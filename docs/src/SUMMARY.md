@@ -9,5 +9,6 @@
   - [Foundry Reference](foundry-reference.md)
   - [Anchor Reference](anchor-reference.md)
   - [Sui Reference](sui-reference.md)
+- [Development](development.md)
 - [Getting Started](getting-started.md)
 - [Contributing](contributing.md)

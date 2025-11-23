@@ -9,22 +9,14 @@ jammin borrows tricks from other chains and frameworks. Studying their wins (and
 - [Anchor reference](anchor-reference.md) documents the Solana/Rust structure with IDLs and macros.
 - [Sui reference](sui-reference.md) shows how Move packages and the `sui` CLI manage builds, tests, and localnets.
 
-More pages will show up as we research other stacks like Foundry or Anchor.
+## lessons from the field
 
-## lessons from truffle, hardhat, and chopsticks
+| Tool | Pros | Cons |
+| --- | --- | --- |
+| Truffle | ✅ Easy onboarding, built-in migrations, Ganache pairing, lots of tutorials. | 🚫 Slow compile/test cycles, weak TS support, aging deps, fragile migrations on big repos. |
+| Hardhat | ✅ TS-first config, rich tasks, good errors, mainnet forking, huge plugin list. | 🚫 Setup can be heavy, plugins drift, flexible structure confuses new folks. |
+| Chopsticks | ✅ Fast forked chains, TypeScript scenarios, easy access to live storage. | 🚫 Eats RAM/CPU on large forks, sparse docs, breaks when runtime metadata changes. |
+| Foundry | ✅ Blazing `forge test`, fuzzing, Solidity-native scripts. | 🚫 Multiple CLIs to juggle, remapping issues, docs assume Solidity veterans. |
+| Anchor | ✅ Rust macros reduce boilerplate, auto IDLs, tight validator integration. | 🚫 Macros hide errors, Solana tooling drifts, TS tests need dependency babysitting. |
+| Sui | ✅ Move tests are quick, `sui client` starts localnet fast, manifests keep deps explicit. | 🚫 Move borrow rules are steep, dependency revisions churn, localnet wipes state without snapshots. |
 
-- **truffle pros** – simple onboarding, built-in migrations, tight Ganache pairing, lots of tutorials.
-- **truffle cons** – slow compile/test loops, weak TypeScript story, dated deps, fragile migrations on bigger projects.
-- **hardhat pros** – TS-first config, great error messages, task system, mainnet forking, huge plugin list.
-- **hardhat cons** – more setup work, plugins can break between releases, flexible structure confuses new folks.
-- **chopsticks pros** – quick forked chains, scenarios in plain TypeScript, easy access to live storage for debugging.
-- **chopsticks cons** – heavy resource usage on big forks, light docs, breaks when upstream runtime metadata changes.
-
-- **foundry pros** – blazing `forge test` speed, Solidity-based scripts, good fuzzing and cheatcodes.
-- **foundry cons** – multiple CLI tools confuse newcomers, remapping errors are common, docs expect Solidity veterans.
-- **anchor pros** – tight Rust macros, auto-generated IDLs, batteries-included testing with `solana-test-validator`.
-- **anchor cons** – macro magic hides errors, Solana tooling can be brittle across releases, TS tests need frequent dependency babysitting.
-- **sui pros** – Move unit tests are fast, localnet spins up with one CLI command, manifests keep dependencies explicit.
-- **sui cons** – Move borrow checker has a steep learning curve, dependency revisions churn, localnet resets wipe state unless you snapshot.
-
-Goal for jammin: keep Truffle’s guided flow, borrow Hardhat’s extensibility, adopt Chopsticks-style scripting, and provide Foundry/Anchor/Sui-level speed plus clean manifests—without drowning people in toolchains.
