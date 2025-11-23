@@ -10,3 +10,7 @@ Documentation lives in `docs/` and is powered by [mdBook](https://github.com/rus
 ```bash
 mdbook serve docs --open
 ```
+
+## AI contributors
+
+Automated agents helping on this repository should review `AI_GUIDELINES.md` before making changes to ensure naming rules—especially the lowercase `jammin` requirement—are respected.
