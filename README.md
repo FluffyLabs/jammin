@@ -1,5 +1,7 @@
-# jammin
+# @fluffylabs/jammin
 JAM development tooling. Code, build, deploy and test your multi-service projects.
+
+- [Documentation](https://fluffylabs.dev/jammin)
 
 ## Documentation
 
