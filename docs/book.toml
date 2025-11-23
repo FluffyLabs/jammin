@@ -1,7 +1,7 @@
 [book]
-title = "Jammin Documentation"
+title = "jammin documentation"
 authors = ["Fluffy Labs"]
-description = "Guides and references for building with Jammin."
+description = "Guides and references for building with jammin."
 language = "en"
 src = "src"
 
