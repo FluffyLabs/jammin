@@ -1,0 +1,15 @@
+[book]
+title = "jammin documentation"
+authors = ["Fluffy Labs"]
+description = "Guides and references for building with jammin."
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+curly-quotes = true
+git-repository-url = "https://github.com/fluffylabs/jammin"
