@@ -1,22 +1,20 @@
 # inspirations
 
-jammin borrows the best practices from established smart-contract frameworks so we avoid reinventing battle-tested ergonomics. This section groups reference material for popular toolchains we study before designing new UX flows or CLIs.
+jammin borrows tricks from other chains and frameworks. Studying their wins (and pain) keeps us from repeating old mistakes.
 
-- [Truffle reference](truffle-reference.md) highlights the default project structure, migrations, and config conventions that make onboarding friendly.
-- [Hardhat reference](hardhat-reference.md) showcases the TypeScript-first experience, custom tasks, and plugin ecosystem that power advanced teams.
-- [Chopsticks reference](chopsticks-reference.md) captures the Polkadot ecosystem’s fork-and-script workflow for deterministic integration testing.
+- [Truffle reference](truffle-reference.md) shows the classic migrations-first layout.
+- [Hardhat reference](hardhat-reference.md) covers the TypeScript-heavy, plugin-friendly world.
+- [Chopsticks reference](chopsticks-reference.md) explains the Polkadot fork-and-script workflow.
 
-We will expand this section with additional ecosystems (e.g., Foundry, Anchor) as we gather more comparative research.
+More pages will show up as we research other stacks like Foundry or Anchor.
 
-## lessons from truffle, hardhat & chopsticks
+## lessons from truffle, hardhat, and chopsticks
 
-Community feedback about incumbent frameworks helps shape jammin’s priorities:
+- **truffle pros** – simple onboarding, built-in migrations, tight Ganache pairing, lots of tutorials.
+- **truffle cons** – slow compile/test loops, weak TypeScript story, dated deps, fragile migrations on bigger projects.
+- **hardhat pros** – TS-first config, great error messages, task system, mainnet forking, huge plugin list.
+- **hardhat cons** – more setup work, plugins can break between releases, flexible structure confuses new folks.
+- **chopsticks pros** – quick forked chains, scenarios in plain TypeScript, easy access to live storage for debugging.
+- **chopsticks cons** – heavy resource usage on big forks, light docs, breaks when upstream runtime metadata changes.
 
-- **truffle positives** – Integrated migrations, Ganache pairing, and straightforward testing make onboarding gentle for small teams. Rich tutorials and opinionated structure reduce bikeshedding for first deployments.
-- **truffle limitations** – Users report slower compile/test cycles, limited TypeScript support, and aging dependency chains. Plugin surface is narrower than newer stacks, and large projects often hit migration bottlenecks or outgrow the default build pipeline.
-- **hardhat positives** – Modern DX with TypeScript-first config, granular tasks, console, and mainnet forking receives strong praise. A wide plugin ecosystem (ethers, deploy, gas-reporter, etc.) plus clear error stacks accelerates iteration.
-- **hardhat trade-offs** – Reviews highlight steeper initial setup, heavy reliance on community plugins that can break between versions, and more responsibility placed on teams to define structure. The flexibility can overwhelm newcomers compared to turnkey suites.
-- **chopsticks positives** – Rapid forked networks, scriptable TypeScript scenarios, and direct access to live-chain storage make reproducing Polkadot bugs much easier.
-- **chopsticks limitations** – Heavy resource usage on large forks, thin documentation, and occasional breakage when runtimes update metadata force teams to babysit upgrades.
-
-jammin should blend truffle’s guided flows with hardhat’s extensibility while adopting chopsticks-style forking ergonomics: offer opinionated defaults, modular building blocks, and predictable scripted environments that track Typeberry releases closely.
+Goal for jammin: keep Truffle’s guided flow, borrow Hardhat’s extensibility, and match Chopsticks’ ability to script real networks—while keeping resources and docs under control.

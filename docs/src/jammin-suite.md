@@ -1,105 +1,89 @@
 # jammin suite
 
-The jammin suite is Fluffy Labs' end‑to‑end tooling stack for building, testing, and operating services on typeberry networks. It packages everything required to bootstrap a project, compile and distribute services, launch dedicated testnets, and inspect live deployments. The suite currently consists of three products — `jammin cli`, `jammin studio`, and `jammin inspect` — that can be adopted independently or as a cohesive workflow.
+jammin suite bundles three tools so Typeberry teams can create, ship, and watch services without juggling random scripts. You can pick the tool that fits your flow, but every piece reads the same config files so the hand-off is smooth.
 
-## Architectural Overview
+## overview
 
-1. **jammin cli** orchestrates project bootstrap, SDK configuration, service builds, testnet deployment, and automated testing pipelines. It is optimized for power users who want deterministic, scriptable control.
-2. **jammin studio** provides an onboarding experience (Electron app or VS Code extension) so new teams can create JAM projects, iterate on code, and hand off artifacts to the CLI without touching the terminal.
-3. **jammin inspect** focuses on post‑deployment operations. It monitors network health, exposes service state, decodes blocks, and offers an interaction surface for refinement workflows.
+- **jammin cli** – command runner for init, build, deploy, tests, and quick interactions. Good for automation and CI.
+- **jammin studio** – desktop or IDE UI (still in design) for folks who want a guided path but still output the same artifacts.
+- **jammin inspect** – web UI that shows what the network is doing and lets you poke services after deploy.
 
-Each component speaks typeberry primitives (genesis files, node definitions, refinement workflows, JAMNP interfaces) to ensure smooth handoffs across the build → deploy → operate lifecycle.
+All of them understand Typeberry basics: genesis files, node definitions, service IDs, JAMNP endpoints, and so on.
 
 ---
 
 ## jammin cli
 
-### Project Bootstrap
+### project bootstrap
 
-- Initializes a new JAM workspace from a template library.
-- Prompts for a default JAM SDK and allows per‑service overrides so heterogeneous stacks (e.g., JAM SDK today, JADE tomorrow) share a single project file.
-- Generates a YAML configuration that captures SDK selections, service targets, and deployment metadata. This file is the single source of truth that both Studio and Inspector consume.
+- `jammin init` creates the repo layout, config YAML, starter services, and agent instructions.
+- You choose a default SDK plus per-service overrides so mixed stacks still live in one tree.
+- Templates cover both simple (single service) and larger multi-service setups.
 
-### Build Pipeline
+### builds
 
-1. **Service‑aware builds** – Each service is compiled using its SDK‑specific toolchain. We ship Docker images for officially supported SDKs (initially JAM SDK, later JADE and others) to keep environments reproducible.
-2. **Custom service types** – Projects can define bespoke service descriptors that list arbitrary build commands; the CLI treats them as first‑class targets.
-3. **Artifacts** – Every build produces a `*.jam` bundle that contains the compiled service artifacts and metadata required for deployment.
+- Each service builds inside a Docker image that ships with its SDK. Right now that means JAM SDK, with hooks for others later.
+- Custom service types can point to any set of commands; CLI treats them the same as built-in targets.
+- Every build outputs a `*.jam` bundle with binaries plus metadata we need for deploys.
 
-### Deployment Orchestration
+### deployment
 
-1. **Genesis authoring**
-   - Built services are embedded into a genesis specification so new nodes start with a consistent state.
-2. **Bootstrap service integration**
-   - Works with Polkajam’s bootstrap service or jammin’s own implementation to deploy services into an existing network via a `new`‑style API.
-3. **Testnet definitions**
-   - YAML describes node roles, instance counts, and parameter mappings (networking, RPC ports, telemetry, etc.).
-   - The CLI expands these definitions into runnable node processes, wires bootnodes, and distributes the genesis file.
-   - Initial focus is typeberry nodes, but the format leaves room for additional chains.
-4. **Upgradable services**
-   - Instead of re‑seeding a network, teams can upgrade in‑place by supplying new `*.jam` bundles. The CLI handles compatibility checks and upgrade sequencing.
+- CLI turns the bundles into a genesis file and node configs based on the YAML definition (roles, replicas, ports, telemetry flags).
+- It launches the nodes, wires bootnodes, and pushes the genesis so everyone starts from the same state.
+- Works with a bootstrap service (Polkajam’s or ours) to deploy or upgrade services without restarting the network.
+- Includes basic health checks so you notice when a node drops offline or loses peers.
 
-### Testing Support
+### testing
 
-1. **Unit (service) tests**
-   - The CLI exposes a `jam test service` command that dispatches to SDK‑native test runners. We treat exit codes as the contract—implementation details remain within the SDK.
-2. **Integration (project) tests**
-   - Provides a deterministic test harness that spins up the target topology, deploys services, and exposes an SDK for scripted interactions.
-   - Example workflow: create multiple work items, push them through refinement, package results, send for accumulation, and assert state transitions.
+- **Unit tests**: `jammin test service` spins up Docker for each service and runs the SDK-native command. Exit code decides pass/fail.
+- **Integration tests**: jammin provides a harness + SDK that:
+  - starts the requested topology,
+  - deploys the services,
+  - exposes helpers to create work items, push them through refine, package, and accumulation,
+  - reads balances or other state to assert behavior.
+- Runs should be repeatable, so we either redeploy each time or reset blocks depending on configuration.
 
-### Interactive Mode
+### interacting
 
-- Mirrors integration testing but keeps the environment live so operators can issue ad‑hoc actions.
-- Ships (or plugs into) a REPL/SDK bridge that can encode service inputs. Until we converge on a unified schema registry, users describe payload shapes using the same codec hints as their service SDKs (currently `@typeberry/codec`).
+- Short term we offer a low-level command that takes hex input, submits it, and prints the result. Useful as a sanity check.
+- Longer term we want a REPL that knows service codecs (via `@typeberry/codec`) so you can send structured payloads without manual encoding.
 
 ---
 
 ## jammin studio
 
-- Delivered either as an Electron desktop client or a VS Code extension.
-- Targets developers who prefer GUI workflows while still producing CLI‑ready assets.
-- Capabilities:
-  1. Project scaffolding, including SDK selection and service definitions, stored in the standard YAML format.
-  2. File system monitoring so AI coding assistants can propose or apply code changes safely.
-  3. Build management up to the point of producing `*.jam` artifacts. Deployment, testnet orchestration, and runtime management remain the CLI’s responsibility.
-- Studio and CLI share the same project metadata, so teams can start in Studio, then switch to CLI automation without translation steps.
+- Target options: VS Code extension or Electron app; we are prototyping both.
+- Goals:
+  - Guide new contributors through project scaffolding and SDK selection.
+  - Watch the filesystem so AI helpers can edit code safely.
+  - Run builds and spit out `*.jam` bundles, then hand off to the CLI for deploy/test steps.
+- Because it uses the same YAML config, teams can hop between Studio and CLI without conversions.
 
 ---
 
 ## jammin inspect
 
-jammin inspect is the observability and interaction surface for deployed typeberry networks. It can be embedded into Studio (for the Electron flavor) or delivered as a standalone web application.
+- Web view (maybe embedded into Studio) that tracks a running Typeberry network.
+- Shows:
+  - node topology and liveness,
+  - blocks as they arrive,
+  - per-service state, similar to `state-viewer`,
+  - refinement stats so you can see work items move through the pipeline.
+- Uses the same type definitions as integration tests, so it can auto-build simple forms that submit or decode work items.
 
-### Post‑Deployment Insights
+### embedded node approach
 
-1. **Network view** – Displays node topology, role assignments, and liveness. Pulls from telemetry or configuration when RPC access is unavailable.
-2. **Service state inspection** – Offers state viewers similar to `state-viewer`, letting operators drill into per‑service data.
-3. **Block stream analysis** – Shows incoming blocks, work packages, and refinement activity. Operators can trace how work items progress through the pipeline.
-4. **Refinement introspection** – Either integrates with `jamtop` or provides a streamlined view of refinement stages and metrics.
-
-### Interaction Layer
-
-- Builds reusable UI components from the same input/output schemas used by services. With AI assistance, users can assemble dashboards that:
-  - Submit work items with structured payloads.
-  - Trace refinement progress and accumulated results.
-  - Trigger upgrades or maintenance routines when paired with the CLI.
-
-### Embedded Node Strategy
-
-- Whenever possible, Inspector runs against an embedded typeberry node rather than raw RPC endpoints. This node:
-  1. Joins the target network using the provided genesis file.
-  2. Streams blocks locally so Inspector can derive state without trusting remote RPC.
-  3. Supplies a minimal WebSocket interface that browsers can consume. The interface loosely mirrors JAMNP handlers:
-     - Performs a handshake that validates the genesis hash.
-     - Syncs block gaps between the bridge node (terminal process) and the browser node.
-     - Streams blocks until both nodes share the same state. Future iterations can add warp‑sync to reduce CPU load on the browser.
-- For web deployments, operators run a lightweight “bridge node” in a terminal. It exposes the above WebSocket endpoint and forwards blocks to the browser. Small testnets can afford full block replay; production deployments can opt into warp‑sync once available.
+- Instead of hitting RPC endpoints directly, inspect prefers an embedded Typeberry node:
+  - join the network using the same genesis,
+  - stream blocks locally so state stays consistent,
+  - expose a tiny WebSocket bridge so the browser can sync blocks (handshake → diff → stream).
+- For browser setups we run a “bridge node” in a terminal. It exposes the WebSocket endpoint and feeds the browser copy. Warp-sync can arrive later if replay becomes heavy.
 
 ---
 
-## Next Steps
+## next steps
 
-- Finalize the project YAML schema so all three products speak the same configuration language.
-- Publish official Docker images for supported SDKs and document how to extend them for custom services.
-- Define the integration testing SDK surface (fixtures, assertions, codecs) so teams can adopt it incrementally.
-- Prototype the embedded Inspector node with a simple WebSocket bridge to validate the synchronization model.
+- Finalize the shared YAML schema so every tool reads the same options.
+- Publish the supported Docker images and docs on how to extend them.
+- Flesh out the integration testing SDK (fixtures, codecs, helpers).
+- Finish the embedded inspector node + WebSocket bridge prototype.

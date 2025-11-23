@@ -12,5 +12,6 @@ Automated assistants working in this repository should follow the conventions be
 - Prefer concise, task-focused prose with short paragraphs.
 - Align terminology with the documentation set in `docs/src`; when in doubt, reference `docs/src/jammin-suite.md` for the canonical wording of suite components.
 - Update `docs/src/SUMMARY.md` whenever new pages are added so the mdBook navigation stays accurate.
+- Use direct, plain language that reads like an experienced (non-native) open source developer explaining the work. Avoid marketing fluff or overly formal sentences; keep the tone practical and grounded.
 
 Consult this file at the start of every AI-assisted session to ensure the repository stays stylistically consistent.

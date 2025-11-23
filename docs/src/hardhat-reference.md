@@ -1,8 +1,8 @@
 # hardhat example project
 
-Hardhat favors flexible task configuration and TypeScript-first tooling. The layout below matches the output of `npx hardhat` (Create an empty hardhat.config) with a sample contract, deployment script, and tests to highlight typical patterns we want jammin to support.
+Hardhat feels more modern than Truffle: TypeScript by default, flexible tasks, big plugin ecosystem. Here’s a trimmed layout from `npx hardhat` plus the files teams usually add.
 
-## Directory structure
+## directory layout
 
 ```text
 .
@@ -18,17 +18,15 @@ Hardhat favors flexible task configuration and TypeScript-first tooling. The lay
 └── .env
 ```
 
-## Key files
+## what lives where
 
-- `contracts/` mirrors Truffle but Hardhat leans on incremental compilation and artifacts under `artifacts/` and `cache/`.
-- `hardhat.config.ts` defines networks, Solidity settings, plugins, and custom tasks.
-- `scripts/` hosts `npx hardhat run` deployment scripts; often paired with `hardhat-deploy`.
-- `test/` typically uses mocha/chai plus ethers.js fixtures; TypeScript is common thanks to built-in typechain support.
-- `.env` + `hardhat.config.ts` wire secrets into providers; Hardhat encourages mainnet forking for integration tests.
+- `contracts/` – Solidity sources; Hardhat writes build artifacts into `artifacts/` and `cache/`.
+- `hardhat.config.ts` – main brain. Networks, optimizer, plugins, custom tasks.
+- `scripts/` – run via `npx hardhat run scripts/deploy.ts --network ...`.
+- `test/` – mocha + chai, usually with ethers.js fixtures and typechain types.
+- `.env` – secrets for RPC providers or explorer APIs.
 
-## Sample files
-
-**hardhat.config.ts**
+## sample config
 
 ```ts
 import { HardhatUserConfig } from "hardhat/types";
@@ -43,25 +41,21 @@ const config: HardhatUserConfig = {
     settings: { optimizer: { enabled: true, runs: 200 } }
   },
   networks: {
-    hardhat: {
-      forking: process.env.TYPEBERRY_RPC
-        ? { url: process.env.TYPEBERRY_RPC }
-        : undefined
-    },
+    hardhat: process.env.TYPEBERRY_RPC
+      ? { forking: { url: process.env.TYPEBERRY_RPC } }
+      : {},
     typeberryDev: {
       url: "http://127.0.0.1:9944",
-      accounts: [process.env.DEPLOYER_KEY!]
+      accounts: process.env.DEPLOYER_KEY ? [process.env.DEPLOYER_KEY] : []
     }
   },
-  etherscan: {
-    apiKey: process.env.EXPLORER_KEY
-  }
+  etherscan: { apiKey: process.env.EXPLORER_KEY }
 };
 
 export default config;
 ```
 
-**scripts/deploy.ts**
+## sample deploy script
 
 ```ts
 import { ethers } from "hardhat";
@@ -80,4 +74,4 @@ main().catch((error) => {
 });
 ```
 
-Hardhat’s emphasis on custom tasks, TypeScript tooling, and network forking reminds us to keep jammin extensible, scriptable, and friendly to rich IDE experiences.
+Lessons for jammin: keep configs in code, make every task scriptable, and provide good TypeScript types for plugins and tests. Also, mainnet forking plus task automation should be first-class features, not bolted on later.
