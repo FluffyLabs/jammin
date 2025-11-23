@@ -7,6 +7,7 @@ jammin borrows tricks from other chains and frameworks. Studying their wins (and
 - [Chopsticks reference](chopsticks-reference.md) explains the Polkadot fork-and-script workflow.
 - [Foundry reference](foundry-reference.md) highlights the fast Rust-style CLI approach for Solidity.
 - [Anchor reference](anchor-reference.md) documents the Solana/Rust structure with IDLs and macros.
+- [Sui reference](sui-reference.md) shows how Move packages and the `sui` CLI manage builds, tests, and localnets.
 
 More pages will show up as we research other stacks like Foundry or Anchor.
 
@@ -23,5 +24,7 @@ More pages will show up as we research other stacks like Foundry or Anchor.
 - **foundry cons** – multiple CLI tools confuse newcomers, remapping errors are common, docs expect Solidity veterans.
 - **anchor pros** – tight Rust macros, auto-generated IDLs, batteries-included testing with `solana-test-validator`.
 - **anchor cons** – macro magic hides errors, Solana tooling can be brittle across releases, TS tests need frequent dependency babysitting.
+- **sui pros** – Move unit tests are fast, localnet spins up with one CLI command, manifests keep dependencies explicit.
+- **sui cons** – Move borrow checker has a steep learning curve, dependency revisions churn, localnet resets wipe state unless you snapshot.
 
-Goal for jammin: keep Truffle’s guided flow, borrow Hardhat’s extensibility, adopt Chopsticks-style scripting, and provide Foundry/Anchor-level speed and codegen without the tool churn.
+Goal for jammin: keep Truffle’s guided flow, borrow Hardhat’s extensibility, adopt Chopsticks-style scripting, and provide Foundry/Anchor/Sui-level speed plus clean manifests—without drowning people in toolchains.
