@@ -1,15 +1,12 @@
-# jammin-cli
+# jammin CLI
 
-To install dependencies:
+JAM development tooling CLI for building, testing, and deploying multi-service projects.
+
+## Installation
+
+### From source (development)
 
 ```bash
+cd cli
 bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.20. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+bun start --help

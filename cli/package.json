@@ -1,11 +1,23 @@
 {
   "name": "jammin-cli",
+  "version": "0.0.1",
+  "description": "JAM development tooling CLI",
   "module": "index.ts",
   "type": "module",
+  "bin": {
+    "jammin": "./index.ts"
+  },
+  "scripts": {
+    "build": "bun build index.ts --outdir dist --target node",
+    "start": "bun run ./index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "commander": "^14.0.2"
   }
 }
