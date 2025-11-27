@@ -1,14 +1,25 @@
 import { Command } from "commander";
-import { group, intro, select, spinner, text } from "@clack/prompts";
+import * as p from "@clack/prompts";
 
 interface ProjectConfig {
   name: string;
   sdk: string;
 }
 
+function validate(name: string): string | undefined {
+  if (!name || name.trim().length === 0) {
+    return "Project name is required";
+  }
+
+  const trimmed = name.trim();
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9-_]*$/.test(trimmed)) {
+    return "Invalid project name. Project name must start with alpha-numeric value, and can only contains letters, numbers, hyphens, and underscores";
+  }
+}
+
 export const newCommand = new Command("new")
   .description("initialize a new jammin project")
-  .argument("[project-name]", "name of the project to create")
+  .argument("[project-name]", "name of the project to create", validate)
   .addOption(
     new Command().createOption("--sdk <sdk>", "target sdk")
       .choices(["polkajam", "jade", "jambrains"])
@@ -40,30 +51,44 @@ export const newCommand = new Command("new")
 });
 
 async function runInteractiveSetup(): Promise<ProjectConfig> {
-  intro('🎯 Create a new JAM Service');
+  p.intro("🎯 Create a new JAM Service");
 
-  const config = await group({
-    name: () => text({
-      message: 'What is your project name?',
-      placeholder: 'my-service',
+  const config = await p.group({
+    name: () => p.text({
+      message: "What is your project name?",
+      placeholder: "my-service",
+      validate
     }),
 
-    sdk: () => select({
-      message: 'Which template would you like to use?',
+    sdk: () => p.select({
+      message: "Which template would you like to use?",
       options: [
         { value: "polkajam" },
         { value: "jade" },
         { value: "jambrains" },
       ]
     }),
+  }, 
+  {
+    onCancel: () => {
+      p.cancel("Operation cancelled");
+      process.exit(1);
+    }
   });
 
   return config as ProjectConfig;
 }
 
+// TODO: [MaSo] Dummy create project
 async function createProject(config: ProjectConfig) {
-  const s = spinner();
+  const s = p.spinner();
   s.start(`🎯 Initializing project: ${config.name}`);
-  await new Promise(resolve => setTimeout(resolve, 3000));
-  s.stop("✅ Created!");
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  s.message(`Using SDK: ${config.sdk}`);
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  s.message(`Finalizing...`);
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  s.stop("Finished");
+
+  p.outro("✅ Project created!");
 }
