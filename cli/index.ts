@@ -3,6 +3,7 @@ import { version } from "./package.json";
 import { newCommand } from "./src/newCommand";
 import { buildCommand } from "./src/buildCommand";
 import { testCommand } from "./src/testCommand";
+import { deployCommand } from "./src/deployCommand";
 
 program
   .name("jammin")
@@ -18,6 +19,7 @@ program.configureHelp({
 program.addCommand(newCommand);
 program.addCommand(buildCommand);
 program.addCommand(testCommand);
+program.addCommand(deployCommand);
 
 // TODO: [MaSo] Display accual examples
 program.addHelpText("after", `
