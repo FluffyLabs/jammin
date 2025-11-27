@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import * as p from "@clack/prompts";
 
 interface ProjectConfig {
@@ -6,15 +6,17 @@ interface ProjectConfig {
   sdk: string;
 }
 
-function validate(name: string): string | undefined {
+function validate(name: string) {
   if (!name || name.trim().length === 0) {
-    return "Project name is required";
+    return new InvalidArgumentError("Project name is required");
   }
 
   const trimmed = name.trim();
   if (!/^[a-zA-Z0-9][a-zA-Z0-9-_]*$/.test(trimmed)) {
-    return "Invalid project name. Project name must start with alpha-numeric value, and can only contains letters, numbers, hyphens, and underscores";
+    return new InvalidArgumentError("Invalid project name. Project name must start with alpha-numeric value, and can only contains letters, numbers, hyphens, and underscores");
   }
+
+  return trimmed;
 }
 
 export const newCommand = new Command("new")
@@ -57,7 +59,13 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
     name: () => p.text({
       message: "What is your project name?",
       placeholder: "my-service",
-      validate
+      validate: (name) => {
+        try {
+          validate(name);
+        } catch (error: any) {
+          return error.message.replace('Error: ', '');
+        }
+      }
     }),
 
     sdk: () => p.select({
@@ -82,13 +90,13 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
 // TODO: [MaSo] Dummy create project
 async function createProject(config: ProjectConfig) {
   const s = p.spinner();
-  s.start(`🎯 Initializing project: ${config.name}`);
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  s.message(`Using SDK: ${config.sdk}`);
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  s.message(`Finalizing...`);
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  s.stop("Finished");
+  p.intro(`🎯 Initializing project: ${config.name}`);
+  s.start("📝 Creating project..."); 
+  await new Promise(resolve => setTimeout(resolve, 2500));
+  s.stop(`✅ Created project using SDK: ${config.sdk}`);
+  s.start(`📚 Creating config files...`);
+  await new Promise(resolve => setTimeout(resolve, 2500));
+  s.stop("✅ Created configs!");
 
-  p.outro("✅ Project created!");
+  p.outro("✅ Finished!");
 }
