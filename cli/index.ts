@@ -2,6 +2,7 @@ import { program } from "commander";
 import { version } from "./package.json";
 import { newCommand } from "./src/newCommand";
 import { buildCommand } from "./src/buildCommand";
+import { testCommand } from "./src/testCommand";
 
 program
   .name("jammin")
@@ -16,18 +17,18 @@ program.configureHelp({
 // Adding commands
 program.addCommand(newCommand);
 program.addCommand(buildCommand);
+program.addCommand(testCommand);
 
 // TODO: [MaSo] Display accual examples
-program.on("--help", () => {
-  console.log("");
-  console.log("Examples:");
-  console.log("  $ jammin new [options]");
-  console.log("  $ jammin build [options]");
-  console.log("  $ jammin test [options]");
-  console.log("  $ jammin deploy [options]");
-  console.log("");
-  console.log("For more information, visit: https://fluffylabs.dev/jammin/");
-});
+program.addHelpText("after", `
+Examples:
+  $ jammin new [options]
+  $ jammin build [options]
+  $ jammin test [options]
+  $ jammin deploy [options]
+
+For more information, visit: https://fluffylabs.dev/jammin/`
+);
 
 try {
   await program.parseAsync(process.argv);
