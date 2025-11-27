@@ -1,6 +1,7 @@
 import { program } from "commander";
 import { version } from "./package.json";
 import { newCommand } from "./src/newCommand";
+import { buildCommand } from "./src/buildCommand";
 
 program
   .name("jammin")
@@ -14,6 +15,7 @@ program.configureHelp({
 
 // Adding commands
 program.addCommand(newCommand);
+program.addCommand(buildCommand);
 
 // TODO: [MaSo] Display accual examples
 program.on("--help", () => {
