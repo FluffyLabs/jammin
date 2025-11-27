@@ -60,6 +60,7 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
       message: "What is your project name?",
       placeholder: "my-service",
       validate: (name) => {
+        if (!name) return "Project name is required";
         try {
           validate(name);
         } catch (error: any) {
@@ -90,7 +91,7 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
 // TODO: [MaSo] Dummy create project
 async function createProject(config: ProjectConfig) {
   const s = p.spinner();
-  p.intro(`🎯 Initializing project: ${config.name}`);
+  p.log.step(`🎯 Initializing project: ${config.name}`);
   s.start("📝 Creating project..."); 
   await new Promise(resolve => setTimeout(resolve, 2500));
   s.stop(`✅ Created project using SDK: ${config.sdk}`);
