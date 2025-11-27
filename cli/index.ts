@@ -1,3 +1,5 @@
+#!/usr/bin/env bun
+
 import { program } from "commander";
 import { version } from "./package.json";
 import { newCommand } from "./src/commands/newCommand";

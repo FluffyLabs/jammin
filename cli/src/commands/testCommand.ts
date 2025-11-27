@@ -8,7 +8,7 @@ export const testCommand = new Command("test")
   .addHelpText("after", `
 Examples:
   $ jammin test
-  $ jamming test **/*-pattern.{test,spec}.{ts,js}
+  $ jammin test **/*-pattern.{test,spec}.{ts,js}
   $ jammin test /my-tests/*.ts --watch
 `)
   .action(async (pattern, options) => {

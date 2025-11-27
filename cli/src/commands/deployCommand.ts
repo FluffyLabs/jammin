@@ -17,7 +17,7 @@ Examples:
     if (!options.skipBuild) {
       s.start("🔨 Building...");
       await new Promise(resolve => setTimeout(resolve, 2000));
-      s.stop("✅ Building was successfull!");
+      s.stop("✅ Building was successful!");
     }
 
     if (options.service) {
@@ -27,7 +27,7 @@ Examples:
     }
 
     await new Promise(resolve => setTimeout(resolve, 2000));
-    s.stop("✅ Deployment was succesfull!");
+    s.stop("✅ Deployment was succesful!");
 
     p.outro("✅ Finished!");
 });
