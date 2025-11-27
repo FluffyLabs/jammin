@@ -11,5 +11,6 @@
   - [Anchor Reference](reference-anchor.md)
   - [Sui Reference](reference-sui.md)
 - [Development](development.md)
+- [Requirements](requirements.md)
 - [Getting Started](getting-started.md)
 - [Contributing](contributing.md)
