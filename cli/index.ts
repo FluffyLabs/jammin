@@ -1,9 +1,9 @@
 import { program } from "commander";
 import { version } from "./package.json";
-import { newCommand } from "./src/newCommand";
-import { buildCommand } from "./src/buildCommand";
-import { testCommand } from "./src/testCommand";
-import { deployCommand } from "./src/deployCommand";
+import { newCommand } from "./src/commands/newCommand";
+import { buildCommand } from "./src/commands/buildCommand";
+import { testCommand } from "./src/commands/testCommand";
+import { deployCommand } from "./src/commands/deployCommand";
 
 program
   .name("jammin")
