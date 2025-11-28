@@ -73,10 +73,9 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
             if (!name) {
               return "Project name is required";
             }
-            try {
-              validate(name);
-            } catch (err) {
-              return (err as InvalidArgumentError).message.replace("Error: ", "");
+            const result = validate(name);
+            if (result instanceof InvalidArgumentError) {
+              return result.message.replace("Error: ", "");
             }
           },
         }),
