@@ -2,6 +2,8 @@
   "name": "@typeberry/jammin-cli",
   "version": "0.0.1",
   "description": "JAM development tooling CLI",
+  "author": "Fluffy Labs",
+  "license": "MPL-2.0",
   "module": "index.ts",
   "type": "module",
   "bin": {
