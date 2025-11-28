@@ -1,5 +1,5 @@
 {
-  "name": "jammin",
+  "name": "@fluffylabs/jammin",
   "module": "index.ts",
   "type": "module",
   "private": true,
