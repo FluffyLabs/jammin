@@ -3,8 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "workspace": [
+    "cli"
+  ],
   "scripts": {
-    "cli": "bun run ./cli/index.ts",
     "qa": "biome ci",
     "qa-fix": "npm run format; npm run lint",
     "format": "biome format --write",
@@ -15,6 +17,6 @@
     "@types/bun": "^1.3.3"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   }
 }
