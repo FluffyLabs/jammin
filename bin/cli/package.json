@@ -1,5 +1,5 @@
 {
-  "name": "jammin-cli",
+  "name": "@typeberry/jammin-cli",
   "version": "0.0.1",
   "description": "JAM development tooling CLI",
   "module": "index.ts",

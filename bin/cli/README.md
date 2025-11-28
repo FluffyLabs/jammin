@@ -7,6 +7,6 @@ JAM development tooling CLI for building, testing, and deploying multi-service p
 ### From source (development)
 
 ```bash
-cd cli
+cd bin/cli
 bun install
 bun start --help

@@ -5,17 +5,17 @@
   "type": "module",
   "private": true,
   "workspace": [
-    "cli"
+    "bin/*"
   ],
   "publishConfig": {
     "tag": "next"
-  }
+  },
   "scripts": {
     "qa": "biome ci",
     "qa-fix": "npm run format; npm run lint",
     "format": "biome format --write",
     "lint": "biome check --write && biome lint --write",
-    "publish:cli": "cd cli && bun publish --access public --tag next"
+    "publish:cli": "cd bin/cli && bun publish --access public"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
