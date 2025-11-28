@@ -1,16 +1,21 @@
 {
-  "name": "jammin",
-  "module": "index.ts",
+  "name": "@fluffylabs/jammin",
+  "version": "0.0.1",
+  "description": "JAM development tooling",
   "type": "module",
   "private": true,
   "workspace": [
     "cli"
   ],
+  "publishConfig": {
+    "tag": "next"
+  }
   "scripts": {
     "qa": "biome ci",
     "qa-fix": "npm run format; npm run lint",
     "format": "biome format --write",
-    "lint": "biome check --write && biome lint --write"
+    "lint": "biome check --write && biome lint --write",
+    "publish:cli": "cd cli && bun publish --access public --tag next"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
