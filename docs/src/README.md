@@ -10,4 +10,4 @@ All tools read the same YAML config, so you can swap between them without conver
 
 ## Inspiration sources
 
-We pay close attention to existing smart-contract stacks such as [Truffle Suite](https://archive.trufflesuite.com/docs/truffle/) and [Hardhat](https://hardhat.org/docs/getting-started), plus Polkadot tooling like Chopsticks. These projects already solved many problems we care about. The [inspirations section](inspirations.md) collects sample layouts, configs, and notes on what works well (and what doesn’t).
+We pay close attention to existing smart-contract stacks such as [Truffle Suite](https://archive.trufflesuite.com/docs/truffle/) and [Hardhat](https://hardhat.org/docs/getting-started), plus Polkadot tooling like [Chopsticks](https://github.com/AcalaNetwork/chopsticks). These projects already solved many problems we care about. The [inspirations section](inspirations.md) collects sample layouts, configs, and notes on what works well (and what doesn’t).

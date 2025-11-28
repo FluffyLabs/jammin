@@ -1,32 +1,33 @@
 # jammin suite
 
-#### jammin cli
-1. Bootstrap new project
-	1. should allow using various jam sdks for services
-	2. multi-service deployment
-2. Project is configured in a yaml file. That YAML contains:
-	1. SDK framework used (global + per-service override)
-	2. list of services and their destinations
-3. **Build**
+## jammin cli
+
+1. **New**
+    1. Should allow using various jam sdks for services
+    2. Project is configured in a yaml file. That YAML contains:
+	    1. SDK framework used (global + per-service override)
+	    2. List of services and their destinations
+2. **Build**
 	1. Each service is being built with its SDK-specific instructions.
 	2. We provide docker images for JAM-SDK, later maybe JADE or other services.
 	3. Defining a "custom" service type with a bunch of commands is possible.
 	4. Building ends with `*.jam` file being produced for the service. 
-4. **Deploy**
-	1. Preparing genesis state
+3. **Deploy**
+    1. Multi-service deployment
+	2. Preparing genesis state
 		1. Each service that we built is put to the genesis state and that's what the nodes are initialised with.
-	2. Using bootstrap service (polkajam's or our custom)
+	3. Using bootstrap service (polkajam's or our custom)
 		1. We can connect to an already running network and just deploy the services using some `new` API of the bootstrap service.
-	3. Configuration file for testnet spawning:
+	4. Configuration file for testnet spawning:
 		1. Node definitions (we can have a bunch pre-defined ones)
 		2. Number of instances of each node definition
 		3. Node definition should probably tell us how to map some parameters (like separate networking/rpc ports, etc) we may decide on the common CLI flags required or some sort of mapping between jammin option and the node option
 		4. Genesis file should be passed to all of the nodes and there should be some bootnodes so that the network can stay connected.
 		5. Focus on typeberry initially.
 	4. Support upgradable services pattern. We could allow the user, instead of deploying a fresh set of services, to just upgrade the existing ones.
-5. **Unit (Service) Testing**
+4. **Unit (Service) Testing**
 	1. CLI should have a way to run unit tests from each of the service. Note that these tests will be written in SDK-specific way, we don't care about them any more than whether the command exits with `0` or something else.
-6. **Integration (Project) Testing**
+5. **Integration (Project) Testing**
 	1. We should provide an SDK to interact with the deployed services in a deterministic way.
 	2. For instance:
 		1. Create a work item and pass it through refine
@@ -34,15 +35,19 @@
 		3. Take two work results and put them into a package.
 		4. Send the package for accumulation.
 		5. Assert that specific changes happened.
-7. **Interacting**
+6. **Interacting**
 	1. Interacting should basically be the same as integration testing, with that difference that interacting allows more dynamic actions. Perhaps that could be just a REPL if the API is good enough.
 	2. Interacting will require some encoding of input arguments for refine, so the user needs to tell us what's the shape of the objects its service expects - a bit of duplication between Service SDK and our format, presumably @typeberry/codec. In the future perhaps we could have a common source of these, but it's not a priority for now.
-#### jammin studio
+
+## jammin studio
+
 1. Electron app or VS Code extension
 2. The main goal is to make it easy to start with JAM development without needing to touch the CLI.
 3. Electron app would need to observe the filesystem to make sure that AI agents can alter the code.
 4. The studio responsibility pretty much ends after the **Build** step. When we build the contracts, we should later be able to deploy them and that's it.
-#### jammin inspect
+
+## jammin inspect
+
 1. The inspector could be part of the studio, especially if it's an electron app, but can easily be also just a separate web app.
 2. The inspector is mostly useful after **Deployment** step. After that:
 	1. We can see the network running, maybe even some sort of simplified topology.

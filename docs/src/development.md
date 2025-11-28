@@ -1,6 +1,7 @@
 # Execution
 
 ## Work mode
+
 1. Two-week sprints.
 2. Sync meetings every Tuesday and Thursday (10:00 am)
 3. Fast pace - focus on delivering features, not necessarily perfect code.
@@ -28,7 +29,7 @@
     1. Starting test networks based on configuration.
 2. Preparation of genesis files
 3. Some basic monitoring to make sure the nodes are up and connected (stdout based or rather some health endpoint or metrics)
-    4. Interacting with bootstrap service or creating our own bootstrap service to deploy & upgrade contracts.
+    1. Interacting with bootstrap service or creating our own bootstrap service to deploy & upgrade contracts.
 4. Unit testing
     1. Running docker containers for each service to invoke test command.
 5. Integration testing
