@@ -1,5 +1,5 @@
-import { Command } from "commander";
 import * as p from "@clack/prompts";
+import { Command } from "commander";
 
 // TODO: [MaSo] dummy command
 export const deployCommand = new Command("deploy")
@@ -8,17 +8,20 @@ export const deployCommand = new Command("deploy")
   .option("-s, --service <name>", "deploy specific service only")
   // TODO: [MaSo] Ideally this should happen automatically if the build artifacts are already there.
   .option("--skip-build", "skip building before deploy")
-  .addHelpText("after", `
+  .addHelpText(
+    "after",
+    `
 Examples:
   $ jammin deploy --env mainnet
   $ jammin deploy --env local --service api
-`)
+`,
+  )
   .action(async (options) => {
     p.intro(`🚀 Deploying to ${options.env}...`);
     const s = p.spinner();
     if (!options.skipBuild) {
       s.start("🔨 Building...");
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       s.stop("✅ Building was successful!");
     }
 
@@ -28,8 +31,8 @@ Examples:
       s.start("Deploying all services");
     }
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     s.stop("✅ Deployment was succesful!");
 
     p.outro("✅ Finished!");
-});
+  });

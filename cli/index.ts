@@ -2,10 +2,10 @@
 
 import { program } from "commander";
 import { version } from "./package.json";
-import { newCommand } from "./src/commands/newCommand";
 import { buildCommand } from "./src/commands/buildCommand";
-import { testCommand } from "./src/commands/testCommand";
 import { deployCommand } from "./src/commands/deployCommand";
+import { newCommand } from "./src/commands/newCommand";
+import { testCommand } from "./src/commands/testCommand";
 
 program
   .name("jammin")
@@ -14,7 +14,7 @@ program
 
 program.configureHelp({
   sortSubcommands: true,
-  subcommandTerm: (cmd) => cmd.name() + ' ' + cmd.usage(),
+  subcommandTerm: (cmd) => `${cmd.name()}·${cmd.usage()}`,
 });
 
 // Adding commands
@@ -24,19 +24,21 @@ program.addCommand(testCommand);
 program.addCommand(deployCommand);
 
 // TODO: [MaSo] Display accual examples
-program.addHelpText("after", `
+program.addHelpText(
+  "after",
+  `
 Examples:
   $ jammin new [options]
   $ jammin build [options]
   $ jammin test [options]
   $ jammin deploy [options]
 
-For more information, visit: https://fluffylabs.dev/jammin/`
+For more information, visit: https://fluffylabs.dev/jammin/`,
 );
 
 try {
   await program.parseAsync(process.argv);
-} catch (err: any) {
+} catch (err) {
   console.error("❌ Error:", err.message);
   process.exit(1);
 }

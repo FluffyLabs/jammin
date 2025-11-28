@@ -1,5 +1,5 @@
-import { Command, InvalidArgumentError } from "commander";
 import * as p from "@clack/prompts";
+import { Command, InvalidArgumentError } from "commander";
 
 interface ProjectConfig {
   name: string;
@@ -14,7 +14,9 @@ function validate(name: string) {
 
   const trimmed = name.trim();
   if (!/^[a-zA-Z0-9][a-zA-Z0-9-_]*$/.test(trimmed)) {
-    return new InvalidArgumentError("Invalid project name. Project name must start with alpha-numeric value, and can only contains letters, numbers, hyphens, and underscores");
+    return new InvalidArgumentError(
+      "Invalid project name. Project name must start with alpha-numeric value, and can only contains letters, numbers, hyphens, and underscores",
+    );
   }
 
   return trimmed;
@@ -25,11 +27,14 @@ export const newCommand = new Command("new")
   .description("initialize a new jammin project")
   .argument("[project-name]", "name of the project to create", validate)
   .addOption(
-    new Command().createOption("--sdk <sdk>", "target sdk")
+    new Command()
+      .createOption("--sdk <sdk>", "target sdk")
       .choices(["polkajam", "jade", "jambrains"])
-      .default("polkajam")
+      .default("polkajam"),
   )
-  .addHelpText("after", `
+  .addHelpText(
+    "after",
+    `
   SDKs: 
     polkajam      by Parity
     jade          by SpaceJam
@@ -38,7 +43,8 @@ export const newCommand = new Command("new")
   Examples:
     $ jammin new my-app
     $ jammin new my-app --sdk polkajam
-  `)
+  `,
+  )
   .action(async (projectName, options) => {
     let config: ProjectConfig;
 
@@ -52,40 +58,42 @@ export const newCommand = new Command("new")
     }
 
     createProject(config);
-});
+  });
 
 async function runInteractiveSetup(): Promise<ProjectConfig> {
   p.intro("🎯 Create a new JAM Service");
 
-  const config = await p.group({
-    name: () => p.text({
-      message: "What is your project name?",
-      placeholder: "my-service",
-      validate: (name) => {
-        if (!name) return "Project name is required";
-        try {
-          validate(name);
-        } catch (error: any) {
-          return error.message.replace('Error: ', '');
-        }
-      }
-    }),
+  const config = await p.group(
+    {
+      name: () =>
+        p.text({
+          message: "What is your project name?",
+          placeholder: "my-service",
+          validate: (name) => {
+            if (!name) {
+              return "Project name is required";
+            }
+            try {
+              validate(name);
+            } catch (err) {
+              return (err as InvalidArgumentError).message.replace("Error: ", "");
+            }
+          },
+        }),
 
-    sdk: () => p.select({
-      message: "Which template would you like to use?",
-      options: [
-        { value: "polkajam" },
-        { value: "jade" },
-        { value: "jambrains" },
-      ]
-    }),
-  }, 
-  {
-    onCancel: () => {
-      p.cancel("Operation cancelled");
-      process.exit(1);
-    }
-  });
+      sdk: () =>
+        p.select({
+          message: "Which template would you like to use?",
+          options: [{ value: "polkajam" }, { value: "jade" }, { value: "jambrains" }],
+        }),
+    },
+    {
+      onCancel: () => {
+        p.cancel("Operation cancelled");
+        process.exit(1);
+      },
+    },
+  );
 
   return config as ProjectConfig;
 }
@@ -94,11 +102,11 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
 async function createProject(config: ProjectConfig) {
   const s = p.spinner();
   p.log.step(`🎯 Initializing project: ${config.name}`);
-  s.start("📝 Creating project..."); 
-  await new Promise(resolve => setTimeout(resolve, 2500));
+  s.start("📝 Creating project...");
+  await new Promise((resolve) => setTimeout(resolve, 2500));
   s.stop(`✅ Created project using SDK: ${config.sdk}`);
-  s.start(`📚 Creating config files...`);
-  await new Promise(resolve => setTimeout(resolve, 2500));
+  s.start("📚 Creating config files...");
+  await new Promise((resolve) => setTimeout(resolve, 2500));
   s.stop("✅ Created configs!");
 
   p.outro("✅ Finished!");
