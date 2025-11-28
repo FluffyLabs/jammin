@@ -18,13 +18,13 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Use Bun ${{ matrix.bun-version }}
-    - uses: oven-sh/setup-bun@v1
+      uses: oven-sh/setup-bun@v1
       with:
         bun-version: ${{ matrix.bun-version }}
 
     - name: Install dependencies
-    - run: bun install
+      run: bun install
 
     - name: Run QA Checks
-    - run: bun run qa
+      run: bun run qa
 
