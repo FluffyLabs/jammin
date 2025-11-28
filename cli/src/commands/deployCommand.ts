@@ -1,10 +1,12 @@
 import { Command } from "commander";
 import * as p from "@clack/prompts";
 
+// TODO: [MaSo] dummy command
 export const deployCommand = new Command("deploy")
   .description("deploy your services to target environment")
   .requiredOption("-e, --env <environment>", "target environment (mainnet, testnet, local)")
   .option("-s, --service <name>", "deploy specific service only")
+  // TODO: [MaSo] Ideally this should happen automatically if the build artifacts are already there.
   .option("--skip-build", "skip building before deploy")
   .addHelpText("after", `
 Examples:

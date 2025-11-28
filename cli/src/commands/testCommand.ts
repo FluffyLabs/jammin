@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import * as p from "@clack/prompts";
 
+// TODO: [MaSo] dummy command
 export const testCommand = new Command("test")
   .description("run tests for your project")
   .argument("[pattern]", "test file pattern")

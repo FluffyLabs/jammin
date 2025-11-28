@@ -6,6 +6,7 @@ interface ProjectConfig {
   sdk: string;
 }
 
+// TODO: [MaSo] Should employ zod for validation
 function validate(name: string) {
   if (!name || name.trim().length === 0) {
     return new InvalidArgumentError("Project name is required");
@@ -19,6 +20,7 @@ function validate(name: string) {
   return trimmed;
 }
 
+// TODO: [MaSo] dummy command
 export const newCommand = new Command("new")
   .description("initialize a new jammin project")
   .argument("[project-name]", "name of the project to create", validate)

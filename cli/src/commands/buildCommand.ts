@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import * as p from "@clack/prompts";
 
+// TODO: [MaSo] dummy command
 export const buildCommand = new Command("build")
   .description("build your multi-service project")
   .option("-s, --service <name>", "build specific service only")
