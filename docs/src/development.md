@@ -24,7 +24,7 @@
     2. Template for starting new projects.
     3. Agent instructions!
 2. Build
-    1. Prepare docker images to build services (JAM-SDK). Ideally we would only need bun + docker to work on services.
+    1. Prepare docker images to build services (JAM-SDK). Ideally we would only need node + docker to work on services.
 3. Deployment
     1. Starting test networks based on configuration.
 2. Preparation of genesis files
