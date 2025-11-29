@@ -1,5 +1,5 @@
-import { Command } from "commander";
 import * as p from "@clack/prompts";
+import { Command } from "commander";
 
 // TODO: [MaSo] dummy command
 export const buildCommand = new Command("build")
@@ -12,8 +12,6 @@ export const buildCommand = new Command("build")
     } else {
       s.start("🔨 Building project...");
     }
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
     s.stop("✅ Build completed successfully!");
-});
-
-
+  });
