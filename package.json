@@ -1,8 +1,14 @@
 {
   "name": "@fluffylabs/jammin",
-  "module": "index.ts",
+  "version": "0.0.1",
+  "description": "JAM development tooling",
+  "author": "Fluffy Labs",
+  "license": "MPL-2.0",
   "type": "module",
   "private": true,
+  "workspace": [
+    "bin/*"
+  ],
   "scripts": {
     "cli": "bun run ./bin/cli/index.ts",
     "qa": "biome ci",
