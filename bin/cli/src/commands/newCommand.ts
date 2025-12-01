@@ -7,7 +7,7 @@ interface ProjectConfig {
 }
 
 // TODO: [MaSo] Should employ zod for validation
-function validate(name: string) {
+export function validate(name: string) {
   if (!name || name.trim().length === 0) {
     return new InvalidArgumentError("Project name is required");
   }
