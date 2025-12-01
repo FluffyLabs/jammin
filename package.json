@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "cli": "bun run ./cli/index.ts",
+    "cli": "bun run ./bin/cli/index.ts",
     "qa": "biome ci",
     "qa-fix": "npm run format; npm run lint",
     "format": "biome format --write",
