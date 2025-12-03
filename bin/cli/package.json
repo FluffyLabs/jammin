@@ -1,14 +1,16 @@
 {
-  "name": "jammin-cli",
+  "name": "@fluffylabs/jammin-cli",
   "version": "0.0.1",
   "description": "JAM development tooling CLI",
+  "author": "Fluffy Labs",
+  "license": "MPL-2.0",
   "module": "index.ts",
   "type": "module",
   "bin": {
     "jammin": "./index.ts"
   },
   "scripts": {
-    "build": "bun build index.ts --outdir dist --target node",
+    "build": "bun build index.ts --outdir ../../dist/cli --target bun",
     "start": "bun run ./index.ts"
   },
   "devDependencies": {

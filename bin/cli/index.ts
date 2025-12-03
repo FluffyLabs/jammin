@@ -1,7 +1,7 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { program } from "commander";
-import { version } from "./package.json";
+import { version } from "./package.json" with { type: "json" };
 import { buildCommand } from "./src/commands/buildCommand";
 import { deployCommand } from "./src/commands/deployCommand";
 import { newCommand } from "./src/commands/newCommand";
@@ -39,6 +39,6 @@ For more information, visit: https://fluffylabs.dev/jammin/`,
 try {
   await program.parseAsync(process.argv);
 } catch (err) {
-  console.error("❌ Error:", err.message);
+  console.error(`❌ Error: ${err}`);
   process.exit(1);
 }

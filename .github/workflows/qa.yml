@@ -22,4 +22,5 @@ jobs:
 
     - name: Run QA Checks
       run: bun run qa
+    - run: bun test
 
