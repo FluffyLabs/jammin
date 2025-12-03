@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { InvalidArgumentError } from "commander";
 import { validate } from "./newCommand";
 
-// TODO: [MaSo] Example test
+// TODO: [MaSo] Implement accual test for `new` command. This is just and example.
 describe("Package validation", () => {
   test("Should pass and trim package names", () => {
     expect(validate("   my-app  ")).toBe("my-app");
