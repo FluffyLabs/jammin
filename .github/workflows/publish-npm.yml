@@ -1,0 +1,76 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  BUN_VERSION: latest
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run QA checks
+        run: bun run qa
+
+      - name: Run build
+        run: bun run build
+
+      - name: Run tests
+        run: bun test
+
+      - name: Determine publish tag and version
+        id: publish-info
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "tag=next" >> $GITHUB_OUTPUT
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sync version from tag
+        if: steps.publish-info.outputs.is_release == 'true'
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          CURRENT_VERSION=$(bun pm pkg get version)
+          if [ "$CURRENT_VERSION" != "$TAG_VERSION" ]; then
+            echo "Aligning package.json version ($CURRENT_VERSION) -> $TAG_VERSION"
+            bun pm pkg set version=$TAG_VERSION
+          fi
+
+      - name: Bump version for next tag
+        if: steps.publish-info.outputs.is_release == 'false'
+        run: |
+          COMMIT_HASH="${{ github.sha }}"
+          COMMIT_SHORT="${COMMIT_HASH:0:7}"
+          CURRENT_VERSION=$(bun pm pkg get version)
+          NEW_VERSION="${CURRENT_VERSION}-${COMMIT_SHORT}"
+          echo "Publishing version: ${NEW_VERSION}"
+          bun pm pkg set version=$NEW_VERSION
+
+      - name: Publish to npm
+        run: bun publish --access public --tag ${{ steps.publish-info.outputs.tag }}
+
