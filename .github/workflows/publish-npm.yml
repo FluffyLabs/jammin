@@ -57,7 +57,7 @@ jobs:
         run: |
           TAG_VERSION="${{ github.event.release.tag_name }}"
           TAG_VERSION="${TAG_VERSION#v}"
-          CURRENT_VERSION=$(bun pm pkg get version)
+          CURRENT_VERSION=$(bun pm pkg get version | tr -d '"')
           if [ "$CURRENT_VERSION" != "$TAG_VERSION" ]; then
             echo "Aligning package.json version ($CURRENT_VERSION) -> $TAG_VERSION"
             bun pm pkg set version=$TAG_VERSION
@@ -68,7 +68,7 @@ jobs:
         run: |
           COMMIT_HASH="${{ github.sha }}"
           COMMIT_SHORT="${COMMIT_HASH:0:7}"
-          CURRENT_VERSION=$(bun pm pkg get version)
+          CURRENT_VERSION=$(bun pm pkg get version | tr -d '"')
           NEW_VERSION="${CURRENT_VERSION}-${COMMIT_SHORT}"
           echo "Publishing version: ${NEW_VERSION}"
           bun pm pkg set version=$NEW_VERSION
