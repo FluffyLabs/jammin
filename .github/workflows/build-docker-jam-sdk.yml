@@ -30,7 +30,7 @@ jobs:
 
     - name: Test Docker image
       run: |
-        docker run --rm jam-sdk:latest --help
+        docker run --rm jam-sdk:latest
 
     - name: Save Docker image
       run: |
