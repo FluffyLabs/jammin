@@ -1,25 +1,10 @@
-FROM debian:bookworm-slim
+FROM rust:1.89-slim-bookworm
 
-ARG TOOLCHAIN=nightly-2025-05-10
-ARG SDK_VERSION=0.1.26
-
-# Install dependencies needed for rustup and cargo builds
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    build-essential 
-        
-# Create a non-root user for building
-RUN useradd --create-home --shell /bin/bash builder
-USER builder
-
-# Install rustup
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${TOOLCHAIN} -c rust-src
-ENV PATH="/home/builder/.cargo/bin:${PATH}"
+# Install rust-src as required by jam-pvm-build
+RUN rustup component add rust-src --toolchain nightly-2025-05-10
 
 # Install the JAM PVM build tool
-RUN cargo install jam-pvm-build@${SDK_VERSION}
+RUN cargo install jam-pvm-build@0.1.26
 
-# Mount point for user's source code
-WORKDIR /home/builder/workdir
-VOLUME ["/home/builder/workdir"]
+# This fixes an issue where jam-pvm-build looks for rustup home in the wrong place
+RUN ln -s /usr/local/rustup /root/.rustup
