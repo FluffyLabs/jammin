@@ -80,5 +80,5 @@ jobs:
         run: bun pm pack
 
       - name: Publish to npm
-        run: npm publish fluffylabs-jammin-*.tgz --provenance --access public --tag ${{ steps.publish-info.outputs.tag }}
+        run: npm publish fluffylabs-jammin-*.tgz --access public --tag ${{ steps.publish-info.outputs.tag }}
 
