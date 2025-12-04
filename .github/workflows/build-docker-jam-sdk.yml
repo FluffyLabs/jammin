@@ -1,4 +1,4 @@
-name: Build - Docker
+name: Build - Docker - JAM SDK
 
 on:
   push:
@@ -23,6 +23,7 @@ jobs:
         context: .
         push: false
         load: true
+        file: jam-sdk.Dockerfile
         tags: jam-sdk:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
