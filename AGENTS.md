@@ -24,7 +24,7 @@ jammin (always lowercase) is JAM development tooling for creating, building, dep
 ## Architecture
 
 This is a **monorepo using Bun workspaces**:
-- Root package `@fluffylabs/jammin` serves as the main package and build coordinator
+- Root package `@fluffylabs/jammin` serves as the main package and build coordinator.
 - `bin/cli/` contains the CLI implementation (`@fluffylabs/jammin-cli`)
 - Commands are organized in `bin/cli/src/commands/` using Commander.js
 - CLI uses `@clack/prompts` for interactive user experiences
@@ -76,16 +76,10 @@ bun test bin/cli/src/commands/new-command.test.ts  # Run specific test file
 - Module system: Preserve (bundler mode)
 - Use `.ts` file extensions in imports
 
-### Editor Configuration
-EditorConfig settings are enforced (`.editorconfig`):
-- 2 space indentation
-- LF line endings
-- UTF-8 encoding
-- Max line length 120
-
 ## Important Implementation Notes
 
 ### Command Implementation Pattern
+Each command is in a separate file (`bin/cli/src/commands/*-command.ts`) and exports a Commander `Command` object. Commands should support both interactive mode (using clack prompts) and non-interactive mode (using command-line arguments).
 When adding new commands:
 1. Create `bin/cli/src/commands/your-command.ts`
 2. Export a Commander `Command` object
@@ -94,19 +88,8 @@ When adding new commands:
 5. Register command in `bin/cli/index.ts`
 6. Add tests in `bin/cli/src/commands/your-command.test.ts` using Bun's test runner
 
-### Project Structure Expectations
-- CLI commands are currently stubs/dummies marked with `TODO: ` comments
-- The build process outputs to `dist/` directory
-- The main binary is `dist/index.js`
-- Package is published as `@fluffylabs/jammin` to npm
-
 ### Future Architecture Plans
-See `docs/src/jammin-suite.md` for detailed feature plans:
-- Multi-service deployment with genesis state preparation
-- Docker images for JAM-SDK builds
-- Integration testing SDK for service interactions
-- Support for multiple node implementations (typeberry is priority)
-- YAML configuration files for project setup
+See `docs/src/jammin-suite.md` for detailed feature plans.
 
 ## Documentation
 
@@ -117,16 +100,17 @@ mdbook serve docs --open       # Preview documentation locally (requires mdbook 
 
 When adding new documentation pages, update `docs/src/SUMMARY.md` for navigation.
 
-## Publishing
-
-The package is published automatically via GitHub Actions using npm with OIDC trusted publishers. The version in `package.json` is the source of truth.
-
 ## Related Documentation
 
 - `docs/src/jammin-suite.md`: Comprehensive feature roadmap
 - `docs/src/development.md`: Sprint planning and task breakdown
 
-## Default to using Bun instead of Node.js.
+## Bun-Native Development
+
+This project uses **Bun** as the primary runtime and toolchain. Always prefer Bun-native APIs over Node.js or
+third-party alternatives.
+
+### Default to using Bun instead of Node.js.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`
 - Use `bun test` instead of `jest` or `vitest`
@@ -135,7 +119,7 @@ The package is published automatically via GitHub Actions using npm with OIDC tr
 - Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
 - Bun automatically loads .env, so don't use dotenv.
 
-## APIs
+### APIs
 
 - `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
 - `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
@@ -145,7 +129,7 @@ The package is published automatically via GitHub Actions using npm with OIDC tr
 - Prefer `Bun.file` over `node:fs`'s readFile/writeFile
 - Bun.$`ls` instead of execa.
 
-## Testing
+### Testing
 
 Use `bun test` to run tests.
 
@@ -157,7 +141,7 @@ test("hello world", () => {
 });
 ```
 
-## Frontend
+### Frontend
 
 Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
 
@@ -231,5 +215,7 @@ bun --hot ./index.ts
 ```
 
 For more information, read the Bun API docs in `node_modules/bun-types/docs/**.md`.
+
+---
 
 Consult this file at the start of every AI-assisted session to ensure the repository stays stylistically consistent.
