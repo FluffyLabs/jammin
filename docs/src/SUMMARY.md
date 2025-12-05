@@ -2,6 +2,9 @@
 
 - [Introduction](README.md)
 - [jammin suite](jammin-suite.md)
+- [Getting Started](getting-started.md)
+- [CLI reference](cli-reference.md)
+- [YAML configuration](yaml-configuration.md)
 - [example API](jammin-examples.md)
 - [Inspirations](inspirations.md)
   - [Truffle Reference](reference-truffle.md)
@@ -12,5 +15,4 @@
   - [Sui Reference](reference-sui.md)
 - [Development](development.md)
 - [Requirements](requirements.md)
-- [Getting Started](getting-started.md)
 - [Contributing](contributing.md)

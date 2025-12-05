@@ -21,7 +21,7 @@
     "build": "bun run --filter '*' build",
     "cli": "bun run ./bin/cli/index.ts",
     "qa": "biome ci",
-    "qa-fix": "npm run format; npm run lint",
+    "qa-fix": "bun run format; bun run lint",
     "format": "biome format --write",
     "lint": "biome check --write && biome lint --write"
   },
