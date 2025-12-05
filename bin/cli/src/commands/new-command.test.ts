@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { InvalidArgumentError } from "commander";
-import { validate } from "./newCommand";
+import { validate } from "./new-command";
 
 // TODO: [MaSo] Implement accual test for `new` command. This is just and example.
 describe("Package validation", () => {
