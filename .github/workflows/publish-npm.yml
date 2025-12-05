@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write
+  id-token: write # required by oidc
 
 env:
   BUN_VERSION: 1.3.3
@@ -35,6 +35,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Update npm to 11.5.1
+        run: npm install -g npm@11.5.1
+
       - name: Install dependencies
         run: bun install
 
@@ -57,7 +60,7 @@ jobs:
         run: |
           TAG_VERSION="${{ github.event.release.tag_name }}"
           TAG_VERSION="${TAG_VERSION#v}"
-          CURRENT_VERSION=$(bun pm pkg get version)
+          CURRENT_VERSION=$(bun pm pkg get version | tr -d '"')
           if [ "$CURRENT_VERSION" != "$TAG_VERSION" ]; then
             echo "Aligning package.json version ($CURRENT_VERSION) -> $TAG_VERSION"
             bun pm pkg set version=$TAG_VERSION
@@ -68,7 +71,7 @@ jobs:
         run: |
           COMMIT_HASH="${{ github.sha }}"
           COMMIT_SHORT="${COMMIT_HASH:0:7}"
-          CURRENT_VERSION=$(bun pm pkg get version)
+          CURRENT_VERSION=$(bun pm pkg get version | tr -d '"')
           NEW_VERSION="${CURRENT_VERSION}-${COMMIT_SHORT}"
           echo "Publishing version: ${NEW_VERSION}"
           bun pm pkg set version=$NEW_VERSION
@@ -77,5 +80,5 @@ jobs:
         run: bun pm pack
 
       - name: Publish to npm
-        run: npm publish fluffylabs-jammin-*.tgz --provenance --access public --tag ${{ steps.publish-info.outputs.tag }}
+        run: npm publish fluffylabs-jammin-*.tgz --access public --tag ${{ steps.publish-info.outputs.tag }}
 
