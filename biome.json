@@ -26,6 +26,7 @@
         "useAsConstAssertion": "error",
         "useDefaultParameterLast": "error",
         "useEnumInitializers": "error",
+        "useFilenamingConvention": { "level": "error", "options": { "filenameCases": ["kebab-case"] } },
         "useSelfClosingElements": "error",
         "useSingleVarDeclarator": "error",
         "noUnusedTemplateLiteral": "error",
