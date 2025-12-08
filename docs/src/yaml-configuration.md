@@ -24,7 +24,7 @@ Defines network configurations for local development and deployment.
 
 ```yaml
 services:
-  - path: ./services/my-service
+  - path: ./services/my-service.ts
     name: myService
     sdk: jam-sdk-0.1.26
 
@@ -46,9 +46,9 @@ deployment:
 Array of service definitions. Each service must specify:
 
 **`path`** (string, required)
-- Relative or absolute path to service directory
+- Relative or absolute path to service **file**
 - Resolved relative to config file location
-- Example: `./services/calculator`, `/absolute/path/service`
+- Examples: `./services/calculator.ts`, `/absolute/path/service.rs`
 
 **`name`** (string, required)
 - Unique identifier for the service
@@ -65,15 +65,15 @@ Array of service definitions. Each service must specify:
 
 ```yaml
 services:
-  - path: ./services/calculator
+  - path: ./services/calculator.rs
     name: calculator
     sdk: jam-sdk-0.1.26
-  
-  - path: ./services/storage  
+
+  - path: ./services/storage.go
     name: storage
     sdk: custom-polkajam
-  
-  - path: ../shared/auth-service
+
+  - path: ../shared/auth-service.ts
     name: auth
     sdk: jam-sdk-0.1.26
 ```
@@ -101,13 +101,13 @@ sdks:
 
 **`build`** (string, required)
 - Command to build the service
-- Executed in service directory
+- Executed in directory containing the service file
 - Should produce `.jam` file
 - Examples: `bun run build`, `make build`, `./build.sh`
 
 **`test`** (string, required)
 - Command to test the service
-- Executed in service directory
+- Executed in directory containing the service file
 - Should exit with code 0 on success
 - Examples: `bun test`, `make test`, `./test.sh`
 
@@ -291,7 +291,7 @@ networks:
 ```yaml
 # jammin.build.yml
 services:
-  - path: ./services/calculator
+  - path: ./services/calculator.ts
     name: calculator
     sdk: jam-sdk-0.1.26
 ```
@@ -302,16 +302,16 @@ services:
 # jammin.build.yml
 services:
   # Core services
-  - path: ./services/auth
+  - path: ./services/auth.ts
     name: auth
     sdk: polkajam-custom
-  
-  - path: ./services/storage
+
+  - path: ./services/storage.ts
     name: storage
     sdk: polkajam-custom
-  
+
   # Third-party service
-  - path: ./services/oracle
+  - path: ./services/oracle.ts
     name: oracle
     sdk: jade-custom
 
@@ -397,13 +397,13 @@ jammin build --config jammin.staging.yml
 Prefer relative paths for portability:
 
 ```yaml
-# Good
+# Good - relative path to file
 services:
-  - path: ./services/my-service
-  
-# Avoid
+  - path: ./services/my-service.ts
+
+# Avoid - absolute paths are less portable
 services:
-  - path: /home/user/project/services/my-service
+  - path: /home/user/project/services/my-service.ts
 ```
 
 ### descriptive service names
@@ -431,13 +431,13 @@ Add comments for clarity:
 ```yaml
 services:
   # Core authentication service - handles JWT tokens
-  - path: ./services/auth
+  - path: ./services/auth.ts
     name: auth
     sdk: jam-sdk-0.1.26
-  
+
   # Oracle service - fetches external price data
   # Requires ORACLE_API_KEY environment variable
-  - path: ./services/oracle
+  - path: ./services/oracle.ts
     name: oracle
     sdk: custom-oracle-sdk
 ```
@@ -478,9 +478,16 @@ jammin validates YAML configs with these rules:
 
 ### paths
 
-- Must be valid filesystem paths
-- Service directories must exist
+- Must point to service **files**
+- Cannot end with `/` (directory indicator)
+- Service files must exist at the specified path
 - Resolved relative to config file location
+- Examples of valid paths:
+  - ✅ `./services/calculator.ts`
+  - ✅ `./services/auth.rs`
+  - ✅ `../shared/service.go`
+  - ❌ `./services/calculator` (no extension)
+  - ❌ `./services/calculator/` (directory path)
 
 ### SDK names
 
@@ -494,13 +501,13 @@ All required fields must be present and non-empty:
 ```yaml
 # Valid
 services:
-  - path: ./service
+  - path: ./service.ts
     name: myService
     sdk: jam-sdk-0.1.26
 
 # Invalid - missing name
 services:
-  - path: ./service
+  - path: ./service.ts
     sdk: jam-sdk-0.1.26
 
 # Valid deployment with version
@@ -529,14 +536,26 @@ deployment:
 - Use `--config` to specify path
 - Check file name spelling
 
-### service path does not exist
+### invalid service path
 
-**error:** `Service path does not exist: ./services/missing`
+**error:** `Path must point to a file, not a directory`
 
 **solutions:**
-- Verify path is correct
-- Check path is relative to config file
-- Ensure service directory exists
+- Add file extension to the path: use `./services/auth.ts` not `./services/auth`
+- Remove trailing slash: use `./service.ts` not `./service.ts/`
+- Point to the actual service file, not its containing directory
+- Supported extensions: `.ts`, `.rs`, `.go`, `.js`, etc.
+
+### service path does not exist
+
+**error:** `Service file does not exist: ./services/missing.ts`
+
+**solutions:**
+- Verify the file path is correct
+- Ensure the path points to a **file**
+- Check path is **relative to config file location**
+- Verify the service file exists at that location
+- Don't use directory paths - must point to the actual service file
 
 ### unknown SDK
 
