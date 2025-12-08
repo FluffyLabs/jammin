@@ -543,8 +543,7 @@ deployment:
 **solutions:**
 - Add file extension to the path: use `./services/auth.ts` not `./services/auth`
 - Remove trailing slash: use `./service.ts` not `./service.ts/`
-- Point to the actual service file, not its containing directory
-- Supported extensions: `.ts`, `.rs`, `.go`, `.js`, etc.
+- Point to the actual service file
 
 ### service path does not exist
 
@@ -564,7 +563,7 @@ deployment:
 **solutions:**
 - Define SDK in `sdks` section
 - Check SDK name spelling
-- Use built-in SDK name
+- Use one of available built-in SDK name
 
 ### invalid service name
 
@@ -573,7 +572,7 @@ deployment:
 **solutions:**
 - Remove invalid characters
 - Replace spaces with hyphens or underscores
-- Start name with letter or number
+- Start name with a letter
 
 ### invalid version format
 

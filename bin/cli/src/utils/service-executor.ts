@@ -47,16 +47,13 @@ export async function executeForServices(
   const results: ServiceExecutionResult[] = [];
 
   if (options.parallel) {
-    // Execute all services in parallel
     const promises = services.map((service) => executeServiceCommand(service, getCommand(service), options));
     results.push(...(await Promise.all(promises)));
   } else {
-    // Execute services sequentially
     for (const service of services) {
       const result = await executeServiceCommand(service, getCommand(service), options);
       results.push(result);
 
-      // Stop on first error if continueOnError is false
       if (!result.success && !options.continueOnError) {
         break;
       }

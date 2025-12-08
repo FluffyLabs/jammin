@@ -4,6 +4,7 @@ import { filterServices, loadBuildConfig, resolveServices } from "../utils/confi
 import { handleError } from "../utils/error-handler";
 import { testServices } from "../utils/service-executor";
 
+// TODO: [MaSo] Should test e2e by running network
 export const testCommand = new Command("test")
   .description("run tests for your project")
   .option("-s, --service <name>", "test specific service only")
@@ -25,7 +26,6 @@ Examples:
     const s = p.spinner();
 
     try {
-      // Load configuration
       s.start("Loading configuration...");
       const config = await loadBuildConfig(options.config);
       const allServices = await resolveServices(config, options.config);
@@ -39,7 +39,6 @@ Examples:
         process.exit(1);
       }
 
-      // Display what will be tested
       p.intro("Running tests...");
       if (options.service) {
         p.log.info(`Testing service: ${options.service}`);
@@ -47,14 +46,12 @@ Examples:
         p.log.info(`Testing ${servicesToTest.length} service(s)${options.parallel ? " in parallel" : " sequentially"}`);
       }
 
-      // Test services
       const summary = await testServices(servicesToTest, {
         parallel: options.parallel,
         verbose: options.verbose,
         continueOnError: !options.failFast,
       });
 
-      // Display results
       for (const result of summary.results) {
         if (result.success) {
           p.log.success(`${result.serviceName}: Tests passed (${result.duration}ms)`);
@@ -66,7 +63,6 @@ Examples:
         }
       }
 
-      // Summary
       if (summary.failed > 0) {
         p.outro(`Tests completed with ${summary.failed} failure(s) out of ${summary.total}`);
         process.exit(1);

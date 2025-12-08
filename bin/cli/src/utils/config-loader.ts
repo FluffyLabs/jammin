@@ -7,6 +7,7 @@ import { fileExists, findConfigFile, resolvePathFromConfig } from "./file-utils"
 
 /** Configuration loader and validation */
 
+/** Default config files */
 const CONFIG_FILES = {
   BUILD: "jammin.build.yml",
   NETWORKS: "jammin.networks.yml",

@@ -37,7 +37,6 @@ Examples:
         process.exit(1);
       }
 
-      // Display what will be built
       if (options.service) {
         p.log.info(`Building service: ${options.service}`);
       } else {
@@ -46,7 +45,6 @@ Examples:
         );
       }
 
-      // Build services
       s.start("Building...");
       const summary = await buildServices(servicesToBuild, {
         parallel: options.parallel,
@@ -55,7 +53,6 @@ Examples:
       });
       s.stop();
 
-      // Display results
       for (const result of summary.results) {
         if (result.success) {
           p.log.success(`${result.serviceName}: Built successfully (${result.duration}ms)`);
@@ -67,7 +64,6 @@ Examples:
         }
       }
 
-      // Summary
       if (summary.failed > 0) {
         p.outro(`Build completed with ${summary.failed} failure(s) out of ${summary.total}`);
         process.exit(1);
