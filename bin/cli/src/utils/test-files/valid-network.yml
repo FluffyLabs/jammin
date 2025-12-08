@@ -1,0 +1,29 @@
+# Valid jammin.networks.yml - Demonstrates multiple network configurations
+
+networks:
+  # Container-based network with single client
+  local:
+    - image: typeberry-0.4.1
+      args: dev --unsafe-rpc-external
+      instances: 2
+
+    - image: polkajam
+      instances: 1
+
+  # Compose-based network
+  staging:
+    compose: ./docker-compose.staging.yml
+
+  # Production network with multiple validators
+  testnet:
+    - image: typeberry-0.4.1
+      args: validator --chain testnet
+      instances: 3
+
+    - image: polkajam
+      args: validator --name polkajam-validator --telemetry
+      instances: 2
+
+  # Minimal network without optional fields
+  minimal:
+    - image: typeberry-0.4.1

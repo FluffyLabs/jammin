@@ -24,7 +24,6 @@ Examples:
     const s = p.spinner();
 
     try {
-      // Load configuration
       s.start("Loading configuration...");
       const config = await loadBuildConfig(options.config);
       const allServices = await resolveServices(config, options.config);

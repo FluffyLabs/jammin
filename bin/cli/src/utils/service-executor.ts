@@ -1,8 +1,7 @@
+import { dirname } from "node:path";
 import type { ExecutionSummary, ResolvedServiceConfig, ServiceExecutionResult } from "../types/config";
 
-/**
- * Service command execution with parallel/sequential support
- */
+/** Service command execution with parallel/sequential support */
 
 interface ExecutionOptions {
   parallel?: boolean;
@@ -10,18 +9,17 @@ interface ExecutionOptions {
   continueOnError?: boolean;
 }
 
-/**
- * Execute a command for a single service
- */
+/** Execute a command for a single service */
 async function executeServiceCommand(
   service: ResolvedServiceConfig,
   command: string,
   options: ExecutionOptions = {},
 ): Promise<ServiceExecutionResult> {
   const startTime = Date.now();
+  const serviceDir = dirname(service.absolutePath);
 
   try {
-    const result = await Bun.$`cd ${service.absolutePath} && ${command}`.quiet(!options.verbose);
+    const result = await Bun.$`cd ${serviceDir} && sh -c ${command}`.quiet(!options.verbose);
 
     return {
       serviceName: service.name,
@@ -40,9 +38,7 @@ async function executeServiceCommand(
   }
 }
 
-/**
- * Execute command for multiple services (parallel or sequential)
- */
+/** Execute command for multiple services (parallel or sequential) */
 export async function executeForServices(
   services: ResolvedServiceConfig[],
   getCommand: (service: ResolvedServiceConfig) => string,
@@ -78,9 +74,7 @@ export async function executeForServices(
   };
 }
 
-/**
- * Build all services
- */
+/** Build all services */
 export async function buildServices(
   services: ResolvedServiceConfig[],
   options: ExecutionOptions = {},
@@ -88,9 +82,7 @@ export async function buildServices(
   return executeForServices(services, (service) => service.sdkConfig.buildCommand, options);
 }
 
-/**
- * Test all services
- */
+/** Test all services */
 export async function testServices(
   services: ResolvedServiceConfig[],
   options: ExecutionOptions = {},

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { InvalidArgumentError } from "commander";
 import { validate } from "./new-command";
 
-// TODO: [MaSo] Implement accual test for `new` command. This is just and example.
+// TODO: [MaSo] Implement actual test for `new` command. This is just an example.
 describe("Package validation", () => {
   test("Should pass and trim package names", () => {
     expect(validate("   my-app  ")).toBe("my-app");
@@ -17,7 +17,7 @@ describe("Package validation", () => {
   test("Should return InvalidArgumentError: contains illegal character", () => {
     expect(validate("my/illegal.app")).toEqual(
       new InvalidArgumentError(
-        "Invalid project name. Project name must start with alpha-numeric value, and can only contains letters, numbers, hyphens, and underscores",
+        "Invalid project name. Project name must start with alphanumeric character and can only contain letters, numbers, hyphens, and underscores",
       ),
     );
   });

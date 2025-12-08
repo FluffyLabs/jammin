@@ -15,7 +15,7 @@ export function validate(name: string) {
   const trimmed = name.trim();
   if (!/^[a-zA-Z0-9][a-zA-Z0-9-_]*$/.test(trimmed)) {
     return new InvalidArgumentError(
-      "Invalid project name. Project name must start with alpha-numeric value, and can only contains letters, numbers, hyphens, and underscores",
+      "Invalid project name. Project name must start with alphanumeric character and can only contain letters, numbers, hyphens, and underscores",
     );
   }
 

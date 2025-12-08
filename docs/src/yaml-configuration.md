@@ -36,6 +36,7 @@ sdks:
 
 deployment:
   spawn: local
+  version: "1.0.0"
   deploy_with: bootstrap-service
   upgrade: true
 ```
@@ -141,6 +142,7 @@ Configure deployment behavior.
 ```yaml
 deployment:
   spawn: string                    # Network to spawn
+  version: string                  # Service version (semantic versioning)
   deploy_with: string              # Deployment method
   upgrade: boolean                 # Upgrade existing services
 ```
@@ -148,6 +150,17 @@ deployment:
 **`spawn`** (string, required)
 - Name of network configuration from `jammin.networks.yml`
 - Example: `local`, `testnet`, `mainnet`
+
+**`version`** (string, required)
+- Service version following semantic versioning format
+- Format: `MAJOR.MINOR.PATCH[-prerelease][+build]`
+- Examples:
+  - `1.0.0` - Basic version
+  - `0.0.1` - Initial development
+  - `1.0.0-alpha` - Pre-release version
+  - `1.0.0-beta.1` - Pre-release with number
+  - `1.0.0+build.123` - Version with build metadata
+- Invalid formats: `1.0`, `v1.0.0`, `1`, `1.0.0.0`
 
 **`deploy_with`** (enum, required)
 - `"bootstrap-service"` - deploy via bootstrap service API
@@ -162,6 +175,7 @@ deployment:
 ```yaml
 deployment:
   spawn: local
+  version: "1.0.0"
   deploy_with: bootstrap-service
   upgrade: true
 ```
@@ -316,6 +330,7 @@ sdks:
 # Deployment configuration
 deployment:
   spawn: local
+  version: "1.0.0"
   deploy_with: bootstrap-service
   upgrade: true
 ```
@@ -451,6 +466,16 @@ jammin validates YAML configs with these rules:
 - Can contain: letters, numbers, hyphens (`-`), underscores (`_`)
 - Cannot contain: spaces, special characters, slashes
 
+### version format
+
+- Must follow semantic versioning: `MAJOR.MINOR.PATCH`
+- Optional pre-release: `-alpha`, `-beta.1`, `-rc.2`
+- Optional build metadata: `+build.123`, `+sha.5114f85`
+- Pattern: `^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$`
+- Examples:
+  - ✅ Valid: `1.0.0`, `0.0.1`, `2.1.3-alpha`, `1.0.0+build`
+  - ❌ Invalid: `1.0`, `v1.0.0`, `1`, `1.0.0.0`, `1.0.x`
+
 ### paths
 
 - Must be valid filesystem paths
@@ -477,6 +502,17 @@ services:
 services:
   - path: ./service
     sdk: jam-sdk-0.1.26
+
+# Valid deployment with version
+deployment:
+  spawn: local
+  version: "1.0.0"
+  deploy_with: bootstrap-service
+
+# Invalid - missing version
+deployment:
+  spawn: local
+  deploy_with: bootstrap-service
 ```
 
 ---
@@ -519,3 +555,23 @@ services:
 - Remove invalid characters
 - Replace spaces with hyphens or underscores
 - Start name with letter or number
+
+### invalid version format
+
+**error:** `Version must follow semantic versioning format (e.g., 1.0.0, 1.0.0-alpha, 1.0.0+build)`
+
+**solutions:**
+- Use semantic versioning format: `MAJOR.MINOR.PATCH`
+- Remove `v` prefix: use `1.0.0` not `v1.0.0`
+- Include all three version parts: use `1.0.0` not `1.0`
+- Use hyphens for pre-release: `1.0.0-alpha` not `1.0.0_alpha`
+- Quote version in YAML to prevent type conversion: `version: "1.0.0"`
+
+**valid examples:**
+```yaml
+version: "1.0.0"        # Basic version
+version: "0.0.1"        # Initial development
+version: "1.0.0-alpha"  # Pre-release
+version: "2.1.3-rc.1"   # Release candidate
+version: "1.0.0+build"  # With build metadata
+```

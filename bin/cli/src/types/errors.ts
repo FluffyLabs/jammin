@@ -1,6 +1,4 @@
-/**
- * Custom error types for better error handling
- */
+// Custom error types for better error handling
 
 export class ConfigError extends Error {
   constructor(

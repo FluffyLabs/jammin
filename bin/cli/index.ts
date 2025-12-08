@@ -17,13 +17,12 @@ program.configureHelp({
   subcommandTerm: (cmd) => `${cmd.name()}·${cmd.usage()}`,
 });
 
-// Adding commands
 program.addCommand(newCommand);
 program.addCommand(buildCommand);
 program.addCommand(testCommand);
 program.addCommand(deployCommand);
 
-// TODO: [MaSo] Display accual examples
+// TODO: [MaSo] Display actual examples
 program.addHelpText(
   "after",
   `

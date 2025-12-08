@@ -5,27 +5,26 @@ import { ConfigError } from "../types/errors";
 import { validateBuildConfig, validateNetworksConfig } from "./config-validator";
 import { fileExists, findConfigFile, resolvePathFromConfig } from "./file-utils";
 
-/**
- * Configuration loader with caching and validation
- */
+/** Configuration loader and validation */
 
 const CONFIG_FILES = {
   BUILD: "jammin.build.yml",
   NETWORKS: "jammin.networks.yml",
 } as const;
 
-// Built-in SDK configurations
+/**
+ * Built-in SDKs configurations
+ * TODO: [MaSo] Build and test commands should be updated to actual build and test commands
+ */
 const BUILTIN_SDKS: Record<string, SdkConfig> = {
   "jam-sdk-0.1.26": {
     type: "builtin",
-    buildCommand: "npm run build",
-    testCommand: "npm test",
+    buildCommand: "bun run build",
+    testCommand: "bun test",
   },
 };
 
-/**
- * Load and parse YAML config file using Bun's native YAML support
- */
+/** Load and parse YAML config file */
 async function loadYamlFile(filePath: string): Promise<unknown> {
   try {
     const file = Bun.file(filePath);
@@ -33,71 +32,52 @@ async function loadYamlFile(filePath: string): Promise<unknown> {
     return YAML.parse(content);
   } catch (error) {
     if (error instanceof Error) {
-      throw new ConfigError(`Failed to read config file: ${error.message}`, filePath, error);
+      throw new ConfigError("Failed to parse YAML file", filePath, error);
     }
     throw error;
   }
 }
 
-/**
- * Load build configuration
- */
+/** Generic config loader with validation */
+async function loadConfig<T>(
+  configPath: string | undefined,
+  configFileName: string,
+  validator: (data: unknown) => T,
+  configType: string,
+): Promise<T> {
+  const filePath = configPath || (await findConfigFile(configFileName));
+
+  if (!filePath) {
+    throw new ConfigError(`Config file '${configFileName}' not found in current directory or parent directories`);
+  }
+
+  if (!(await fileExists(filePath))) {
+    throw new ConfigError(`Config file not found: ${filePath}`, filePath);
+  }
+
+  const data = await loadYamlFile(filePath);
+
+  try {
+    return validator(data);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new ConfigError(`Invalid ${configType} configuration`, filePath, error);
+    }
+    throw new ConfigError(`Invalid ${configType} configuration`, filePath);
+  }
+}
+
+/** Load build configuration */
 export async function loadBuildConfig(configPath?: string): Promise<JamminBuildConfig> {
-  const filePath = configPath || (await findConfigFile(CONFIG_FILES.BUILD));
-
-  if (!filePath) {
-    throw new ConfigError(`Config file '${CONFIG_FILES.BUILD}' not found in current directory or parent directories`);
-  }
-
-  if (!fileExists(filePath)) {
-    throw new ConfigError(`Config file not found: ${filePath}`, filePath);
-  }
-
-  const data = await loadYamlFile(filePath);
-
-  try {
-    return validateBuildConfig(data);
-  } catch (error) {
-    throw new ConfigError(
-      `Invalid build configuration: ${error instanceof Error ? error.message : "Unknown error"}`,
-      filePath,
-      error instanceof Error ? error : undefined,
-    );
-  }
+  return loadConfig(configPath, CONFIG_FILES.BUILD, validateBuildConfig, "build");
 }
 
-/**
- * Load networks configuration
- */
+/** Load networks configuration */
 export async function loadNetworksConfig(configPath?: string): Promise<JamminNetworksConfig> {
-  const filePath = configPath || (await findConfigFile(CONFIG_FILES.NETWORKS));
-
-  if (!filePath) {
-    throw new ConfigError(
-      `Config file '${CONFIG_FILES.NETWORKS}' not found in current directory or parent directories`,
-    );
-  }
-
-  if (!fileExists(filePath)) {
-    throw new ConfigError(`Config file not found: ${filePath}`, filePath);
-  }
-
-  const data = await loadYamlFile(filePath);
-
-  try {
-    return validateNetworksConfig(data);
-  } catch (error) {
-    throw new ConfigError(
-      `Invalid networks configuration: ${error instanceof Error ? error.message : "Unknown error"}`,
-      filePath,
-      error instanceof Error ? error : undefined,
-    );
-  }
+  return loadConfig(configPath, CONFIG_FILES.NETWORKS, validateNetworksConfig, "networks");
 }
 
-/**
- * Resolve SDK configuration (built-in or custom)
- */
+/** Resolve SDK configuration (built-in or custom) */
 function resolveSdkConfig(
   sdkName: string,
   customSdks?: Record<string, { image: string; build: string; test: string }>,
@@ -121,9 +101,7 @@ function resolveSdkConfig(
   throw new ConfigError(`Unknown SDK: ${sdkName}. Not found in built-in or custom SDKs.`);
 }
 
-/**
- * Resolve service configurations with absolute paths and SDK info
- */
+/** Resolve service configurations with absolute paths and SDK info */
 export async function resolveServices(
   config: JamminBuildConfig,
   configPath?: string,
@@ -136,9 +114,9 @@ export async function resolveServices(
   for (const service of config.services) {
     const absolutePath = resolvePathFromConfig(configDir, service.path);
 
-    if (!fileExists(absolutePath)) {
+    if (!(await fileExists(absolutePath))) {
       throw new ConfigError(
-        `Service path does not exist: ${service.path} (resolved to: ${absolutePath})`,
+        `Service file does not exist: ${service.path} (resolved to: ${absolutePath})`,
         filePath || undefined,
       );
     }
@@ -155,9 +133,7 @@ export async function resolveServices(
   return resolved;
 }
 
-/**
- * Filter services by name or pattern
- */
+/** Filter services by name or pattern */
 export function filterServices(services: ResolvedServiceConfig[], filter?: string): ResolvedServiceConfig[] {
   if (!filter) {
     return services;

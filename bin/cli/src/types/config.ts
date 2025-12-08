@@ -1,8 +1,6 @@
-/**
- * Core configuration types matching YAML schema
- */
+// Core configuration types matching YAML schema
 
-// ============ jammin.build.yml types ============
+// jammin.build.yml types
 
 export interface JamminBuildConfig {
   services: ServiceConfig[];
@@ -11,7 +9,7 @@ export interface JamminBuildConfig {
 }
 
 export interface ServiceConfig {
-  path: string; // Path to service directory
+  path: string; // Path to service file (any programming language)
   name: string; // Service identifier
   sdk: string; // SDK name (built-in or custom)
 }
@@ -23,13 +21,13 @@ export interface CustomSdkConfig {
 }
 
 export interface DeploymentConfig {
-  // TODO: [MaSo] Maybe `network` would be better name?
   spawn: string; // Network name to spawn
+  version: string;
   deploy_with: "bootstrap-service" | "genesis";
   upgrade?: boolean;
 }
 
-// ============ jammin.networks.yml types ============
+// jammin.networks.yml types
 
 export interface JamminNetworksConfig {
   networks: Record<string, NetworkConfig>;
@@ -47,7 +45,7 @@ export interface ComposeNetworkConfig {
   compose: string; // Path to docker-compose file
 }
 
-// ============ Runtime types ============
+// Runtime types
 
 export interface ResolvedServiceConfig extends ServiceConfig {
   absolutePath: string; // Resolved absolute path
@@ -61,7 +59,7 @@ export interface SdkConfig {
   image?: string; // Only for custom SDKs
 }
 
-// ============ Execution results ============
+// Execution results
 
 export interface ServiceExecutionResult {
   serviceName: string;
