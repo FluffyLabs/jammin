@@ -10,6 +10,8 @@ export const buildCommand = new Command("build")
   .option("-c, --config <path>", "path to jammin.build.yml")
   .option("-p, --parallel", "build services in parallel", false)
   .option("-v, --verbose", "show detailed build output", false)
+  .option("--fail-fast", "stop on first build service failure", false)
+
   .addHelpText(
     "after",
     `
@@ -49,7 +51,7 @@ Examples:
       const summary = await buildServices(servicesToBuild, {
         parallel: options.parallel,
         verbose: options.verbose,
-        continueOnError: true,
+        continueOnError: !options.failFast,
       });
       s.stop();
 
