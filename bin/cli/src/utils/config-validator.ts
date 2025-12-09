@@ -89,9 +89,14 @@ const ComposeNetworkConfigSchema = z.object({
 
 const NetworkConfigSchema = z.union([ContainerNetworkConfigSchema, ComposeNetworkConfigSchema]);
 
-export const JamminNetworksConfigSchema = z.object({
-  networks: z.record(z.string(), NetworkConfigSchema),
-});
+export const JamminNetworksConfigSchema = z
+  .object({
+    networks: z.record(z.string(), NetworkConfigSchema),
+  })
+  .refine((data) => Object.keys(data.networks).length > 0, {
+    message: "At least one network must be defined",
+    path: ["networks"],
+  });
 
 /** Validate and parse build config */
 export function validateBuildConfig(data: unknown) {

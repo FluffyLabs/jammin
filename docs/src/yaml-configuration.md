@@ -205,6 +205,8 @@ networks:
 
 Object mapping network names to their configurations.
 
+**At least one network must be defined.**
+
 ---
 
 ### container-based networks
@@ -495,7 +497,13 @@ jammin validates YAML configs with these rules:
 
 ### required fields
 
-All required fields must be present and non-empty:
+All required fields must be present and non-empty.
+
+**For `jammin.build.yml`:**
+- At least one service must be defined in the `services` array
+
+**For `jammin.networks.yml`:**
+- At least one network must be defined in the `networks` object
 
 ```yaml
 # Valid
@@ -524,6 +532,20 @@ deployment:
 ---
 
 ## troubleshooting
+
+### empty networks configuration
+
+**error:** `At least one network must be defined`
+
+**solutions:**
+- Add at least one network to the `networks` section
+- Define either a container-based network or compose-based network
+- Example:
+  ```yaml
+  networks:
+    local:
+      - image: typeberry-0.4.1
+  ```
 
 ### config file not found
 

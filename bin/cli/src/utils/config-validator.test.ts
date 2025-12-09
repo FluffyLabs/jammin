@@ -316,7 +316,6 @@ describe("Validate Networks Config", () => {
       networks: {},
     };
 
-    const result = validateNetworksConfig(invalidConfig);
-    expect(Object.keys(result.networks)).toHaveLength(0);
+    expect(() => validateNetworksConfig(invalidConfig)).toThrow("At least one network must be defined");
   });
 });
