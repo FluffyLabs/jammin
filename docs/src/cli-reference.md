@@ -71,6 +71,7 @@ jammin build [options]
 - `-c, --config <path>` - path to custom config file (default: `jammin.build.yml`)
 - `-p, --parallel` - build services in parallel (default: sequential)
 - `-v, --verbose` - show detailed build output
+- `--fail-fast` - stop on first build service failure
 
 **examples:**
 ```bash
@@ -85,6 +86,9 @@ jammin build --parallel
 
 # Use custom config file
 jammin build --config ./custom-build.yml
+
+# Stop on first failure
+jammin build --fail-fast
 
 # Build with verbose output
 jammin build -s my-service --verbose
@@ -191,7 +195,7 @@ jammin automatically searches for configuration files in the current directory a
 
 ### sequential execution (default)
 
-Services are built/tested one after another. If a service fails and `--fail-fast` is not set, remaining services will still be processed.
+Services are built/tested one after another. By default, if a service fails, remaining services will still be processed. Use `--fail-fast` to stop on the first failure.
 
 **advantages:**
 - Easier to debug output
@@ -291,6 +295,7 @@ jammin test --parallel
 Stop on first failure to quickly identify issues:
 
 ```bash
+jammin build --fail-fast
 jammin test --fail-fast
 ```
 

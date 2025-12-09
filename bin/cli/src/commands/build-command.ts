@@ -19,6 +19,7 @@ Examples:
   $ jammin build                          # Build all services
   $ jammin build -s my-service            # Build specific service
   $ jammin build --parallel               # Build all services in parallel
+  $ jammin build --fail-fast              # Stop on first build failure
   $ jammin build --config ./custom.yml    # Use custom config file
 `,
   )
