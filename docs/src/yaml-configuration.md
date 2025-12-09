@@ -462,7 +462,6 @@ jammin validates YAML configs with these rules:
 
 ### service names
 
-- Must start with alphanumeric character
 - Can contain: letters, numbers, hyphens (`-`), underscores (`_`)
 - Cannot contain: spaces, special characters, slashes
 
