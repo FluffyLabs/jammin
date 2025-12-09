@@ -20,10 +20,13 @@ export async function findConfigFile(fileName: string, startDir: string = proces
   let currentDir = resolve(startDir);
   const root = resolve("/");
 
-  while (currentDir !== root) {
+  while (true) {
     const configPath = join(currentDir, fileName);
     if (await fileExists(configPath)) {
       return configPath;
+    }
+    if (currentDir === root) {
+      break;
     }
     currentDir = resolve(currentDir, "..");
   }
