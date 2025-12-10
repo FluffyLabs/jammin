@@ -42,3 +42,33 @@ $ docker run --rm -v $(pwd):/app ghcr.io/jambrains/service-sdk:latest single-fil
 ```
 
 Should you have trouble running this image on Apple Silicon add the following flag: `--platform linux/amd64`.
+
+### Jade (Spacejam)
+
+First, build the docker image.
+
+```console
+$ docker build -f jade.Dockerfile -t jade .
+```
+
+Then `cd` into the example code directory:
+
+```console
+$ cd jam-examples/empty-jade
+```
+
+And build:
+
+```console
+$ docker run --rm -v $(pwd):/app jade
+```
+
+Notice that "cargo" is set as the entry point of this docker image (and "build" as the default command).
+
+#### Unit tests
+
+To run unit tests:
+
+```console
+$ docker run --rm -v $(pwd):/app jade test
+```

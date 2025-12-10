@@ -1,4 +1,4 @@
-name: Build - Docker - JAM SDK
+name: Build - Docker - Jade
 
 on:
   push:
@@ -23,8 +23,8 @@ jobs:
         context: .
         push: false
         load: true
-        file: jam-sdk.Dockerfile
-        tags: jam-sdk
+        file: jade.Dockerfile
+        tags: jade
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -36,15 +36,15 @@ jobs:
 
     - name: Test Docker image
       run: |
-        docker run --rm -v ./jam-examples/empty-jamsdk:/app jam-sdk jam-pvm-build -m service
+        docker run --rm -v ./jam-examples/empty-jade:/app jade
 
     - name: Save Docker image
       run: |
-        docker save jam-sdk | gzip > jam-sdk-image.tar.gz
+        docker save jade | gzip > jade-image.tar.gz
 
     - name: Upload Docker image artifact
       uses: actions/upload-artifact@v4
       with:
-        name: jam-sdk-docker-image
-        path: jam-sdk-image.tar.gz
+        name: jade-docker-image
+        path: jade-image.tar.gz
         retention-days: 1
