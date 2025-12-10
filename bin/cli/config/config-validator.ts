@@ -28,7 +28,37 @@ export const JamminBuildConfigSchema = z.object({
   deployment: DeploymentConfigSchema.optional(),
 });
 
+// jammin.network.yml schema
+
+const NodeDefinitionSchema = z.object({
+  image: z.string().min(1, "Node image is required"),
+  args: z.string().optional(),
+  instances: z.number().int().positive().optional().default(1),
+});
+
+const NetworkDefinitionSchema = z.array(NodeDefinitionSchema);
+
+const NetworkComposeSchema = z.object({
+  compose: z.string().min(1, "Docker compose file path is required"),
+});
+
+const NetworkConfigSchema = z.union([NetworkDefinitionSchema, NetworkComposeSchema]);
+
+export const JamminNetworksConfigSchema = z
+  .object({
+    networks: z.record(z.string(), NetworkConfigSchema),
+  })
+  .refine((data) => Object.keys(data.networks).length > 0, {
+    error: "At least one network must be defined",
+    path: ["networks"],
+  });
+
 /** Validate and parse build config */
 export function validateBuildConfig(data: unknown) {
   return JamminBuildConfigSchema.parse(data);
+}
+
+/** Validate and parse networks config */
+export function validateNetworksConfig(data: unknown) {
+  return JamminNetworksConfigSchema.parse(data);
 }

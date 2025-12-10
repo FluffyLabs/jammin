@@ -1,0 +1,17 @@
+# Invalid jammin.networks.yml - Contains multiple validation errors
+# This config intentionally violates various schema rules
+
+networks:
+  local:
+    # Invalid: empty image string
+    - image: ""
+      args: dev
+      instances: 4
+
+    # Invalid: missing required 'image' field
+    - dev: testnet
+      instances: 2
+
+  staging:
+    # Invalid: empty compose string
+    compose: ""
