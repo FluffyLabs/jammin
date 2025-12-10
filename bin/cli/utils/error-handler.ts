@@ -34,16 +34,8 @@ function getErrorHint(issue: core.$ZodIssue): string | null {
     return "Service names can only contain letters, numbers, hyphens (-), and underscores (_)";
   }
 
-  if (path.includes("version") && issue.message.includes("semantic")) {
-    return 'Use format "MAJOR.MINOR.PATCH" like "1.0.0" (quote the version!)';
-  }
-
   if (path.includes("path") && issue.message.includes("file")) {
     return "Path must point to a file with an extension (e.g., service.ts, not service/)";
-  }
-
-  if (path.includes("deploy_with") && issue.code === "invalid_value") {
-    return 'Must be either "bootstrap-service" or "genesis"';
   }
 
   if (issue.code === "too_small" && "minimum" in issue && issue.minimum === 1) {

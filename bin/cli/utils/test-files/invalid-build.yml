@@ -1,6 +1,11 @@
 # Invalid jammin.build.yml - Contains multiple validation errors
 # This config intentionally violates various schema rules
 
+custom_sdk: &custom-polkajam
+  # Invalid: missing required 'build' field
+    image: polkajam/sdk:v1.2.0
+    test: bun test --coverage
+
 services:
   # Invalid: service name contains spaces and special characters
   - path: ./services/auth.ts
@@ -9,7 +14,7 @@ services:
 
   # Invalid: missing required 'name' field
   - path: ./services/calculator.rs
-    sdk: custom-polkajam
+    sdk: *custom-polkajam
 
   # Invalid: empty path string
   - path: ""
@@ -27,17 +32,5 @@ sdks:
     image: polkajam/sdk:v1.2.0
     test: bun test --coverage
 
-  # Invalid: empty SDK name
-  "":
-    image: spacejam/jade:v2.1
-    build: jade build
-    test: jade test
-
 deployment:
   spawn: local
-  # Invalid: version must follow semantic versioning (X.Y.Z)
-  version: v1.0
-  # Invalid: deploy_with must be "bootstrap-service" or "genesis"
-  deploy_with: invalid-deploy-method
-  # Invalid: upgrade must be boolean, not string
-  upgrade: "yes"

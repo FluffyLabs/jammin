@@ -4,14 +4,13 @@
 
 export interface JamminBuildConfig {
   services: ServiceConfig[];
-  sdks?: Record<string, CustomSdkConfig>;
   deployment?: DeploymentConfig;
 }
 
 export interface ServiceConfig {
   path: string; // Path to service file (any programming language)
   name: string; // Service identifier
-  sdk: string; // SDK name (built-in or custom)
+  sdk: string | CustomSdkConfig; // SDK name (built-in) or custom sdk
 }
 
 export interface CustomSdkConfig {
@@ -22,23 +21,6 @@ export interface CustomSdkConfig {
 
 export interface DeploymentConfig {
   spawn: string; // Network name to spawn
-  version: string;
-  deploy_with: "bootstrap-service" | "genesis";
-  upgrade?: boolean;
-}
-
-// Runtime types
-
-export interface ResolvedServiceConfig extends ServiceConfig {
-  absolutePath: string; // Resolved absolute path
-  sdkConfig: SdkConfig; // Resolved SDK configuration
-}
-
-export interface SdkConfig {
-  type: "builtin" | "custom";
-  buildCommand: string;
-  testCommand: string;
-  image?: string; // Only for custom SDKs
 }
 
 // Execution results
@@ -48,7 +30,7 @@ export interface ServiceExecutionResult {
   success: boolean;
   output?: string;
   error?: string;
-  duration: number; // milliseconds
+  durationMs: number;
 }
 
 export interface ExecutionSummary {

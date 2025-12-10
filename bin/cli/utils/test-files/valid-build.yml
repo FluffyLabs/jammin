@@ -1,6 +1,11 @@
 # Valid jammin.build.yml - Full-featured example
 # This config demonstrates all valid features
 
+custom-polkajam: &custom-polkajam
+  image: polkajam/sdk:v1.2.0
+  build: polkajam -m service
+  test: polkajam test --coverage
+
 services:
   - path: ./services/auth.ts
     name: auth-service
@@ -8,25 +13,14 @@ services:
 
   - path: ./services/calculator.rs
     name: calculator
-    sdk: custom-polkajam
+    sdk: *custom-polkajam
 
   - path: ./services/storage.go
     name: storage_service
-    sdk: jade-custom
-
-sdks:
-  custom-polkajam:
-    image: polkajam/sdk:v1.2.0
-    build: polkajam -m service
-    test: polkajam test --coverage
-
-  jade-custom:
-    image: spacejam/jade:v2.1
-    build: jade build --optimize
-    test: jade test
+    sdk:
+      image: spacejam/jade:v2.1
+      build: jade build --optimize
+      test: jade test
 
 deployment:
   spawn: local
-  version: "0.0.1"
-  deploy_with: bootstrap-service
-  upgrade: true
