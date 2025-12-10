@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import { type core, ZodError } from "zod";
-import { ConfigError, ServiceExecutionError, ValidationError } from "../types/errors";
+import { ConfigError } from "../types/errors";
 
 /** Centralized error handling with @clack/prompts formatting */
 
@@ -84,19 +84,6 @@ export function handleError(error: unknown): never {
     p.log.error("Configuration Validation Failed:");
     for (const issue of error.issues) {
       p.log.error(`  - ${issue.path.join(".")}: ${issue.message}`);
-    }
-  } else if (error instanceof ValidationError) {
-    p.log.error(`Validation Error: ${error.message}`);
-    for (const [field, messages] of Object.entries(error.errors)) {
-      for (const message of messages) {
-        p.log.error(`  - ${field}: ${message}`);
-      }
-    }
-  } else if (error instanceof ServiceExecutionError) {
-    p.log.error(`Service Execution Failed: ${error.serviceName}`);
-    p.log.error(`Command: ${error.command}`);
-    if (error.exitCode) {
-      p.log.error(`Exit code: ${error.exitCode}`);
     }
   } else if (error instanceof Error) {
     p.log.error(`Error: ${error.message}`);

@@ -22,20 +22,3 @@ export interface CustomSdkConfig {
 export interface DeploymentConfig {
   spawn: string; // Network name to spawn
 }
-
-// Execution results
-
-export interface ServiceExecutionResult {
-  serviceName: string;
-  success: boolean;
-  output?: string;
-  error?: string;
-  durationMs: number;
-}
-
-export interface ExecutionSummary {
-  total: number;
-  successful: number;
-  failed: number;
-  results: ServiceExecutionResult[];
-}
