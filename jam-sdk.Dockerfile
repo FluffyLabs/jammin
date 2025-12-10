@@ -8,3 +8,6 @@ RUN cargo install jam-pvm-build@0.1.26
 
 # This fixes an issue where jam-pvm-build looks for rustup home in the wrong place
 RUN ln -s /usr/local/rustup /root/.rustup
+
+VOLUME /app
+WORKDIR /app
