@@ -2,7 +2,7 @@ import { YAML } from "bun";
 import type { JamminBuildConfig } from "../types/config";
 import { ConfigError } from "../types/errors";
 import { validateBuildConfig } from "./config-validator";
-import { fileExists, findConfigFile } from "./file-utils";
+import { findConfigFile, pathExists } from "./file-utils";
 
 /** Configuration loader and validation */
 
@@ -38,7 +38,7 @@ async function loadConfig<T>(
     throw new ConfigError(`Config file '${configFileName}' not found in current directory or parent directories`);
   }
 
-  if (!(await fileExists(filePath))) {
+  if (!(await pathExists(filePath))) {
     throw new ConfigError(`Config file not found: ${filePath}`, filePath);
   }
 
