@@ -1,8 +1,8 @@
 import { YAML } from "bun";
-import { findConfigFile, pathExists } from "../utils/file-utils";
-import { validateBuildConfig, validateNetworksConfig } from "./config-validator";
 import type { JamminBuildConfig, JamminNetworksConfig } from "../types/config";
 import { ConfigError } from "../types/errors";
+import { findConfigFile, pathExists } from "../utils/file-utils";
+import { validateBuildConfig, validateNetworksConfig } from "./config-validator";
 
 /** Configuration loader and validation */
 
