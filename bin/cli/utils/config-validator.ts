@@ -1,0 +1,34 @@
+import { z } from "zod";
+
+// Zod schemas for runtime validation of YAML configs
+
+// jammin.build.yml schema
+
+const CustomSdkConfigSchema = z.object({
+  image: z.string().min(1, "SDK image is required"),
+  build: z.string().min(1, "Build command is required"),
+  test: z.string().min(1, "Test command is required"),
+});
+
+const ServiceConfigSchema = z.object({
+  path: z.string().min(1, "Service path is required"),
+  name: z
+    .string()
+    .min(1, "Service name is required")
+    .regex(/^[a-zA-Z0-9_-]+$/, "Service name must contain only letters, numbers, hyphens, and underscores"),
+  sdk: z.union([z.string().min(1, "SDK is required"), CustomSdkConfigSchema]),
+});
+
+const DeploymentConfigSchema = z.object({
+  spawn: z.string().min(1),
+});
+
+export const JamminBuildConfigSchema = z.object({
+  services: z.array(ServiceConfigSchema).min(1, "At least one service is required"),
+  deployment: DeploymentConfigSchema.optional(),
+});
+
+/** Validate and parse build config */
+export function validateBuildConfig(data: unknown) {
+  return JamminBuildConfigSchema.parse(data);
+}

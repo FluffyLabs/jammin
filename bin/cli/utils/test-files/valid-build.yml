@@ -1,0 +1,26 @@
+# Valid jammin.build.yml - Full-featured example
+# This config demonstrates all valid features
+
+custom-polkajam: &custom-polkajam
+  image: polkajam/sdk:v1.2.0
+  build: polkajam -m service
+  test: polkajam test --coverage
+
+services:
+  - path: ./services/auth.ts
+    name: auth-service
+    sdk: jam-sdk-0.1.26
+
+  - path: ./services/calculator.rs
+    name: calculator
+    sdk: *custom-polkajam
+
+  - path: ./services/storage.go
+    name: storage_service
+    sdk:
+      image: spacejam/jade:v2.1
+      build: jade build --optimize
+      test: jade test
+
+deployment:
+  spawn: local
