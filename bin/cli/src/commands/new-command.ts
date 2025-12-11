@@ -1,9 +1,18 @@
 import * as p from "@clack/prompts";
 import { Command, InvalidArgumentError } from "commander";
+import { fetchRepo } from "../../utils/fetch-repo";
+
+type SDK = "jam-sdk";
+
+const SDK_TEMPLATES: Record<SDK, string> = {
+  "jam-sdk": "jammin-create/jammin-create-jam-sdk",
+};
+
+const SDKS = Object.keys(SDK_TEMPLATES) as SDK[];
 
 interface ProjectConfig {
   name: string;
-  sdk: string;
+  sdk: SDK;
 }
 
 // TODO: [MaSo] Should employ zod for validation
@@ -26,23 +35,12 @@ export function validate(name: string) {
 export const newCommand = new Command("new")
   .description("initialize a new jammin project")
   .argument("[project-name]", "name of the project to create", validate)
-  .addOption(
-    new Command()
-      .createOption("--sdk <sdk>", "target sdk")
-      .choices(["polkajam", "jade", "jambrains"])
-      .default("polkajam"),
-  )
+  .addOption(new Command().createOption("--sdk <sdk>", "target sdk").choices(SDKS).default(SDKS[0]))
   .addHelpText(
     "after",
-    `
-  SDKs: 
-    polkajam      by Parity
-    jade          by SpaceJam
-    jambrains     by JamBrains
-
-  Examples:
+    `Examples:
     $ jammin new my-app
-    $ jammin new my-app --sdk polkajam
+    $ jammin new my-app --sdk ${SDKS[0]}
   `,
   )
   .action(async (projectName, options) => {
@@ -83,7 +81,7 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
       sdk: () =>
         p.select({
           message: "Which template would you like to use?",
-          options: [{ value: "polkajam" }, { value: "jade" }, { value: "jambrains" }],
+          options: SDKS.map((sdk) => ({ value: sdk })),
         }),
     },
     {
@@ -97,16 +95,21 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
   return config as ProjectConfig;
 }
 
-// TODO: [MaSo] Dummy create project
 async function createProject(config: ProjectConfig) {
   const s = p.spinner();
   p.log.step(`🎯 Initializing project: ${config.name}`);
+
   s.start("📝 Creating project...");
-  await new Promise((resolve) => setTimeout(resolve, 2500));
-  s.stop(`✅ Created project using SDK: ${config.sdk}`);
-  s.start("📚 Creating config files...");
-  await new Promise((resolve) => setTimeout(resolve, 2500));
-  s.stop("✅ Created configs!");
+  try {
+    const template = SDK_TEMPLATES[config.sdk];
+    await fetchRepo(template, config.name);
+    s.stop(`✅ Created project using SDK: ${config.sdk}`);
+    p.note(`cd ${config.name}`);
+  } catch (error) {
+    s.stop("❌ Failed to create project");
+    p.log.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 
   p.outro("✅ Finished!");
 }
