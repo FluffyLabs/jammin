@@ -31,7 +31,6 @@ export function validate(name: string) {
   return trimmed;
 }
 
-// TODO: [MaSo] dummy command
 export const newCommand = new Command("new")
   .description("initialize a new jammin project")
   .argument("[project-name]", "name of the project to create", validate)
@@ -101,8 +100,7 @@ async function createProject(config: ProjectConfig) {
 
   s.start("📝 Creating project...");
   try {
-    const template = SDK_TEMPLATES[config.sdk];
-    await fetchRepo(template, config.name);
+    await fetchRepo(SDK_TEMPLATES[config.sdk], config.name);
     s.stop(`✅ Created project using SDK: ${config.sdk}`);
     p.note(`cd ${config.name}`);
   } catch (error) {
