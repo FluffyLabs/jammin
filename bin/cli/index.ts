@@ -3,8 +3,8 @@
 import { program } from "commander";
 import { version } from "./package.json" with { type: "json" };
 import { buildCommand } from "./src/commands/build-command";
-import { deployCommand } from "./src/commands/deploy-command";
 import { createCommand } from "./src/commands/create-command";
+import { deployCommand } from "./src/commands/deploy-command";
 import { testCommand } from "./src/commands/test-command";
 
 program

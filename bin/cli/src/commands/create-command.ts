@@ -37,7 +37,12 @@ export function validate(name: string) {
 export const createCommand = new Command("create")
   .description("initialize a new jammin project from template")
   .argument("[project-name]", "name of the project to create", validate)
-  .addOption(new Command().createOption("--template <template>", "project template to use").choices(TEMPLATES).default(TEMPLATES[0]))
+  .addOption(
+    new Command()
+      .createOption("--template <template>", "project template to use")
+      .choices(TEMPLATES)
+      .default(TEMPLATES[0]),
+  )
   .addHelpText(
     "after",
     `Examples:
@@ -104,7 +109,7 @@ async function createProject(config: ProjectConfig) {
   s.start("📝 Creating project...");
   try {
     await fetchRepo(TARGETS[config.template], config.name);
-    s.stop(`✅ Created project using SDK: ${config.template}`);
+    s.stop(`✅ Created project using ${config.template} template`);
     p.note(`cd ${config.name}`);
   } catch (error) {
     s.stop("❌ Failed to create project");

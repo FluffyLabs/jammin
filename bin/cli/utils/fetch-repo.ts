@@ -7,6 +7,6 @@
 export async function fetchRepo(repo: string, dest: string): Promise<void> {
   const result = await Bun.$`bun create --no-install ${repo} ${dest}`.quiet();
   if (result.exitCode !== 0) {
-    throw Error(`Failed to fetch repo: ${result.stderr}`);
+    throw Error(`Failed to fetch ${repo}: ${result.stderr}`);
   }
 }
