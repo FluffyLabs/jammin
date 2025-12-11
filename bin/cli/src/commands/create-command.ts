@@ -1,9 +1,21 @@
 import * as p from "@clack/prompts";
 import { Command, InvalidArgumentError } from "commander";
+import { fetchRepo } from "../../utils/fetch-repo";
+
+type Template = "jam-sdk" | "jade" | "jambrains" | "undecided";
+
+const TARGETS: Record<Template, string> = {
+  "jam-sdk": "jammin-create/jammin-create-jam-sdk",
+  jade: "jammin-create/jammin-create-jade",
+  jambrains: "jammin-create/jammin-create-jambrains",
+  undecided: "jammin-create/jammin-create-undecided",
+};
+
+const TEMPLATES = Object.keys(TARGETS) as Template[];
 
 interface ProjectConfig {
   name: string;
-  sdk: string;
+  template: Template;
 }
 
 // TODO: [MaSo] Should employ zod for validation
@@ -22,27 +34,20 @@ export function validate(name: string) {
   return trimmed;
 }
 
-// TODO: [MaSo] dummy command
-export const newCommand = new Command("new")
-  .description("initialize a new jammin project")
+export const createCommand = new Command("create")
+  .description("initialize a new jammin project from template")
   .argument("[project-name]", "name of the project to create", validate)
   .addOption(
     new Command()
-      .createOption("--sdk <sdk>", "target sdk")
-      .choices(["polkajam", "jade", "jambrains"])
-      .default("polkajam"),
+      .createOption("--template <template>", "project template to use")
+      .choices(TEMPLATES)
+      .default(TEMPLATES[0]),
   )
   .addHelpText(
     "after",
-    `
-  SDKs: 
-    polkajam      by Parity
-    jade          by SpaceJam
-    jambrains     by JamBrains
-
-  Examples:
-    $ jammin new my-app
-    $ jammin new my-app --sdk polkajam
+    `Examples:
+    $ jammin create my-app
+    $ jammin create my-app --template ${TEMPLATES[0]}
   `,
   )
   .action(async (projectName, options) => {
@@ -51,7 +56,7 @@ export const newCommand = new Command("new")
     if (projectName) {
       config = {
         name: projectName,
-        sdk: options.sdk,
+        template: options.template,
       };
     } else {
       config = await runInteractiveSetup();
@@ -80,10 +85,10 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
           },
         }),
 
-      sdk: () =>
+      template: () =>
         p.select({
           message: "Which template would you like to use?",
-          options: [{ value: "polkajam" }, { value: "jade" }, { value: "jambrains" }],
+          options: TEMPLATES.map((template) => ({ value: template })),
         }),
     },
     {
@@ -97,16 +102,20 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
   return config as ProjectConfig;
 }
 
-// TODO: [MaSo] Dummy create project
 async function createProject(config: ProjectConfig) {
   const s = p.spinner();
   p.log.step(`🎯 Initializing project: ${config.name}`);
+
   s.start("📝 Creating project...");
-  await new Promise((resolve) => setTimeout(resolve, 2500));
-  s.stop(`✅ Created project using SDK: ${config.sdk}`);
-  s.start("📚 Creating config files...");
-  await new Promise((resolve) => setTimeout(resolve, 2500));
-  s.stop("✅ Created configs!");
+  try {
+    await fetchRepo(TARGETS[config.template], config.name);
+    s.stop(`✅ Created project using ${config.template} template`);
+    p.note(`cd ${config.name}`);
+  } catch (error) {
+    s.stop("❌ Failed to create project");
+    p.log.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 
   p.outro("✅ Finished!");
 }
