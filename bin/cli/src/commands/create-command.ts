@@ -2,17 +2,20 @@ import * as p from "@clack/prompts";
 import { Command, InvalidArgumentError } from "commander";
 import { fetchRepo } from "../../utils/fetch-repo";
 
-type SDK = "jam-sdk";
+type Template = "jam-sdk" | "jade" | "jambrains" | "undecided";
 
-const SDK_TEMPLATES: Record<SDK, string> = {
+const TARGETS: Record<Template, string> = {
   "jam-sdk": "jammin-create/jammin-create-jam-sdk",
+  jade: "jammin-create/jammin-create-jade",
+  jambrains: "jammin-create/jammin-create-jambrains",
+  undecided: "jammin-create/jammin-create-undecided",
 };
 
-const SDKS = Object.keys(SDK_TEMPLATES) as SDK[];
+const TEMPLATES = Object.keys(TARGETS) as Template[];
 
 interface ProjectConfig {
   name: string;
-  sdk: SDK;
+  template: Template;
 }
 
 // TODO: [MaSo] Should employ zod for validation
@@ -31,15 +34,15 @@ export function validate(name: string) {
   return trimmed;
 }
 
-export const newCommand = new Command("new")
-  .description("initialize a new jammin project")
+export const createCommand = new Command("create")
+  .description("initialize a new jammin project from template")
   .argument("[project-name]", "name of the project to create", validate)
-  .addOption(new Command().createOption("--sdk <sdk>", "target sdk").choices(SDKS).default(SDKS[0]))
+  .addOption(new Command().createOption("--template <template>", "project template to use").choices(TEMPLATES).default(TEMPLATES[0]))
   .addHelpText(
     "after",
     `Examples:
-    $ jammin new my-app
-    $ jammin new my-app --sdk ${SDKS[0]}
+    $ jammin create my-app
+    $ jammin create my-app --template ${TEMPLATES[0]}
   `,
   )
   .action(async (projectName, options) => {
@@ -48,7 +51,7 @@ export const newCommand = new Command("new")
     if (projectName) {
       config = {
         name: projectName,
-        sdk: options.sdk,
+        template: options.template,
       };
     } else {
       config = await runInteractiveSetup();
@@ -77,10 +80,10 @@ async function runInteractiveSetup(): Promise<ProjectConfig> {
           },
         }),
 
-      sdk: () =>
+      template: () =>
         p.select({
           message: "Which template would you like to use?",
-          options: SDKS.map((sdk) => ({ value: sdk })),
+          options: TEMPLATES.map((template) => ({ value: template })),
         }),
     },
     {
@@ -100,8 +103,8 @@ async function createProject(config: ProjectConfig) {
 
   s.start("📝 Creating project...");
   try {
-    await fetchRepo(SDK_TEMPLATES[config.sdk], config.name);
-    s.stop(`✅ Created project using SDK: ${config.sdk}`);
+    await fetchRepo(TARGETS[config.template], config.name);
+    s.stop(`✅ Created project using SDK: ${config.template}`);
     p.note(`cd ${config.name}`);
   } catch (error) {
     s.stop("❌ Failed to create project");
