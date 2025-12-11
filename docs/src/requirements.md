@@ -2,19 +2,14 @@
 
 All jammin tooling expects a recent macOS or Linux environment with the tools below available globally.
 
-## Node.js (LTS via nvm)
+## Bun
 
 ```bash
-# macOS
-brew install nvm
-mkdir -p ~/.nvm && echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.zshrc
-source $(brew --prefix nvm)/nvm.sh
-nvm install --lts
+# macOS and Linux
+curl -fsSL https://bun.sh/install | bash
 
-# Linux
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-export NVM_DIR="$HOME/.nvm" && source "$NVM_DIR/nvm.sh"
-nvm install --lts
+# Or via Homebrew (macOS)
+brew install oven-sh/bun/bun
 ```
 
 ## Docker
@@ -41,4 +36,4 @@ sudo apt-get update
 sudo apt-get install -y git
 ```
 
-Verify each tool with `node --version`, `docker --version`, and `git --version` before running jammin commands.
+Verify each tool with `bun --version`, `docker --version`, and `git --version` before running jammin commands.
