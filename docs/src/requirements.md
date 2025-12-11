@@ -8,7 +8,7 @@ All jammin tooling expects a recent macOS or Linux environment with the tools be
 # macOS and Linux
 curl -fsSL https://bun.sh/install | bash
 
-# Or via Homebrew (macOS)
+# Or with Homebrew (macOS)
 brew install oven-sh/bun/bun
 ```
 

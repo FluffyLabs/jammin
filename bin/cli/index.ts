@@ -3,8 +3,8 @@
 import { program } from "commander";
 import { version } from "./package.json" with { type: "json" };
 import { buildCommand } from "./src/commands/build-command";
+import { createCommand } from "./src/commands/create-command";
 import { deployCommand } from "./src/commands/deploy-command";
-import { newCommand } from "./src/commands/new-command";
 import { testCommand } from "./src/commands/test-command";
 
 program
@@ -18,7 +18,7 @@ program.configureHelp({
 });
 
 // Adding commands
-program.addCommand(newCommand);
+program.addCommand(createCommand);
 program.addCommand(buildCommand);
 program.addCommand(testCommand);
 program.addCommand(deployCommand);
