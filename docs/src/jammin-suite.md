@@ -2,11 +2,16 @@
 
 ## jammin cli
 
-1. **New**
-    1. Should allow using various jam sdks for services
-    2. Project is configured in a yaml file. That YAML contains:
-	    1. SDK framework used (global + per-service override)
-	    2. List of services and their destinations
+1. **Create**
+    1. Bootstraps new projects from pre-configured templates
+    2. Available templates:
+        1. `jam-sdk` - JAM SDK template for building JAM services
+        2. `jade` - JADE SDK template
+        3. `jambrains` - JamBrains SDK template
+        4. `undecided` - Starter template for exploring options with all of the above
+    3. Templates are fetched from GitHub (`jammin-create` organization)
+    4. Project is configured in a yaml file. That YAML contains:
+	    1. List of services and their destinations
 2. **Build**
 	1. Each service is being built with its SDK-specific instructions.
 	2. We provide docker images for JAM-SDK, later maybe JADE or other services.
