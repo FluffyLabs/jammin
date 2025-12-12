@@ -1,7 +1,7 @@
 import { YAML } from "bun";
 import type { JamminBuildConfig, JamminNetworksConfig } from "../types/config";
 import { ConfigError } from "../types/errors";
-import { findConfigFile, pathExists } from "../utils/file-utils";
+import { findFile, pathExists } from "../utils/file-utils";
 import { validateBuildConfig, validateNetworksConfig } from "./config-validator";
 
 /** Configuration loader and validation */
@@ -33,7 +33,7 @@ async function loadConfig<T>(
   validator: (data: unknown) => T,
   configType: string,
 ): Promise<T> {
-  const filePath = configPath || (await findConfigFile(configFileName));
+  const filePath = configPath || (await findFile(configFileName));
 
   if (!filePath) {
     throw new ConfigError(`Config file '${configFileName}' not found in current directory or parent directories`);

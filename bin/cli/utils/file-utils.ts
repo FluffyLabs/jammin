@@ -13,8 +13,11 @@ export async function pathExists(path: string): Promise<boolean> {
   }
 }
 
-/** Find config file in current directory or walk up parent directories */
-export async function findConfigFile(fileName: string, startDir: string = process.cwd()): Promise<string | null> {
+/**
+ * Find file in current directory or walk up parent directories
+ * Up to git root directory or system root
+ */
+export async function findFile(fileName: string, startDir: string = process.cwd()): Promise<string | null> {
   let currentDir = resolve(startDir);
   const root = resolve("/");
 
@@ -23,9 +26,18 @@ export async function findConfigFile(fileName: string, startDir: string = proces
     if (await pathExists(configPath)) {
       return configPath;
     }
+
+    // Stop at git root
+    const gitPath = join(currentDir, ".git");
+    if (await pathExists(gitPath)) {
+      break;
+    }
+
+    // Stop at system root
     if (currentDir === root) {
       break;
     }
+
     currentDir = resolve(currentDir, "..");
   }
 
