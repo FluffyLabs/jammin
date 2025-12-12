@@ -36,12 +36,20 @@ $ docker run --rm -v $(pwd):/app jam-sdk cargo test
 
 The docker image provided by JamBrains is going to do all the work here:
 
+Pull the image:
+
+```console
+$ docker pull ghcr.io/jambrains/service-sdk:latest
+```
+
+On Apple Silicon, you may need to add: `--platform linux/amd64`.
+
+And build:
+
 ```console
 $ cd jam-examples/empty-jambrains
 $ docker run --rm -v $(pwd):/app ghcr.io/jambrains/service-sdk:latest single-file main.c
 ```
-
-Should you have trouble running this image on Apple Silicon add the following flag: `--platform linux/amd64`.
 
 ### Jade (Spacejam)
 
