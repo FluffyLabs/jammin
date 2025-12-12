@@ -7,9 +7,24 @@ This guide walks you through creating your first jammin project and understandin
 Before you start, make sure you have the required tools installed. See the [Requirements](requirements.md) page for detailed installation instructions.
 
 Quick checklist:
+
 - Bun
 - Docker
 - Git
+
+### Install pre-releases, canary, or main-branch builds (for dev)
+
+```bash
+bun add -g @fluffylabs/jammin@next
+```
+
+or
+
+### Install latest release
+
+```bash
+bun add -g @fluffylabs/jammin@latest
+```
 
 ## Creating a new project
 
@@ -24,6 +39,7 @@ jammin create
 ```
 
 The interactive wizard will ask you:
+
 1. **Project name** - Must start with an alphanumeric character and can only contain letters, numbers, hyphens, and underscores
 2. **Template** - Choose from available templates:
    - `jam-sdk` - JAM SDK template for building JAM services
