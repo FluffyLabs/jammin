@@ -1,0 +1,16 @@
+# Valid jammin.networks.yml - Demonstrates multiple network configurations
+
+networks:
+  # Test network with multiple nodes
+  local:
+    - image: typeberry-0.4.1
+      args: dev
+      instances: 4
+
+    - image: polkajam-v0.1.26
+      instances: 2
+
+  # Docker compose network
+  staging:
+    compose: ./docker-compose.staging.yml
+

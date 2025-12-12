@@ -8,17 +8,45 @@ export interface JamminBuildConfig {
 }
 
 export interface ServiceConfig {
-  path: string; // Path to service file (any programming language)
-  name: string; // Service identifier
-  sdk: string | CustomSdkConfig; // SDK name (built-in) or custom sdk
+  /** Path to service directory */
+  path: string;
+  /** Service identifier */
+  name: string;
+  /** SDK name (built-in) or custom sdk */
+  sdk: string | CustomSdkConfig;
 }
 
 export interface CustomSdkConfig {
-  image: string; // Docker image name
-  build: string; // Build command
-  test: string; // Test command
+  /** Docker image name */
+  image: string;
+  /** Build command */
+  build: string;
+  /** Test command */
+  test: string;
 }
 
 export interface DeploymentConfig {
-  spawn: string; // Network name to spawn
+  /** Network name to spawn */
+  spawn: string;
+}
+
+// jammin.network.yml types
+
+export interface JamminNetworksConfig {
+  networks: Record<string, NetworkConfig>;
+}
+
+export type NetworkConfig = NodeDefinition[] | ComposeNetworkConfig;
+
+export interface NodeDefinition {
+  /** Docker image with jam node */
+  image: string;
+  args?: string;
+  /** Number of instances spawned */
+  instances?: number;
+}
+
+export interface ComposeNetworkConfig {
+  /** Path to docker-compose file */
+  compose: string;
 }

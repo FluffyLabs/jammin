@@ -1,14 +1,15 @@
 import { YAML } from "bun";
-import type { JamminBuildConfig } from "../types/config";
+import type { JamminBuildConfig, JamminNetworksConfig } from "../types/config";
 import { ConfigError } from "../types/errors";
-import { validateBuildConfig } from "./config-validator";
-import { findConfigFile, pathExists } from "./file-utils";
+import { findConfigFile, pathExists } from "../utils/file-utils";
+import { validateBuildConfig, validateNetworksConfig } from "./config-validator";
 
 /** Configuration loader and validation */
 
 /** Default config files */
 const CONFIG_FILES = {
   BUILD: "jammin.build.yml",
+  NETWORKS: "jammin.networks.yml",
 } as const;
 
 /** Load and parse YAML config file */
@@ -57,4 +58,9 @@ async function loadConfig<T>(
 /** Load build configuration */
 export async function loadBuildConfig(configPath?: string): Promise<JamminBuildConfig> {
   return loadConfig(configPath, CONFIG_FILES.BUILD, validateBuildConfig, "build");
+}
+
+/** Load networks configuration */
+export async function loadNetworksConfig(configPath?: string): Promise<JamminNetworksConfig> {
+  return loadConfig(configPath, CONFIG_FILES.NETWORKS, validateNetworksConfig, "networks");
 }
