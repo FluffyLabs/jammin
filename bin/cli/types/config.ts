@@ -42,7 +42,7 @@ export interface NodeDefinition {
   /** Docker image with jam node */
   image: string;
   args?: string;
-  /** Number of instances swpaned */
+  /** Number of instances spawned */
   instances?: number;
 }
 
