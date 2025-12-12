@@ -75,4 +75,4 @@ Once you've created a project, you can use the following jammin commands:
 - `jammin test` - Run unit tests
 - `jammin deploy` - Deploy to a network
 
-Refer to the [jammin suite](jammin-suite.md) documentation for detailed information about each command.
+Refer to the [jammin suite](bootstrap/jammin-suite.md) documentation for detailed information about each command.
