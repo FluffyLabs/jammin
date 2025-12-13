@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   polkajam-testnet:
     image: polkajam:v0.1.27-aarch64
@@ -26,7 +24,7 @@ services:
       - ./scripts/corevm-setup.sh:/corevm-setup.sh
     entrypoint: ["/bin/bash", "/corevm-setup.sh"]
 
-# TODO - it seems that ubuntu docker does not have corevm-monitor - need to uynderstand why
+  # TODO - it seems that ubuntu docker does not have corevm-monitor - need to understand why
   corevm-monitor:
     image: polkajam:v0.1.27-aarch64
     platform: linux/arm64

@@ -1,0 +1,17 @@
+services:
+  polkajam-testnet:
+    image: polkajam:v0.1.27
+    platform: linux/arm64
+    command:
+      - polkajam-testnet
+      - --base-port
+      - "40000"
+      - --base-rpc-port
+      - "19800"
+    volumes:
+      - polkajam-data:/data
+    tty: true
+    stdin_open: true
+
+volumes:
+  polkajam-data:
