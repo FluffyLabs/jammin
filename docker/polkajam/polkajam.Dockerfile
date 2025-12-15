@@ -22,7 +22,7 @@ RUN curl -fL \
     && tar -xzf release.tgz --strip-components=1 \
     && rm release.tgz
 
-RUN chmod +x /opt/polkajam/polkajam /opt/polkajam/polkajam-testnet
+RUN chmod +x /opt/polkajam/polkajam /opt/polkajam/polkajam-testnet /opt/polkajam/polkajam-repl
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

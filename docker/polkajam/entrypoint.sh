@@ -11,13 +11,13 @@ shift || true
 
 case "$CMD_BIN" in
   polkajam)
-    exec "$POLKAJAM_BIN" "$@"
+    exec "$POLKAJAM_BIN" ${SERVICE_ARGS}
     ;;
   polkajam-testnet)
-    exec "$POLKAJAM_TESTNET_BIN" "$@"
+    exec "$POLKAJAM_TESTNET_BIN" ${SERVICE_ARGS}
     ;;
   polkajam-repl)
-    exec "$POLKAJAM_REPL_BIN" "$@"
+    exec "$POLKAJAM_REPL_BIN" ${SERVICE_ARGS}
     ;;
   *)
     echo "Unknown command: $CMD_BIN"

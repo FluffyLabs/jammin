@@ -1,5 +1,5 @@
 services:
-  polkajam-testnet:
+  polkajam:
     image: polkajam:v0.1.27
     platform: linux/arm64
     command:
