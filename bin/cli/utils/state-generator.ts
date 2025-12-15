@@ -1,0 +1,145 @@
+import { join } from "node:path";
+import { block, bytes, hash, numbers, state_merkleization } from "@typeberry/lib";
+import blake2b from "blake2b";
+import z from "zod";
+import { ConfigError } from "../types/errors";
+import { pathExists } from "./file-utils";
+
+/// zod schemas
+
+const KeyValueSchema = z.object({
+  key: z.string(),
+  value: z.string(),
+});
+
+const StateSchema = z.object({
+  state_root: z.string(),
+  keyvals: z.array(KeyValueSchema),
+});
+
+export const StfStateSchema = z.object({
+  header: z.unknown(),
+  state: StateSchema,
+});
+
+type KeyValue = z.infer<typeof KeyValueSchema>;
+
+/** JAM State Transision Function - Genesis state type */
+export type StfState = z.infer<typeof StfStateSchema>;
+
+/// Generated service type
+
+export interface ServiceBuildOutput {
+  id: number;
+  code: bytes.BytesBlob;
+}
+
+/// Genesis methods
+
+const libBlake2b = await hash.Blake2b.createHasher();
+
+// Service without code hash
+const DEFAULT_SERVICE =
+  "27ffffffffffffffff0a000000000000000a000000000000003418020000000000ffffffffffffffff040000000000000000000000000000";
+
+/**
+ * Find the correct insertion index for a key
+ */
+function findInsertionIndex(keyvals: KeyValue[], key: string): number {
+  let left = 0;
+  let right = keyvals.length;
+
+  while (left < right) {
+    const mid = Math.floor((left + right) / 2);
+    if (keyvals[mid]) {
+      if (keyvals[mid].key < key) {
+        left = mid + 1;
+      } else {
+        right = mid;
+      }
+    } else {
+      throw new Error("Index out of bounds");
+    }
+  }
+
+  return left;
+}
+
+/** Load and validates a genesis.json file */
+export async function loadStateFile(state: string): Promise<StfState> {
+  if (!(await pathExists(state))) {
+    throw new ConfigError(`Could not locate ${state} file`, state);
+  }
+  return StfStateSchema.parse(await Bun.file(state).json());
+}
+
+/** Creates genesis.json file in given directory */
+export async function saveStateFile(genesis: StfState, outputDir: string): Promise<void> {
+  const outputPath = join(outputDir, "genesis.json");
+  await Bun.write(outputPath, JSON.stringify(genesis, null, 2));
+}
+
+/**
+ * Update given StfState using provided configuration
+ *
+ * TODO: Recalculate state root hash
+ */
+export function updateState(genesis: StfState, config: { services?: ServiceBuildOutput[] } = {}): void {
+  if (config.services) {
+    const keyvals: KeyValue[] = [];
+    for (const service of config.services) {
+      keyvals.push(...createServiceEntries(service));
+    }
+    for (const { key, value } of keyvals) {
+      const insertionIndex = findInsertionIndex(genesis.state.keyvals, key);
+      genesis.state.keyvals.splice(insertionIndex, 0, { key, value });
+    }
+  }
+}
+
+/**
+ * Creates list of key-values to be added to state
+ * Generate: Preimage entry, Lookup entry and Service entry
+ */
+function createServiceEntries({ id, code }: ServiceBuildOutput): KeyValue[] {
+  const keyvals: KeyValue[] = [];
+
+  const hash = hashBytes(code);
+  keyvals.push({ key: servicePreimageKey(id, hash), value: code.toString() });
+  keyvals.push({ key: serviceLookupKey(id, hash, code.length), value: "0x0100000000" });
+  // First byte is version number
+  keyvals.push({ key: serviceKey(id), value: `0x00${hash.toString().substring(2)}${DEFAULT_SERVICE}` });
+
+  return keyvals;
+}
+
+/// Helper functions
+
+function hashBytes(b: bytes.BytesBlob): bytes.Bytes<32> {
+  const hasher = blake2b(32);
+  hasher.update(b.raw);
+  return bytes.Bytes.fromBlob(hasher.digest(), 32);
+}
+
+function servicePreimageKey(serviceId: number, codeHash: bytes.Bytes<32>): string {
+  return state_merkleization.stateKeys
+    .servicePreimage(libBlake2b, block.tryAsServiceId(serviceId), codeHash.asOpaque())
+    .toString()
+    .substring(0, 64);
+}
+
+function serviceLookupKey(serviceId: number, codeHash: bytes.Bytes<32>, codeLength: number): string {
+  return state_merkleization.stateKeys
+    .serviceLookupHistory(
+      libBlake2b,
+      block.tryAsServiceId(serviceId),
+      codeHash.asOpaque(),
+      numbers.tryAsU32(codeLength),
+    )
+    .toString()
+    .substring(0, 64);
+}
+
+function serviceKey(serviceId: number): string {
+  return state_merkleization.stateKeys.serviceInfo(block.tryAsServiceId(serviceId)).toString().substring(0, 64);
+}
