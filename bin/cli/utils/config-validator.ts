@@ -4,7 +4,7 @@ import { z } from "zod";
 
 // jammin.build.yml schema
 
-const CustomSdkConfigSchema = z.object({
+export const SdkConfigSchema = z.object({
   image: z.string().min(1, "SDK image is required"),
   build: z.string().min(1, "Build command is required"),
   test: z.string().min(1, "Test command is required"),
@@ -16,7 +16,7 @@ const ServiceConfigSchema = z.object({
     .string()
     .min(1, "Service name is required")
     .regex(/^[a-zA-Z0-9_-]+$/, "Service name must contain only letters, numbers, hyphens, and underscores"),
-  sdk: z.union([z.string().min(1, "SDK is required"), CustomSdkConfigSchema]),
+  sdk: z.union([z.string().min(1, "SDK is required"), SdkConfigSchema]),
 });
 
 const DeploymentConfigSchema = z.object({

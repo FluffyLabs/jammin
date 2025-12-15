@@ -13,10 +13,10 @@ export interface ServiceConfig {
   /** Service identifier */
   name: string;
   /** SDK name (built-in) or custom sdk */
-  sdk: string | CustomSdkConfig;
+  sdk: string | SdkConfig;
 }
 
-export interface CustomSdkConfig {
+export interface SdkConfig {
   /** Docker image name */
   image: string;
   /** Build command */
