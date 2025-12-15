@@ -53,8 +53,6 @@ Running:
 docker compose up
 ```
 
-in the same directory (`/docker`) you will see the polkajam-testnet running
-
 ## AI contributors
 
 Automated agents helping on this repository should review `AI_GUIDELINES.md`

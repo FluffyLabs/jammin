@@ -24,7 +24,7 @@ RUN curl -fL \
 
 RUN chmod +x /opt/polkajam/polkajam /opt/polkajam/polkajam-testnet /opt/polkajam/polkajam-repl || true
 
-COPY entrypoint.sh /entrypoint.sh
+COPY docker/polkajam/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

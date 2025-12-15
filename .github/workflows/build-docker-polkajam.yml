@@ -23,7 +23,7 @@ jobs:
           context: .
           push: false
           load: true
-          file: docker/polkadjam/polkajam.Dockerfile
+          file: docker/polkajam/polkajam.Dockerfile
           tags: polkajam
           cache-from: type=gha
           cache-to: type=gha,mode=max
