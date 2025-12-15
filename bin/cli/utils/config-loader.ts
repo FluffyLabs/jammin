@@ -1,10 +1,20 @@
 import { YAML } from "bun";
+import { ZodError } from "zod";
 import type { JamminBuildConfig, JamminNetworksConfig } from "../types/config";
-import { ConfigError } from "../types/errors";
 import { findConfigFile, pathExists } from "../utils/file-utils";
 import { validateBuildConfig, validateNetworksConfig } from "./config-validator";
 
 /** Configuration loader and validation */
+
+export class ConfigError extends Error {
+  constructor(
+    message: string,
+    public readonly filePath?: string,
+  ) {
+    super(message);
+    this.name = "ConfigError";
+  }
+}
 
 /** Default config files */
 const CONFIG_FILES = {
@@ -20,7 +30,7 @@ async function loadYamlFile(filePath: string): Promise<unknown> {
     return YAML.parse(content);
   } catch (error) {
     if (error instanceof Error) {
-      throw new ConfigError("Failed to parse YAML file", filePath, error);
+      throw new ConfigError(`Failed to parse YAML file: ${error.message}`, filePath);
     }
     throw error;
   }
@@ -40,7 +50,7 @@ async function loadConfig<T>(
   }
 
   if (!(await pathExists(filePath))) {
-    throw new ConfigError(`Config file not found: ${filePath}`, filePath);
+    throw new ConfigError("Config file not found", filePath);
   }
 
   const data = await loadYamlFile(filePath);
@@ -48,10 +58,14 @@ async function loadConfig<T>(
   try {
     return validator(data);
   } catch (error) {
-    if (error instanceof Error) {
-      throw new ConfigError(`Invalid ${configType} configuration`, filePath, error);
+    if (error instanceof ZodError) {
+      const details = formatZodError(error);
+      throw new ConfigError(`Invalid '${configType}' configuration: ${details}`, filePath);
     }
-    throw new ConfigError(`Invalid ${configType} configuration`, filePath);
+    if (error instanceof Error) {
+      throw new ConfigError(`Invalid '${configType}' configuration: ${error.message}`, filePath);
+    }
+    throw new ConfigError(`Invalid '${configType}' configuration`, filePath);
   }
 }
 
@@ -63,4 +77,13 @@ export async function loadBuildConfig(configPath?: string): Promise<JamminBuildC
 /** Load networks configuration */
 export async function loadNetworksConfig(configPath?: string): Promise<JamminNetworksConfig> {
   return loadConfig(configPath, CONFIG_FILES.NETWORKS, validateNetworksConfig, "networks");
+}
+
+/** Format Zod validation errors into readable messages */
+function formatZodError(error: ZodError): string {
+  const issues = error.issues.map((i) => {
+    const path = i.path.length > 0 ? i.path.join(".") : "root";
+    return `  -  ${path}: ${i.message}`;
+  });
+  return issues.join("\n");
 }
