@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import { block, bytes, hash, numbers, state_merkleization } from "@typeberry/lib";
 import blake2b from "blake2b";
 import z from "zod";
@@ -24,7 +23,6 @@ export const StfStateSchema = z.object({
 
 type KeyValue = z.infer<typeof KeyValueSchema>;
 
-/** JAM State Transision Function - Genesis state type */
 export type StfState = z.infer<typeof StfStateSchema>;
 
 /// Generated service type
@@ -65,18 +63,17 @@ function findInsertionIndex(keyvals: KeyValue[], key: string): number {
   return left;
 }
 
-/** Load and validates a genesis.json file */
-export async function loadStateFile(state: string): Promise<StfState> {
-  if (!(await pathExists(state))) {
-    throw new ConfigError(`Could not locate ${state} file`, state);
+/** Load and validates a StfState file */
+export async function loadStateFile(statePath: string): Promise<StfState> {
+  if (!(await pathExists(statePath))) {
+    throw new ConfigError(`Could not locate ${statePath} file`, statePath);
   }
-  return StfStateSchema.parse(await Bun.file(state).json());
+  return StfStateSchema.parse(await Bun.file(statePath).json());
 }
 
-/** Creates genesis.json file in given directory */
-export async function saveStateFile(genesis: StfState, outputDir: string): Promise<void> {
-  const outputPath = join(outputDir, "genesis.json");
-  await Bun.write(outputPath, JSON.stringify(genesis, null, 2));
+/** Creates StfState file in given directory */
+export async function saveStateFile(state: StfState, outputPath: string): Promise<void> {
+  await Bun.write(outputPath, JSON.stringify(state, null, 2));
 }
 
 /**
