@@ -1,5 +1,7 @@
 // Core configuration types matching YAML schema
 
+import type { SDK_CONFIGS } from "../utils/sdk-configs";
+
 // jammin.build.yml types
 
 export interface JamminBuildConfig {
@@ -13,7 +15,7 @@ export interface ServiceConfig {
   /** Service identifier */
   name: string;
   /** SDK name (built-in) or custom sdk */
-  sdk: string | SdkConfig;
+  sdk: keyof typeof SDK_CONFIGS | SdkConfig;
 }
 
 export interface SdkConfig {

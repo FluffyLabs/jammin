@@ -10,7 +10,7 @@ import { SDK_CONFIGS } from "../../utils/sdk-configs";
 /**
  *  Resolve SDK string or config to SDK config
  */
-function resolveSdk(sdk: string | SdkConfig): SdkConfig {
+export function resolveSdk(sdk: keyof typeof SDK_CONFIGS | SdkConfig): SdkConfig {
   if (typeof sdk === "string") {
     const predefinedConfig = SDK_CONFIGS[sdk];
     if (!predefinedConfig) {
@@ -24,9 +24,9 @@ function resolveSdk(sdk: string | SdkConfig): SdkConfig {
 /**
  * Build a single service using Docker
  */
-type BuildError = Error & { output?: string };
+export type BuildError = Error & { output?: string };
 
-async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {
+export async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {
   const sdk = resolveSdk(service.sdk);
   const servicePath = resolve(projectRoot, service.path);
 
@@ -118,7 +118,7 @@ Examples:
     }
 
     const logFilesList = logFiles.map((f) => `  - ${f}`).join("\n");
-    const logsMessage = logFiles.length > 0 ? `\n\nDetailed build logs saved to:\n${logFilesList}` : "";
+    const logsMessage = logFiles.length > 0 ? `\n\nLogs saved to:\n${logFilesList}` : "";
 
     if (buildFailed) {
       p.log.error(lastError?.message || "Build failed");
