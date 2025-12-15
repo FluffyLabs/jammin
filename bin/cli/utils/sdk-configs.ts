@@ -2,17 +2,17 @@ import type { SdkConfig } from "../types/config";
 
 export const SDK_CONFIGS: Record<string, SdkConfig> = {
   "jam-sdk-0.1.26": {
-    image: "jam-sdk",
+    image: "jam-sdk", // todo [seko] replace with pushed image name
     build: "jam-pvm-build -m service",
     test: "cargo test",
   },
   jambrains: {
     image: "ghcr.io/jambrains/service-sdk:latest",
     build: "single-file main.c",
-    test: "single-file main.c --test",
+    test: "true",
   },
   jade: {
-    image: "jade",
+    image: "jade", // todo [seko] replace with pushed image name
     build: "build",
     test: "test",
   },

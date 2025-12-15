@@ -24,7 +24,9 @@ function resolveSdk(sdk: string | SdkConfig): SdkConfig {
 /**
  * Build a single service using Docker
  */
-async function buildService(service: ServiceConfig, projectRoot: string, logFilePath: string): Promise<void> {
+type BuildError = Error & { output?: string };
+
+async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {
   const sdk = resolveSdk(service.sdk);
   const servicePath = resolve(projectRoot, service.path);
 
@@ -39,11 +41,13 @@ async function buildService(service: ServiceConfig, projectRoot: string, logFile
 
   const [combinedOutput, exitCode] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
 
-  await Bun.write(logFilePath, combinedOutput);
-
   if (exitCode !== 0) {
-    throw new Error(`Build failed for service '${service.name}' with exit code ${exitCode}`);
+    const error: BuildError = new Error(`Build failed for service '${service.name}' with exit code ${exitCode}`);
+    error.output = combinedOutput;
+    throw error;
   }
+
+  return combinedOutput;
 }
 
 /**
@@ -63,67 +67,64 @@ Examples:
 `,
   )
   .action(async (serviceName, options) => {
-    try {
-      const targetLabel = serviceName ? `service '${serviceName}'` : "project";
-      p.intro(`🔨 Building ${targetLabel}`);
+    const targetLabel = serviceName ? "service" : "project";
+    p.intro(`🔨 Building ${targetLabel}`);
 
-      const s = p.spinner();
-      s.start("Loading build configuration...");
-      const config = await loadBuildConfig(options.config);
-      s.stop("✅ Configuration loaded");
+    const s = p.spinner();
+    s.start("Loading build configuration...");
+    const config = await loadBuildConfig(options.config);
+    s.stop("✅ Configuration loaded");
 
-      let servicesToBuild = config.services;
-      if (serviceName) {
-        servicesToBuild = config.services.filter((s) => s.name === serviceName);
-        if (servicesToBuild.length === 0) {
-          p.log.error(`Service '${serviceName}' not found in configuration`);
-          process.exit(1);
-        }
-      }
-
-      const projectRoot = process.cwd();
-      const logsDir = join(projectRoot, "logs");
-      await mkdir(logsDir, { recursive: true });
-
-      const logFiles: string[] = [];
-      let buildFailed = false;
-      let lastError: Error | null = null;
-
-      for (const service of servicesToBuild) {
-        s.start(`Building service '${service.name}'...`);
-        const timestamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
-        const logFileName = `jammin-build-${service.name}-${timestamp}.log`;
-        const logFilePath = join(logsDir, logFileName);
-
-        try {
-          await buildService(service, projectRoot, logFilePath);
-          logFiles.push(logFilePath);
-          s.stop(`✅ Service '${service.name}' built successfully`);
-        } catch (error) {
-          buildFailed = true;
-          lastError = error instanceof Error ? error : new Error(String(error));
-          logFiles.push(logFilePath);
-          s.stop(`❌ Failed to build service '${service.name}'`);
-        }
-      }
-
-      const logFilesList = logFiles.map((f) => `  - ${f}`).join("\n");
-      if (buildFailed) {
-        p.log.error(lastError?.message || "Build failed");
-        p.outro(`❌ Build failed\n\nBuild logs saved to:\n${logFilesList}`);
+    let servicesToBuild = config.services;
+    if (serviceName) {
+      servicesToBuild = config.services.filter((s) => s.name === serviceName);
+      if (servicesToBuild.length === 0) {
+        p.log.error(`Service '${serviceName}' not found in configuration`);
         process.exit(1);
-      } else {
-        p.outro(`✅ Build completed successfully!\n\nBuild logs saved to:\n${logFilesList}`);
       }
-    } catch (error) {
-      if (error instanceof ConfigError) {
-        p.log.error(error.message);
-        if (error.filePath) {
-          p.log.error(`Config file: ${error.filePath}`);
-        }
-      } else {
-        p.log.error(error instanceof Error ? error.message : String(error));
+    }
+
+    const projectRoot = process.cwd();
+    const logsDir = join(projectRoot, "logs");
+    await mkdir(logsDir, { recursive: true });
+
+    const logFiles: string[] = [];
+    let buildFailed = false;
+    let lastError: Error | null = null;
+
+    for (const service of servicesToBuild) {
+      s.start(`Building service '${service.name}'...`);
+      const timestamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
+      const logFileName = `jammin-build-${service.name}-${timestamp}.log`;
+      const logFilePath = join(logsDir, logFileName);
+
+      let output: string | undefined;
+
+      try {
+        output = await buildService(service, projectRoot);
+        await Bun.write(logFilePath, output);
+        s.stop(`✅ Service '${service.name}' built successfully`);
+      } catch (error) {
+        buildFailed = true;
+        lastError = error instanceof Error ? error : new Error(String(error));
+        output = (lastError as BuildError).output;
+        s.stop(`❌ Failed to build service '${service.name}'`);
       }
+
+      if (output) {
+        await Bun.write(logFilePath, output);
+        logFiles.push(logFilePath);
+      }
+    }
+
+    const logFilesList = logFiles.map((f) => `  - ${f}`).join("\n");
+    const logsMessage = logFiles.length > 0 ? `\n\nDetailed build logs saved to:\n${logFilesList}` : "";
+
+    if (buildFailed) {
+      p.log.error(lastError?.message || "Build failed");
+      p.outro(`❌ Build failed ${logsMessage}`);
       process.exit(1);
+    } else {
+      p.outro(`✅ Build completed successfully! ${logsMessage}`);
     }
   });
