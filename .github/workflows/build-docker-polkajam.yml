@@ -1,4 +1,4 @@
-name: Build - Docker - JAM SDK
+name: Build - Docker - polkajam
 
 on:
   push:
