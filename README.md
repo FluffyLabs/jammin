@@ -13,18 +13,26 @@ To preview locally install `mdbook` (`cargo install mdbook`) and run:
 mdbook serve docs --open
 ```
 
-## Docker
+## Dockers
 
-In `docker` directory exists the `Dockerfile` and an `entrypoint.sh` that packages polkajam and its related binaries in a Linux container.
+The `docker/` directory contains multiple build contexts for the supported runtimes:
+
+- `docker/polkajam/polkajam.Dockerfile` creates a minimal Ubuntu-based runtime for polkajam.
+- `docker/jade/jade.Dockerfile` provides a Rust toolchain image with `rust-src` for jade development.
+- `docker/jam-sdk/jam-sdk.Dockerfile` installs the `jam-pvm-build` tool used by the jam SDK pipelines.
+
+### polkajam
+
+The polkajam image also includes an `entrypoint.sh` that packages polkajam and its related binaries in a Linux container, wiring them through a lightweight command router.
 It creates a minimal Ubuntu-based runtime environment for polkajam.
 
-### `entrypoint.sh` overview
+#### `entrypoint.sh` overview
 
 entrypoint.sh acts as a lightweight command router.
 
 At container startup: 1. The first argument passed to the container is read as the desired `polkajam` command 2. Based on that argument, the script executes the corresponding binary: - polkajam - polkajam-testnet - polkajam-repl 3. Any additional arguments are forwarded directly to the selected binary
 
-### command examples
+#### command examples
 
 ```bash
 docker build -t polkajam:v0.1.27 .
@@ -46,10 +54,6 @@ docker compose up
 ```
 
 in the same directory (`/docker`) you will see the polkajam-testnet running
-
-### doom-example
-
-This directory contains a docker-composer.yml that shows how doom can run. Unfortunately the final command for "seeing" doom running `corevm-monitor` is not available for linux in the releases (TODO: more investigation is needed for this resolution).
 
 ## AI contributors
 
