@@ -17,7 +17,10 @@ const ServiceConfigSchema = z.object({
     .string()
     .min(1, "Service name is required")
     .regex(/^[a-zA-Z0-9_-]+$/, "Service name must contain only letters, numbers, hyphens, and underscores"),
-  sdk: z.union([z.enum(Object.keys(SDK_CONFIGS) as (keyof typeof SDK_CONFIGS)[]), SdkConfigSchema]),
+  sdk: z.union(
+    [z.enum(Object.keys(SDK_CONFIGS) as (keyof typeof SDK_CONFIGS)[]), SdkConfigSchema],
+    `Expected a valid custom SDK configuration or one of the supported SDK ids (${Object.keys(SDK_CONFIGS).join(", ")})`,
+  ),
 });
 
 const DeploymentConfigSchema = z.object({

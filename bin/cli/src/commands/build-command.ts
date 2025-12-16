@@ -2,7 +2,9 @@ import { mkdir, readdir, stat } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { Command } from "commander";
-import type { ServiceConfig } from "../../types/config";
+import z, { ZodError } from "zod";
+import type { JamminBuildConfig, ServiceConfig } from "../../types/config";
+import { ConfigError } from "../../types/errors";
 import { loadBuildConfig } from "../../utils/config-loader";
 import { SDK_CONFIGS } from "../../utils/sdk-configs";
 
@@ -10,7 +12,10 @@ import { SDK_CONFIGS } from "../../utils/sdk-configs";
  * Build a single service using Docker
  */
 export class DockerError extends Error {
-  constructor(message: string, public output: string) {
+  constructor(
+    message: string,
+    public output: string,
+  ) {
     super(message);
   }
 }
@@ -81,12 +86,22 @@ Examples:
 `,
   )
   .action(async (serviceName, options) => {
+    let config: JamminBuildConfig;
     const targetLabel = serviceName ? "service" : "project";
     p.intro(`🔨 Building ${targetLabel}`);
 
     const s = p.spinner();
     s.start("Loading build configuration...");
-    const config = await loadBuildConfig(options.config);
+    try {
+      config = await loadBuildConfig(options.config);
+    } catch (error) {
+      if (error instanceof ConfigError && error.cause instanceof ZodError) {
+        s.stop("❌ Failed to load build configuration");
+        p.log.error(z.prettifyError(error.cause));
+        process.exit(1);
+      }
+      throw error;
+    }
     s.stop("✅ Configuration loaded");
 
     let servicesToBuild = config.services;
@@ -127,8 +142,8 @@ Examples:
           output = error.output;
           errorMessage = error.message;
         } else {
-          const errorAsError = error instanceof Error ? error : new Error(String(error));
-          errorMessage = errorAsError.message;
+          const errorObj = error instanceof Error ? error : new Error(String(error));
+          errorMessage = errorObj.message;
         }
         s.stop(`❌ Failed to build service '${service.name}': ${errorMessage}`);
       }
