@@ -27,3 +27,8 @@ jobs:
           tags: polkajam
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          OUTPUT=$(docker run --rm --entrypoint /opt/polkajam/polkajam polkajam:v0.1.27 --version)
+          echo "$OUTPUT" | grep -q "polkajam 0.1.27"
