@@ -2,24 +2,9 @@ import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { Command } from "commander";
-import type { SdkConfig, ServiceConfig } from "../../types/config";
-import { ConfigError } from "../../types/errors";
+import type { ServiceConfig } from "../../types/config";
 import { loadBuildConfig } from "../../utils/config-loader";
 import { SDK_CONFIGS } from "../../utils/sdk-configs";
-
-/**
- *  Resolve SDK string or config to SDK config
- */
-export function resolveSdk(sdk: keyof typeof SDK_CONFIGS | SdkConfig): SdkConfig {
-  if (typeof sdk === "string") {
-    const predefinedConfig = SDK_CONFIGS[sdk];
-    if (!predefinedConfig) {
-      throw new ConfigError(`Unknown SDK '${sdk}'. Use a predefined SDK name or provide a custom SDK config.`);
-    }
-    return predefinedConfig;
-  }
-  return sdk;
-}
 
 /**
  * Build a single service using Docker
@@ -27,7 +12,7 @@ export function resolveSdk(sdk: keyof typeof SDK_CONFIGS | SdkConfig): SdkConfig
 export type BuildError = Error & { output?: string };
 
 export async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {
-  const sdk = resolveSdk(service.sdk);
+  const sdk = typeof service.sdk === "string" ? SDK_CONFIGS[service.sdk] : service.sdk;
   const servicePath = resolve(projectRoot, service.path);
 
   const dockerArgs = ["run", "--rm", "-v", `${servicePath}:/app`, sdk.image, ...sdk.build.split(" ")];
@@ -102,7 +87,6 @@ Examples:
 
       try {
         output = await buildService(service, projectRoot);
-        await Bun.write(logFilePath, output);
         s.stop(`✅ Service '${service.name}' built successfully`);
       } catch (error) {
         buildFailed = true;
