@@ -17,17 +17,37 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      - name: Build Docker image (amd64)
         uses: docker/build-push-action@v5
         with:
           context: .
           push: false
           load: true
           file: docker/polkajam/polkajam.Dockerfile
-          tags: polkajam
+          platforms: linux/amd64
+          tags: polkajam:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Test Docker image
+      - name: Verify Polkajam version
         run: |
-          docker run --rm --entrypoint /opt/polkajam/polkajam polkajam --help
+          EXPECTED_POLKAJAM="polkajam 0.1.27"
+          EXPECTED_GP="GP 0.7.2"
+
+          OUTPUT=$(docker run --rm \
+            --entrypoint /opt/polkajam/polkajam \
+            polkajam:test \
+            --version)
+
+          echo "Command output:"
+          echo "$OUTPUT"
+
+          echo "$OUTPUT" | grep -q "$EXPECTED_POLKAJAM" || {
+            echo "ERROR: Polkajam version mismatch"
+            exit 1
+          }
+
+          echo "$OUTPUT" | grep -q "$EXPECTED_GP" || {
+            echo "ERROR: GP version mismatch"
+            exit 1
+          }
