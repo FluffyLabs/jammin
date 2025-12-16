@@ -3,32 +3,9 @@ import { resolve } from "node:path";
 import type { SdkConfig, ServiceConfig } from "../../types/config";
 import { ConfigError } from "../../types/errors";
 import { SDK_CONFIGS } from "../../utils/sdk-configs";
-import { buildService, resolveSdk } from "./build-command";
+import { buildService } from "./build-command";
 
 describe("build-command", () => {
-  describe("resolveSdk", () => {
-    test("should resolve predefined SDK name to SDK config", () => {
-      const result = resolveSdk("jambrains");
-      expect(result).toEqual(SDK_CONFIGS.jambrains);
-    });
-
-    test("should resolve custom SDK config directly", () => {
-      const customSdk: SdkConfig = {
-        image: "custom-image",
-        build: "custom build",
-        test: "custom test",
-      };
-
-      const result = resolveSdk(customSdk);
-      expect(result).toBe(customSdk);
-    });
-
-    test("should throw ConfigError for unknown SDK name", () => {
-      expect(() => resolveSdk("unknown-sdk" as keyof typeof SDK_CONFIGS)).toThrow(ConfigError);
-      expect(() => resolveSdk("unknown-sdk" as keyof typeof SDK_CONFIGS)).toThrow("Unknown SDK 'unknown-sdk'");
-    });
-  });
-
   describe("buildService - Docker command generation", () => {
     let originalSpawn: typeof Bun.spawn;
     let mockSpawn: ReturnType<typeof mock>;
