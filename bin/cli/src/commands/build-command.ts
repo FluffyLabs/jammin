@@ -1,5 +1,5 @@
 import { mkdir, readdir, stat } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { Command } from "commander";
 import type { ServiceConfig } from "../../types/config";
@@ -9,7 +9,11 @@ import { SDK_CONFIGS } from "../../utils/sdk-configs";
 /**
  * Build a single service using Docker
  */
-export type BuildError = Error & { output?: string };
+export class DockerError extends Error {
+  constructor(message: string, public output: string) {
+    super(message);
+  }
+}
 
 /**
  * Recursively get all files in a directory with their modification times
@@ -54,9 +58,7 @@ export async function buildService(service: ServiceConfig, projectRoot: string):
   const [combinedOutput, exitCode] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
 
   if (exitCode !== 0) {
-    const error: BuildError = new Error(`Build failed for service '${service.name}' with exit code ${exitCode}`);
-    error.output = combinedOutput;
-    throw error;
+    throw new DockerError(`Build failed for service '${service.name}' with exit code ${exitCode}`, combinedOutput);
   }
 
   return combinedOutput;
@@ -100,11 +102,10 @@ Examples:
     const logsDir = join(projectRoot, "logs");
     await mkdir(logsDir, { recursive: true });
 
-    const logFiles: string[] = [];
     let buildFailed = false;
-    let lastError: Error | null = null;
 
     for (const service of servicesToBuild) {
+      p.log.info("--------------------------------");
       s.start(`Building service '${service.name}'...`);
       const timestamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
       const logFileName = `jammin-build-${service.name}-${timestamp}.log`;
@@ -121,14 +122,15 @@ Examples:
         s.stop(`✅ Service '${service.name}' built successfully`);
       } catch (error) {
         buildFailed = true;
-        lastError = error instanceof Error ? error : new Error(String(error));
-        output = (lastError as BuildError).output;
-        s.stop(`❌ Failed to build service '${service.name}'`);
-      }
-
-      if (output) {
-        await Bun.write(logFilePath, output);
-        logFiles.push(logFilePath);
+        let errorMessage: string;
+        if (error instanceof DockerError) {
+          output = error.output;
+          errorMessage = error.message;
+        } else {
+          const errorAsError = error instanceof Error ? error : new Error(String(error));
+          errorMessage = errorAsError.message;
+        }
+        s.stop(`❌ Failed to build service '${service.name}': ${errorMessage}`);
       }
 
       // Find new or updated .jam files
@@ -143,19 +145,22 @@ Examples:
       }
 
       if (newFiles.length > 0) {
-        const filesList = newFiles.map((f) => `  - ${f}`).join("\n");
+        const filesList = newFiles.map((f) => `  - ${relative(projectRoot, f)}`).join("\n");
         p.log.info(`🎁 Output files for '${service.name}':\n${filesList}`);
+      }
+
+      if (output) {
+        await Bun.write(logFilePath, output);
+        p.log.info(`📝 Log saved: ${relative(projectRoot, logFilePath)}`);
       }
     }
 
-    const logFilesList = logFiles.map((f) => `  - ${f}`).join("\n");
-    const logsMessage = logFiles.length > 0 ? `\n\nLogs saved to:\n${logFilesList}` : "";
+    p.log.info("--------------------------------");
 
     if (buildFailed) {
-      p.log.error(lastError?.message || "Build failed");
-      p.outro(`❌ Build failed ${logsMessage}`);
+      p.outro("❌ Build failed. See the output above and check the logs for more details.");
       process.exit(1);
     } else {
-      p.outro(`✅ Build completed successfully! ${logsMessage}`);
+      p.outro("✅ Build completed successfully!");
     }
   });
