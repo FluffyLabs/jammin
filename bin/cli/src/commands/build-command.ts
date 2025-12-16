@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, readdir, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { Command } from "commander";
@@ -10,6 +10,33 @@ import { SDK_CONFIGS } from "../../utils/sdk-configs";
  * Build a single service using Docker
  */
 export type BuildError = Error & { output?: string };
+
+/**
+ * Recursively get all files in a directory with their modification times
+ */
+async function getAllFiles(dirPath: string): Promise<Map<string, number>> {
+  const files = new Map<string, number>();
+
+  try {
+    const entries = await readdir(dirPath, { withFileTypes: true, recursive: true });
+
+    for (const entry of entries) {
+      if (entry.name.endsWith(".jam")) {
+        try {
+          const fullPath = resolve(entry.parentPath, entry.name);
+          const stats = await stat(fullPath);
+          files.set(fullPath, stats.mtimeMs);
+        } catch {
+          // Ignore stat errors
+        }
+      }
+    }
+  } catch {
+    // Ignore errors (e.g., directory doesn't exist or permission issues)
+  }
+
+  return files;
+}
 
 export async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {
   const sdk = typeof service.sdk === "string" ? SDK_CONFIGS[service.sdk] : service.sdk;
@@ -83,8 +110,12 @@ Examples:
       const logFileName = `jammin-build-${service.name}-${timestamp}.log`;
       const logFilePath = join(logsDir, logFileName);
 
+      const servicePath = resolve(projectRoot, service.path);
+      const filesBefore = await getAllFiles(servicePath);
+
       let output: string | undefined;
 
+      // Build service and save log
       try {
         output = await buildService(service, projectRoot);
         s.stop(`✅ Service '${service.name}' built successfully`);
@@ -98,6 +129,22 @@ Examples:
       if (output) {
         await Bun.write(logFilePath, output);
         logFiles.push(logFilePath);
+      }
+
+      // Find new or updated .jam files
+      const filesAfter = await getAllFiles(servicePath);
+      const newFiles: string[] = [];
+
+      for (const [file, mtimeAfter] of filesAfter) {
+        const mtimeBefore = filesBefore.get(file);
+        if (mtimeBefore === undefined || mtimeAfter > mtimeBefore) {
+          newFiles.push(file);
+        }
+      }
+
+      if (newFiles.length > 0) {
+        const filesList = newFiles.map((f) => `  - ${f}`).join("\n");
+        p.log.info(`🎁 Output files for '${service.name}':\n${filesList}`);
       }
     }
 
