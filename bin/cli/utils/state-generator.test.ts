@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { bytes } from "@typeberry/lib";
 import { pathExists } from "./file-utils";
@@ -11,7 +10,7 @@ describe("genesis-generator", () => {
 
   afterEach(async () => {
     if (await pathExists(outputPath)) {
-      await unlink(outputPath);
+      await Bun.file(outputPath).delete();
     }
   });
 

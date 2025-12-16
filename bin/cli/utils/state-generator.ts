@@ -1,4 +1,4 @@
-import { block, bytes, hash, numbers, state_merkleization } from "@typeberry/lib";
+import { block, bytes, codec, hash, numbers, state, state_merkleization } from "@typeberry/lib";
 import blake2b from "blake2b";
 import z from "zod";
 import { ConfigError } from "../types/errors";
@@ -37,8 +37,23 @@ export interface ServiceBuildOutput {
 const libBlake2b = await hash.Blake2b.createHasher();
 
 // Service without code hash
-const DEFAULT_SERVICE =
-  "27ffffffffffffffff0a000000000000000a000000000000003418020000000000ffffffffffffffff040000000000000000000000000000";
+const DEFAULT_SERVICE: state.ServiceAccountInfo = {
+  // To be set later to accual codeHash of a given blob
+  codeHash: hash.ZERO_HASH.asOpaque(),
+  // Starting const value, add code.length later
+  storageUtilisationBytes: numbers.tryAsU64(81),
+  // Preconfigured
+  balance: numbers.tryAsU64(0xffffffffffffff27n),
+  accumulateMinGas: block.tryAsServiceGas(0x0an),
+  onTransferMinGas: block.tryAsServiceGas(0x0an),
+  gratisStorage: numbers.tryAsU64(0xffffffffffffffffn),
+  // Preimage + lookup
+  // NOTE: Might change when one service would have multiple preimages at start
+  storageUtilisationCount: numbers.tryAsU32(2),
+  created: block.tryAsTimeSlot(0),
+  lastAccumulation: block.tryAsTimeSlot(0),
+  parentService: block.tryAsServiceId(0),
+};
 
 /**
  * Find the correct insertion index for a key
@@ -104,8 +119,16 @@ function createServiceEntries({ id, code }: ServiceBuildOutput): KeyValue[] {
   const hash = hashBytes(code);
   keyvals.push({ key: servicePreimageKey(id, hash), value: code.toString() });
   keyvals.push({ key: serviceLookupKey(id, hash, code.length), value: "0x0100000000" });
-  // First byte is version number
-  keyvals.push({ key: serviceKey(id), value: `0x00${hash.toString().substring(2)}${DEFAULT_SERVICE}` });
+  const service = state.ServiceAccountInfo.create({
+    ...DEFAULT_SERVICE,
+    codeHash: hash.asOpaque(),
+    storageUtilisationBytes: numbers.sumU64(DEFAULT_SERVICE.storageUtilisationBytes, numbers.tryAsU64(code.length))
+      .value,
+  });
+  keyvals.push({
+    key: serviceKey(id),
+    value: codec.Encoder.encodeObject(state.codecWithVersion(state.ServiceAccountInfo.Codec), service).toString(),
+  });
 
   return keyvals;
 }
