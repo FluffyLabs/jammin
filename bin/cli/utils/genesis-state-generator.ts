@@ -25,9 +25,9 @@ export interface ServiceBuildOutput {
 
 // Base ServiceInfo
 const BASE_SERVICE: jamState.ServiceAccountInfo = {
-  // accual codeHash of a given blob
+  // actual codeHash of a given blob
   codeHash: hash.ZERO_HASH.asOpaque(),
-  // Starting const value, add code.length later + if storage : 34 + storage key lenght + storage data lenght
+  // Starting const value, add code.length later + if storage : 34 + storage key length + storage data length
   // https://graypaper.fluffylabs.dev/#/ab2cdbd/11ce0111ce01?v=0.7.2
   storageUtilisationBytes: numbers.tryAsU64(81),
 
