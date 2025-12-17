@@ -1,20 +1,9 @@
 import { YAML } from "bun";
-import { ZodError } from "zod";
+import z, { ZodError } from "zod";
 import type { JamminBuildConfig, JamminNetworksConfig } from "../types/config";
 import { findConfigFile, pathExists } from "../utils/file-utils";
 import { validateBuildConfig, validateNetworksConfig } from "./config-validator";
-
-/** Configuration loader and validation */
-
-export class ConfigError extends Error {
-  constructor(
-    message: string,
-    public readonly filePath?: string,
-  ) {
-    super(message);
-    this.name = "ConfigError";
-  }
-}
+import { ConfigError } from "../types/errors";
 
 /** Default config files */
 const CONFIG_FILES = {
@@ -59,7 +48,7 @@ async function loadConfig<T>(
     return validator(data);
   } catch (error) {
     if (error instanceof ZodError) {
-      const details = formatZodError(error);
+      const details = z.prettifyError(error);
       throw new ConfigError(`Invalid '${configType}' configuration: ${details}`, filePath);
     }
     if (error instanceof Error) {
@@ -77,13 +66,4 @@ export async function loadBuildConfig(configPath?: string): Promise<JamminBuildC
 /** Load networks configuration */
 export async function loadNetworksConfig(configPath?: string): Promise<JamminNetworksConfig> {
   return loadConfig(configPath, CONFIG_FILES.NETWORKS, validateNetworksConfig, "networks");
-}
-
-/** Format Zod validation errors into readable messages */
-function formatZodError(error: ZodError): string {
-  const issues = error.issues.map((i) => {
-    const path = i.path.length > 0 ? i.path.join(".") : "root";
-    return `  -  ${path}: ${i.message}`;
-  });
-  return issues.join("\n");
 }

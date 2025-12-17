@@ -45,6 +45,10 @@ try {
       // Config error
       console.error(`   File: ${err.filePath}`);
     }
+    if ("output" in err && err.output) {
+      // Docker error
+      console.error(`   Output: ${err.output}`);
+    }
   } else {
     console.error(`❌ Error: ${err}`);
   }
