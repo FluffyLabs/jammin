@@ -10,7 +10,7 @@ describe("genesis-generator", () => {
 
   afterEach(async () => {
     if (await pathExists(outputPath)) {
-      // await Bun.file(outputPath).delete();
+      await Bun.file(outputPath).delete();
     }
   });
 

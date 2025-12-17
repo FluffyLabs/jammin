@@ -29,17 +29,18 @@ export type Genesis = state_vectors.StateTransitionGenesis;
 
 // Service without code hash
 const DEFAULT_SERVICE: jamState.ServiceAccountInfo = {
-  // To be set later to accual codeHash of a given blob
+  // accual codeHash of a given blob
   codeHash: hash.ZERO_HASH.asOpaque(),
-  // Starting const value, add code.length later
+  // Starting const value, add code.length later + if storage : 34 + storage key lenght + storage data lenght
+  // https://graypaper.fluffylabs.dev/#/ab2cdbd/11ce0111ce01?v=0.7.2
   storageUtilisationBytes: numbers.tryAsU64(81),
   // Preconfigured
-  balance: numbers.tryAsU64(0xffffffffffffff27n),
+  balance: numbers.tryAsU64(2n ** 20n),
   accumulateMinGas: block.tryAsServiceGas(0x0an),
   onTransferMinGas: block.tryAsServiceGas(0x0an),
-  gratisStorage: numbers.tryAsU64(0xffffffffffffffffn),
+  gratisStorage: numbers.tryAsU64(0),
   // Preimage + lookup
-  // NOTE: Might change when one service would have multiple preimages at start
+  // NOTE: Might change when one service would have multiple preimages and storages at start
   storageUtilisationCount: numbers.tryAsU32(2),
   created: block.tryAsTimeSlot(0),
   lastAccumulation: block.tryAsTimeSlot(0),
@@ -105,7 +106,7 @@ export function updateState(genesis: Genesis, config: { services?: ServiceBuildO
     blake2b,
     genesis.state.keyvals.map((x) => [x.key, x.value]),
   );
-  const partialState = jamState.InMemoryState.partial(spec, state);
+
   if (config.services) {
     const timeSlot = block.tryAsTimeSlot(0);
     const update = {
@@ -115,6 +116,7 @@ export function updateState(genesis: Genesis, config: { services?: ServiceBuildO
       preimages: new Map(),
       storage: new Map(),
     };
+
     for (const service of config.services) {
       const serviceId = block.tryAsServiceId(service.id);
       const codeHash = blake2b.hashBytes(service.code);
@@ -145,9 +147,10 @@ export function updateState(genesis: Genesis, config: { services?: ServiceBuildO
         }),
       );
     }
-    partialState.applyUpdate(update);
+
     state.backend.applyUpdate(state_merkleization.serializeStateUpdate(spec, blake2b, update));
-    genesis.state.state_root = state.backend.getRootHash(blake2b);
-    genesis.state.keyvals = Array.from(state.backend);
   }
+
+  genesis.state.state_root = state.backend.getRootHash(blake2b);
+  genesis.state.keyvals = Array.from(state.backend.entries()).map(([k, v]) => ({ key: k, value: v }));
 }
