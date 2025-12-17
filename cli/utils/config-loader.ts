@@ -1,9 +1,9 @@
 import { YAML } from "bun";
 import z, { ZodError } from "zod";
 import type { JamminBuildConfig, JamminNetworksConfig } from "../types/config";
+import { ConfigError } from "../types/errors";
 import { findConfigFile, pathExists } from "../utils/file-utils";
 import { validateBuildConfig, validateNetworksConfig } from "./config-validator";
-import { ConfigError } from "../types/errors";
 
 /** Default config files */
 const CONFIG_FILES = {
@@ -49,10 +49,10 @@ async function loadConfig<T>(
   } catch (error) {
     if (error instanceof ZodError) {
       const details = z.prettifyError(error);
-      throw new ConfigError(`Invalid '${configType}' configuration: ${details}`, filePath);
+      throw new ConfigError(`Invalid '${configType}' configuration: \n${details}`, filePath);
     }
     if (error instanceof Error) {
-      throw new ConfigError(`Invalid '${configType}' configuration: ${error.message}`, filePath);
+      throw new ConfigError(`Invalid '${configType}' configuration: \n${error.message}`, filePath);
     }
     throw new ConfigError(`Invalid '${configType}' configuration`, filePath);
   }

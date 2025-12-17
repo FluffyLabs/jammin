@@ -2,7 +2,6 @@ import { mkdir, readdir, stat } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { Command } from "commander";
-import z, { ZodError } from "zod";
 import type { JamminBuildConfig, ServiceConfig } from "../../types/config";
 import { loadBuildConfig } from "../../utils/config-loader";
 import { SDK_CONFIGS } from "../../utils/sdk-configs";
@@ -106,7 +105,6 @@ Examples:
     const projectRoot = process.cwd();
     const logsDir = join(projectRoot, "logs");
     await mkdir(logsDir, { recursive: true });
-
 
     for (const service of servicesToBuild) {
       p.log.info("--------------------------------");

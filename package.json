@@ -5,21 +5,21 @@
   "author": "Fluffy Labs",
   "license": "MPL-2.0",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./cli/dist/index.js",
   "bin": {
-    "jammin": "./dist/index.js"
+    "jammin": "./cli/dist/index.js"
   },
   "files": [
-    "dist",
+    "cli/dist",
     "README.md",
     "LICENSE"
   ],
   "workspaces": [
-    "bin/*"
+    "cli/"
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
-    "cli": "bun run ./bin/cli/index.ts",
+    "cli": "bun run ./cli/index.ts",
     "qa": "biome ci",
     "qa-fix": "npm run format; npm run lint",
     "format": "biome format --write",
