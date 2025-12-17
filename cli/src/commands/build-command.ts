@@ -15,6 +15,7 @@ export class DockerError extends Error {
     public output: string,
   ) {
     super(message);
+    this.name = "DockerError";
   }
 }
 
