@@ -19,7 +19,7 @@ async function loadYamlFile(filePath: string): Promise<unknown> {
     return YAML.parse(content);
   } catch (error) {
     if (error instanceof Error) {
-      throw new ConfigError(`Failed to parse YAML file: ${error.message}`, filePath);
+      throw new ConfigError(`Failed to parse YAML file: \n${error.message}`, filePath);
     }
     throw error;
   }
