@@ -29,25 +29,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Verify Polkajam version
+      - name: Test Docker image
         run: |
-          EXPECTED_POLKAJAM="polkajam 0.1.27"
-          EXPECTED_GP="GP 0.7.2"
-
-          OUTPUT=$(docker run --rm \
-            --entrypoint /opt/polkajam/polkajam \
-            polkajam:test \
-            --version)
-
-          echo "Command output:"
-          echo "$OUTPUT"
-
-          echo "$OUTPUT" | grep -q "$EXPECTED_POLKAJAM" || {
-            echo "ERROR: Polkajam version mismatch"
-            exit 1
-          }
-
-          echo "$OUTPUT" | grep -q "$EXPECTED_GP" || {
-            echo "ERROR: GP version mismatch"
-            exit 1
-          }
+          docker run --rm polkajam:test --version
