@@ -39,7 +39,7 @@ describe("build-command", () => {
       const service: ServiceConfig = {
         name: "test-service",
         path: "./services/test",
-        sdk: "jambrains",
+        sdk: "jambrains-1cfc41c",
       };
 
       await buildService(service, "/test/project");
@@ -54,8 +54,8 @@ describe("build-command", () => {
       const dockerCommand = spawnCall[0][2] as string;
       expect(dockerCommand).toContain("docker run --rm -v");
       expect(dockerCommand).toContain(`${resolve("/test/project", "./services/test")}:/app`);
-      expect(dockerCommand).toContain(SDK_CONFIGS.jambrains.image);
-      expect(dockerCommand).toContain(SDK_CONFIGS.jambrains.build);
+      expect(dockerCommand).toContain(SDK_CONFIGS["jambrains-1cfc41c"].image);
+      expect(dockerCommand).toContain(SDK_CONFIGS["jambrains-1cfc41c"].build);
     });
 
     test("should generate correct Docker command for predefined SDK (jade)", async () => {
@@ -130,7 +130,7 @@ describe("build-command", () => {
       const service: ServiceConfig = {
         name: "failing-service",
         path: "./fail",
-        sdk: "jambrains",
+        sdk: "jambrains-1cfc41c",
       };
 
       await expect(buildService(service, "/test/project")).rejects.toThrow();
@@ -164,7 +164,7 @@ describe("build-command", () => {
       const service: ServiceConfig = {
         name: "success-service",
         path: "./success",
-        sdk: "jambrains",
+        sdk: "jambrains-1cfc41c",
       };
 
       const output = await buildService(service, "/test/project");
@@ -207,7 +207,7 @@ describe("build-command", () => {
       const service: ServiceConfig = {
         name: "test-service",
         path: "./services/test",
-        sdk: "jambrains",
+        sdk: "jambrains-1cfc41c",
       };
 
       const projectRoot = "/absolute/project/root";
