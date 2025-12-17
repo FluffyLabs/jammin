@@ -6,7 +6,7 @@ export const SDK_CONFIGS = {
     build: "jam-pvm-build -m service",
     test: "cargo test",
   },
-  jambrains: {
+  "jambrains-1cfc41c": {
     image: "ghcr.io/jambrains/service-sdk:latest",
     build: "single-file main.c",
     test: "true",
