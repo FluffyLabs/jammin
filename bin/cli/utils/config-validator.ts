@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { SDK_CONFIGS } from "./sdk-configs";
 
 // Zod schemas for runtime validation of YAML configs
 
 // jammin.build.yml schema
 
-const CustomSdkConfigSchema = z.object({
+export const SdkConfigSchema = z.object({
   image: z.string().min(1, "SDK image is required"),
   build: z.string().min(1, "Build command is required"),
   test: z.string().min(1, "Test command is required"),
@@ -16,7 +17,10 @@ const ServiceConfigSchema = z.object({
     .string()
     .min(1, "Service name is required")
     .regex(/^[a-zA-Z0-9_-]+$/, "Service name must contain only letters, numbers, hyphens, and underscores"),
-  sdk: z.union([z.string().min(1, "SDK is required"), CustomSdkConfigSchema]),
+  sdk: z.union(
+    [z.enum(Object.keys(SDK_CONFIGS) as (keyof typeof SDK_CONFIGS)[]), SdkConfigSchema],
+    `Expected a valid custom SDK configuration or one of the supported SDK ids (${Object.keys(SDK_CONFIGS).join(", ")})`,
+  ),
 });
 
 const DeploymentConfigSchema = z.object({
