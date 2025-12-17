@@ -5,12 +5,12 @@
   "author": "Fluffy Labs",
   "license": "MPL-2.0",
   "type": "module",
-  "main": "./cli/dist/index.js",
+  "main": "./dist/index.js",
   "bin": {
-    "jammin": "./cli/dist/index.js"
+    "jammin": "./dist/index.js"
   },
   "files": [
-    "cli/dist",
+    "dist",
     "README.md",
     "LICENSE"
   ],
