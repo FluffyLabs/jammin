@@ -13,27 +13,24 @@ import {
 import { ConfigError } from "../types/errors";
 import { pathExists } from "./file-utils";
 
-/// Generated service type
+const blake2b = await hash.Blake2b.createHasher();
+const spec = config.tinyChainSpec;
+
+export type Genesis = state_vectors.StateTransitionGenesis;
 
 export interface ServiceBuildOutput {
   id: number;
   code: bytes.BytesBlob;
 }
 
-/// Genesis methods
-
-const blake2b = await hash.Blake2b.createHasher();
-const spec = config.tinyChainSpec;
-
-export type Genesis = state_vectors.StateTransitionGenesis;
-
-// Service without code hash
-const DEFAULT_SERVICE: jamState.ServiceAccountInfo = {
+// Base ServiceInfo
+const BASE_SERVICE: jamState.ServiceAccountInfo = {
   // accual codeHash of a given blob
   codeHash: hash.ZERO_HASH.asOpaque(),
   // Starting const value, add code.length later + if storage : 34 + storage key lenght + storage data lenght
   // https://graypaper.fluffylabs.dev/#/ab2cdbd/11ce0111ce01?v=0.7.2
   storageUtilisationBytes: numbers.tryAsU64(81),
+
   // Preconfigured
   balance: numbers.tryAsU64(2n ** 20n),
   accumulateMinGas: block.tryAsServiceGas(0x0an),
@@ -75,7 +72,7 @@ export async function loadGenesisFile(filePath: string): Promise<Genesis> {
   throw new ConfigError("Input file format unsupported", filePath);
 }
 
-/** Creates genesis file in given directory */
+/** Creates genesis file on given path */
 export async function saveStateFile(genesis: Genesis, outputPath: string): Promise<void> {
   if (outputPath.endsWith(".bin")) {
     const blob = codec.Encoder.encodeObject(state_vectors.StateTransitionGenesis.Codec, genesis, spec);
@@ -126,6 +123,7 @@ export async function saveStateFile(genesis: Genesis, outputPath: string): Promi
       },
       state: genesis.state,
     };
+
     await Bun.write(outputPath, JSON.stringify(genesisJson, null, 2));
     return;
   }
@@ -134,7 +132,7 @@ export async function saveStateFile(genesis: Genesis, outputPath: string): Promi
 }
 
 /**
- * Update given StfState using provided configuration
+ * Applying provided configuration to given genesis config
  */
 export function updateState(genesis: Genesis, config: { services?: ServiceBuildOutput[] } = {}): void {
   const state = state_merkleization.loadState(
@@ -172,10 +170,10 @@ export function updateState(genesis: Genesis, config: { services?: ServiceBuildO
         serviceId,
         jamState.UpdateService.create({
           serviceInfo: jamState.ServiceAccountInfo.create({
-            ...DEFAULT_SERVICE,
+            ...BASE_SERVICE,
             codeHash: codeHash.asOpaque(),
             storageUtilisationBytes: numbers.sumU64(
-              DEFAULT_SERVICE.storageUtilisationBytes,
+              BASE_SERVICE.storageUtilisationBytes,
               numbers.tryAsU64(service.code.length),
             ).value,
           }),
