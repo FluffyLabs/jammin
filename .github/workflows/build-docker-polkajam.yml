@@ -31,4 +31,4 @@ jobs:
 
       - name: Test Docker image
         run: |
-          docker run --rm polkajam:test --version
+          docker run --rm polkajam --version
