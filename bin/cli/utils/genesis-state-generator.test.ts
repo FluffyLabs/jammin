@@ -5,7 +5,8 @@ import { pathExists } from "./file-utils";
 import { loadGenesisFile, type ServiceBuildOutput, saveStateFile, updateState } from "./genesis-state-generator";
 
 describe("genesis-generator", () => {
-  const baseStatePath = join(import.meta.dir, "test-files", "base-genesis.json");
+  const baseStateJsonPath = join(import.meta.dir, "test-files", "base-genesis.json");
+  const baseStateBinPath = join(import.meta.dir, "test-files", "base-genesis.bin");
   const outputBinPath = join(import.meta.dir, "test-files", "genesis.bin");
   const outputHexPath = join(import.meta.dir, "test-files", "genesis.hex");
   const outputJsonPath = join(import.meta.dir, "test-files", "genesis.json");
@@ -29,7 +30,7 @@ describe("genesis-generator", () => {
         "0x5000156a616d2d626f6f7473747261702d7365727669636506302e312e32370a4170616368652d322e30012550617269747920546563686e6f6c6f67696573203c61646d696e407061726974792e696f3e20350028000002000020000800",
       ),
     };
-    const genesis = await loadGenesisFile(baseStatePath);
+    const genesis = await loadGenesisFile(baseStateJsonPath);
     const prevKeyValuesLength = genesis.state.keyvals.length;
 
     updateState(genesis, { services: [service] });
@@ -50,7 +51,7 @@ describe("genesis-generator", () => {
         "0x5000156a616d2d626f6f7473747261702d7365727669636506302e312e32370a4170616368652d322e30012550617269747920546563686e6f6c6f67696573203c61646d696e407061726974792e696f3e20350028000002000020000800",
       ),
     };
-    const genesis = await loadGenesisFile(baseStatePath);
+    const genesis = await loadGenesisFile(baseStateBinPath);
 
     updateState(genesis, { services: [service] });
 
@@ -69,7 +70,7 @@ describe("genesis-generator", () => {
         "0x5000156a616d2d626f6f7473747261702d7365727669636506302e312e32370a4170616368652d322e30012550617269747920546563686e6f6c6f67696573203c61646d696e407061726974792e696f3e20350028000002000020000800",
       ),
     };
-    const genesis = await loadGenesisFile(baseStatePath);
+    const genesis = await loadGenesisFile(baseStateJsonPath);
 
     updateState(genesis, { services: [service] });
 
