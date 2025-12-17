@@ -5,9 +5,9 @@
   "author": "Fluffy Labs",
   "license": "MPL-2.0",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/jammin",
   "bin": {
-    "jammin": "./dist/index.js"
+    "jammin": "./dist/jammin"
   },
   "files": [
     "dist",
@@ -15,7 +15,7 @@
     "LICENSE"
   ],
   "workspaces": [
-    "bin/*"
+    "bin/cli/"
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
