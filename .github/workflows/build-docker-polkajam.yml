@@ -31,4 +31,4 @@ jobs:
 
       - name: Test Docker image
         run: |
-          docker run --rm polkajam --version
+          docker run --rm --entrypoint /opt/polkajam/polkajam polkajam:test --version

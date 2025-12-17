@@ -14,13 +14,19 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /opt/polkajam
 
 ARG POLKAJAM_TAG=v0.1.27
-ARG POLKAJAM_ASSET=polkajam-v0.1.27-linux-aarch64.tgz
+ARG TARGETARCH
 
-RUN curl -fL \
-    https://github.com/paritytech/polkajam-releases/releases/download/${POLKAJAM_TAG}/${POLKAJAM_ASSET} \
-    -o release.tgz \
-    && tar -xzf release.tgz --strip-components=1 \
-    && rm release.tgz
+RUN set -eux; \
+    case "$TARGETARCH" in \
+      amd64)  POLKAJAM_ARCH="polkajam-${POLKAJAM_TAG}-linux-x86_64.tgz" ;; \
+      arm64)  POLKAJAM_ARCH="polkajam-${POLKAJAM_TAG}-linux-aarch64.tgz" ;; \
+      *) echo "Unsupported arch: $TARGETARCH" && exit 1 ;; \
+    esac; \
+    curl -fL \
+      "https://github.com/paritytech/polkajam-releases/releases/download/${POLKAJAM_TAG}/${POLKAJAM_ARCH}" \
+      -o release.tgz; \
+    tar -xzf release.tgz --strip-components=1; \
+    rm release.tgz
 
 RUN chmod +x /opt/polkajam/polkajam /opt/polkajam/polkajam-testnet /opt/polkajam/polkajam-repl || true
 
