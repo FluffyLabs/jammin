@@ -1,4 +1,5 @@
 import { YAML } from "bun";
+import { ZodError } from "zod";
 import type { JamminBuildConfig, JamminNetworksConfig } from "../types/config";
 import { ConfigError } from "../types/errors";
 import { findConfigFile, pathExists } from "../utils/file-utils";
@@ -48,10 +49,8 @@ async function loadConfig<T>(
   try {
     return validator(data);
   } catch (error) {
-    if (error instanceof Error) {
-      throw new ConfigError(`Invalid ${configType} configuration`, filePath, error);
-    }
-    throw new ConfigError(`Invalid ${configType} configuration`, filePath);
+    const errorObj = error instanceof Error || error instanceof ZodError ? error : new Error(String(error));
+    throw new ConfigError(`Invalid ${configType} configuration`, filePath, errorObj);
   }
 }
 
