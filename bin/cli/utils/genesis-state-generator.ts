@@ -90,7 +90,43 @@ export async function saveStateFile(genesis: Genesis, outputPath: string): Promi
   }
 
   if (outputPath.endsWith(".json")) {
-    await Bun.write(outputPath, JSON.stringify(genesis, null, 2));
+    const {
+      parentHeaderHash: parent,
+      priorStateRoot: parent_state_root,
+      extrinsicHash: extrinsic_hash,
+      timeSlotIndex: slot,
+      epochMarker,
+      ticketsMarker: tickets_mark,
+      offendersMarker: offenders_mark,
+      bandersnatchBlockAuthorIndex: author_index,
+      entropySource: entropy_source,
+      seal,
+    } = genesis.header;
+
+    const epoch_mark = epochMarker
+      ? {
+          entropy: epochMarker.entropy,
+          tickets_entropy: epochMarker.ticketsEntropy,
+          validators: epochMarker.validators,
+        }
+      : null;
+
+    const genesisJson = {
+      header: {
+        parent,
+        parent_state_root,
+        extrinsic_hash,
+        slot,
+        epoch_mark,
+        tickets_mark,
+        offenders_mark,
+        author_index,
+        entropy_source,
+        seal,
+      },
+      state: genesis.state,
+    };
+    await Bun.write(outputPath, JSON.stringify(genesisJson, null, 2));
     return;
   }
 
