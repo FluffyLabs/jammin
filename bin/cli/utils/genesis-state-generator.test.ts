@@ -2,10 +2,9 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { bytes } from "@typeberry/lib";
 import { pathExists } from "./file-utils";
-import { loadGenesisFile, type ServiceBuildOutput, saveStateFile, updateState } from "./genesis-state-generator";
+import { generateState, type ServiceBuildOutput, saveStateFile } from "./genesis-state-generator";
 
 describe("genesis-generator", () => {
-  const baseStateJsonPath = join(import.meta.dir, "test-files", "test-genesis.json");
   const outputJsonPath = join(import.meta.dir, "test-files", "genesis.json");
 
   const services: ServiceBuildOutput[] = [
@@ -25,24 +24,17 @@ describe("genesis-generator", () => {
 
   afterEach(async () => {
     if (await pathExists(outputJsonPath)) {
-      await Bun.file(outputJsonPath).delete();
+      //await Bun.file(outputJsonPath).delete();
     }
   });
 
-  test("should generate genesis.json with new entries and read it", async () => {
-    const genesis = await loadGenesisFile(baseStateJsonPath);
-    const prevKeyValuesLength = genesis.state.keyvals.length;
-
+  test("should generate genesis.json file and save it", async () => {
     // when
-    updateState(genesis, { services: services });
+    const genesis = generateState(services);
+    saveStateFile(genesis, outputJsonPath);
 
     // then
-    await saveStateFile(genesis, outputJsonPath);
+    expect(genesis.genesisState.size).toBe(22);
     expect(await pathExists(outputJsonPath)).toBe(true);
-    expect(genesis.state.keyvals.length).toSatisfy((newKeyValuesLength) => newKeyValuesLength > prevKeyValuesLength);
-
-    const genesisNew = await loadGenesisFile(outputJsonPath);
-    expect(genesisNew.state.state_root).toEqual(genesis.state.state_root);
-    expect(genesisNew.state.keyvals).toEqual(genesis.state.keyvals);
   });
 });
