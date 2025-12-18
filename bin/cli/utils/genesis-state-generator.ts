@@ -1,7 +1,6 @@
 import {
   block,
-  bytes,
-  codec,
+  type bytes,
   config,
   hash,
   state as jamState,
@@ -52,41 +51,19 @@ export async function loadGenesisFile(filePath: string): Promise<Genesis> {
 
   const file = Bun.file(filePath);
 
-  if (filePath.endsWith(".bin")) {
-    const fileContent = await file.bytes();
-    const blob = bytes.BytesBlob.blobFrom(fileContent);
-    return codec.Decoder.decodeObject(state_vectors.StateTransitionGenesis.Codec, blob, spec);
-  }
-
-  if (filePath.endsWith(".hex")) {
-    const fileContent = await file.text();
-    const blob = bytes.BytesBlob.parseBlob(fileContent);
-    return codec.Decoder.decodeObject(state_vectors.StateTransitionGenesis.Codec, blob, spec);
-  }
-
   if (filePath.endsWith(".json")) {
     const fileContent = await file.json();
+    // TODO: [MaSo] Should be JIP-4 chainspec format
     return json_parser.parseFromJson(fileContent, state_vectors.StateTransitionGenesis.fromJson);
   }
 
-  throw new ConfigError("Input file format unsupported", filePath);
+  throw new ConfigError("Expected genesis json file format", filePath);
 }
 
 /** Creates genesis file on given path */
 export async function saveStateFile(genesis: Genesis, outputPath: string): Promise<void> {
-  if (outputPath.endsWith(".bin")) {
-    const blob = codec.Encoder.encodeObject(state_vectors.StateTransitionGenesis.Codec, genesis, spec);
-    await Bun.write(outputPath, blob.raw);
-    return;
-  }
-
-  if (outputPath.endsWith(".hex")) {
-    const blob = codec.Encoder.encodeObject(state_vectors.StateTransitionGenesis.Codec, genesis, spec);
-    await Bun.write(outputPath, blob.toString());
-    return;
-  }
-
   if (outputPath.endsWith(".json")) {
+    // TODO: [MaSo] Should be JIP-4 chainspec format
     const {
       parentHeaderHash: parent,
       priorStateRoot: parent_state_root,
@@ -128,7 +105,7 @@ export async function saveStateFile(genesis: Genesis, outputPath: string): Promi
     return;
   }
 
-  throw new ConfigError("Output file format unsupported", outputPath);
+  throw new ConfigError("Expected genesis json file format", outputPath);
 }
 
 /**

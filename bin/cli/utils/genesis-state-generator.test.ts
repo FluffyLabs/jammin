@@ -5,10 +5,7 @@ import { pathExists } from "./file-utils";
 import { loadGenesisFile, type ServiceBuildOutput, saveStateFile, updateState } from "./genesis-state-generator";
 
 describe("genesis-generator", () => {
-  const baseStateJsonPath = join(import.meta.dir, "test-files", "base-genesis.json");
-  const baseStateBinPath = join(import.meta.dir, "test-files", "base-genesis.bin");
-  const outputBinPath = join(import.meta.dir, "test-files", "genesis.bin");
-  const outputHexPath = join(import.meta.dir, "test-files", "genesis.hex");
+  const baseStateJsonPath = join(import.meta.dir, "test-files", "test-genesis.json");
   const outputJsonPath = join(import.meta.dir, "test-files", "genesis.json");
 
   const services: ServiceBuildOutput[] = [
@@ -27,12 +24,6 @@ describe("genesis-generator", () => {
   ];
 
   afterEach(async () => {
-    if (await pathExists(outputBinPath)) {
-      await Bun.file(outputBinPath).delete();
-    }
-    if (await pathExists(outputHexPath)) {
-      await Bun.file(outputHexPath).delete();
-    }
     if (await pathExists(outputJsonPath)) {
       await Bun.file(outputJsonPath).delete();
     }
@@ -51,36 +42,6 @@ describe("genesis-generator", () => {
     expect(genesis.state.keyvals.length).toSatisfy((newKeyValuesLength) => newKeyValuesLength > prevKeyValuesLength);
 
     const genesisNew = await loadGenesisFile(outputJsonPath);
-    expect(genesisNew.state.state_root).toEqual(genesis.state.state_root);
-    expect(genesisNew.state.keyvals).toEqual(genesis.state.keyvals);
-  });
-
-  test("should generate genesis.bin and read it", async () => {
-    const genesis = await loadGenesisFile(baseStateBinPath);
-
-    // when
-    updateState(genesis, { services: services });
-
-    // then
-    await saveStateFile(genesis, outputBinPath);
-    expect(await pathExists(outputBinPath)).toBe(true);
-
-    const genesisNew = await loadGenesisFile(outputBinPath);
-    expect(genesisNew.state.state_root).toEqual(genesis.state.state_root);
-    expect(genesisNew.state.keyvals).toEqual(genesis.state.keyvals);
-  });
-
-  test("should generate genesis.hex and read it", async () => {
-    const genesis = await loadGenesisFile(baseStateJsonPath);
-
-    // when
-    updateState(genesis, { services: services });
-
-    // then
-    await saveStateFile(genesis, outputHexPath);
-    expect(await pathExists(outputHexPath)).toBe(true);
-
-    const genesisNew = await loadGenesisFile(outputHexPath);
     expect(genesisNew.state.state_root).toEqual(genesis.state.state_root);
     expect(genesisNew.state.keyvals).toEqual(genesis.state.keyvals);
   });
