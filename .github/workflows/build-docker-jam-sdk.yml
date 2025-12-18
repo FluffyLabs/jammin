@@ -2,49 +2,49 @@ name: Build - Docker - JAM SDK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   docker-build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: false
-        load: true
-        file: jam-sdk.Dockerfile
-        tags: jam-sdk
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          file: docker/jam-sdk/jam-sdk.Dockerfile
+          tags: jam-sdk
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Checkout code examples
-      uses: actions/checkout@v4
-      with:
-        repository: tomusdrw/jam-examples
-        path: jam-examples
+      - name: Checkout code examples
+        uses: actions/checkout@v4
+        with:
+          repository: tomusdrw/jam-examples
+          path: jam-examples
 
-    - name: Test Docker image
-      run: |
-        docker run --rm -v ./jam-examples/empty-jamsdk:/app jam-sdk jam-pvm-build -m service
+      - name: Test Docker image
+        run: |
+          docker run --rm -v ./jam-examples/empty-jamsdk:/app jam-sdk jam-pvm-build -m service
 
-    - name: Save Docker image
-      run: |
-        docker save jam-sdk | gzip > jam-sdk-image.tar.gz
+      - name: Save Docker image
+        run: |
+          docker save jam-sdk | gzip > jam-sdk-image.tar.gz
 
-    - name: Upload Docker image artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: jam-sdk-docker-image
-        path: jam-sdk-image.tar.gz
-        retention-days: 1
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jam-sdk-docker-image
+          path: jam-sdk-image.tar.gz
+          retention-days: 1
