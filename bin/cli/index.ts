@@ -39,6 +39,10 @@ For more information, visit: https://fluffylabs.dev/jammin/`,
 try {
   await program.parseAsync(process.argv);
 } catch (err) {
-  console.error(`❌ Error: ${err}`);
+  if (err instanceof Error) {
+    console.error(`❌ Error: ${err.name}: ${err.message}`);
+  } else {
+    console.error(`❌ Error: ${err}`);
+  }
   process.exit(1);
 }

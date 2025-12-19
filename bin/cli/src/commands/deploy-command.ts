@@ -6,6 +6,13 @@ import { generateState, type ServiceBuildOutput, saveStateFile } from "../../uti
 import { getServiceConfigs } from "../../utils/get-service-configs";
 import { buildService } from "./build-command";
 
+export class DeployError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DeplyError";
+  }
+}
+
 export const deployCommand = new Command("deploy")
   .description("deploy your services to target environment")
   .argument("[service]", "service name to deploy")
@@ -15,8 +22,9 @@ export const deployCommand = new Command("deploy")
     "after",
     `
 Examples:
-  $ jammin deploy --env mainnet
-  $ jammin deploy --env local --service api
+  $ jammin deploy
+  $ jammin deploy test-service --skip-build
+  $ jammin deploy --build-config ./my.config.yml
 `,
   )
   .action(async (serviceName, options) => {
@@ -25,7 +33,7 @@ Examples:
     p.intro(`🚀 Deploying ${targetLabel}...`);
 
     const s = p.spinner();
-    const services = await getServiceConfigs(options.config, serviceName, s);
+    const services = await getServiceConfigs(options.buildConfig, serviceName, s);
 
     if (!options.skipBuild) {
       s.start("🔨 Building...");
@@ -41,11 +49,15 @@ Examples:
     for (const service of services) {
       // NOTE: Taking only first jam blob (closest to service path directory)
       // since each service should produce one blob
-      // if they produce more its propably for testing purpouses
-      const jamFile = Array.from((await getJamFiles(service.path)).keys())[0];
+      // if they produce more its probably for testing purposes
+      const jamFile = (await getJamFiles(service.path)).keys().next().value;
       if (jamFile) {
         jamFiles.push(jamFile);
       }
+    }
+
+    if (jamFiles.length === 0) {
+      throw new DeployError("No JAM files found");
     }
 
     const buildOutputs: ServiceBuildOutput[] = await Promise.all(
@@ -60,9 +72,9 @@ Examples:
 
     s.stop("✅ Genesis state generated!");
 
-    p.log.info(`Found ${jamFiles.length} jam file(s):\n${jamFiles.join("\n")}`);
+    p.log.info(`Found ${buildOutputs.length} service(s)`);
 
     p.note(`🎁 Genesis file: ${genesisOutput}`);
 
-    p.outro("✅ Deployment was succesful!");
+    p.outro("✅ Deployment was successful!");
   });
