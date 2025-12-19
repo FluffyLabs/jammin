@@ -19,7 +19,8 @@ describe("create -> build -> test", () => {
     } catch {}
   });
 
-  test.skip( // todo [seko] unskip when docker images are available on CI
+  test.skip(
+    // todo [seko] unskip when docker images are available on CI
     "should create project, build, and test successfully",
     async () => {
       // 'jammin create'
