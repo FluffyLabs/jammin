@@ -9,7 +9,6 @@ import {
   numbers,
   state_merkleization,
 } from "@typeberry/lib";
-import { ConfigError } from "../types/errors";
 
 const blake2b = await hash.Blake2b.createHasher();
 const spec = config.tinyChainSpec;
@@ -44,29 +43,25 @@ const BASE_SERVICE: jamState.ServiceAccountInfo = {
 
 /** Creates genesis file on given path: JIP-4 Chainspec */
 export async function saveStateFile(genesis: Genesis, outputPath: string): Promise<void> {
-  if (outputPath.endsWith(".json")) {
-    const genesisJson = {
-      id: genesis.id,
-      bootnodes: genesis.bootnodes,
-      genesis_header: genesis.genesisHeader.toString().substring(2),
-      genesis_state: Array.from(genesis.genesisState.entries()).map(([key, value]) => [
-        key.toString().substring(2),
-        value.toString().substring(2),
-      ]),
-      // TODO: [MaSo] Update typeberry jip4Chainspec - add protocol_parameters
-    };
-    await Bun.write(outputPath, JSON.stringify(genesisJson, null, 2));
-    return;
-  }
-
-  throw new ConfigError("Expected genesis json file format", outputPath);
+  await Bun.write(outputPath, JSON.stringify(toJip4Schema(genesis), null, 2));
 }
 
-/**
- * Applying provided configuration to given genesis config
- */
+export function toJip4Schema(genesis: Genesis) {
+  return {
+    id: genesis.id,
+    bootnodes: genesis.bootnodes,
+    genesis_header: genesis.genesisHeader.toString().substring(2),
+    genesis_state: Array.from(genesis.genesisState.entries()).map(([key, value]) => [
+      key.toString().substring(2),
+      value.toString().substring(2),
+    ]),
+    // TODO: [MaSo] Update typeberry jip4Chainspec - add protocol_parameters
+  };
+}
+
+/** Creates a new state with provided services */
 export function generateState(services: ServiceBuildOutput[]): Genesis {
-  const state = state_merkleization.StateEntries.serializeInMemory(spec, blake2b, jamState.InMemoryState.empty(spec));
+  const memState = jamState.InMemoryState.empty(spec);
 
   const timeSlot = block.tryAsTimeSlot(0);
   const update = {
@@ -108,7 +103,9 @@ export function generateState(services: ServiceBuildOutput[]): Genesis {
     );
   }
 
-  state.applyUpdate(state_merkleization.serializeStateUpdate(spec, blake2b, update));
+  memState.applyUpdate(update);
+
+  const state = state_merkleization.StateEntries.serializeInMemory(spec, blake2b, memState);
 
   return config_node.JipChainSpec.create({
     id: "testnet",

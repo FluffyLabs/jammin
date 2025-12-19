@@ -1,12 +1,9 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { join } from "node:path";
+import { describe, expect, test } from "bun:test";
 import { bytes } from "@typeberry/lib";
-import { pathExists } from "./file-utils";
-import { generateState, type ServiceBuildOutput, saveStateFile } from "./genesis-state-generator";
+import { generateState, type ServiceBuildOutput, toJip4Schema } from "./genesis-state-generator";
+import { EXPECTED_JIP4_GENESIS } from "./test-files/test-jip4-genesis";
 
 describe("genesis-generator", () => {
-  const outputJsonPath = join(import.meta.dir, "test-files", "genesis.json");
-
   const services: ServiceBuildOutput[] = [
     {
       id: 42,
@@ -22,19 +19,11 @@ describe("genesis-generator", () => {
     },
   ];
 
-  afterEach(async () => {
-    if (await pathExists(outputJsonPath)) {
-      //await Bun.file(outputJsonPath).delete();
-    }
-  });
-
-  test("should generate genesis.json file and save it", async () => {
+  test("should generate genesis file", async () => {
     // when
-    const genesis = generateState(services);
-    saveStateFile(genesis, outputJsonPath);
+    const genesis = toJip4Schema(generateState(services));
 
     // then
-    expect(genesis.genesisState.size).toBe(22);
-    expect(await pathExists(outputJsonPath)).toBe(true);
+    expect(genesis).toEqual(EXPECTED_JIP4_GENESIS);
   });
 });
