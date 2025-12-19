@@ -1,4 +1,4 @@
-import { stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 /** File system utilities */
@@ -30,4 +30,31 @@ export async function findConfigFile(fileName: string, startDir: string = proces
   }
 
   return null;
+}
+
+/**
+ * Recursively get all jam files in a directory with their modification times
+ */
+export async function getJamFiles(dirPath: string): Promise<Map<string, number>> {
+  const files = new Map<string, number>();
+
+  try {
+    const entries = await readdir(dirPath, { withFileTypes: true, recursive: true });
+
+    for (const entry of entries) {
+      if (entry.name.endsWith(".jam")) {
+        try {
+          const fullPath = resolve(entry.parentPath, entry.name);
+          const stats = await stat(fullPath);
+          files.set(fullPath, stats.mtimeMs);
+        } catch {
+          // Ignore stat errors
+        }
+      }
+    }
+  } catch {
+    // Ignore errors (e.g., directory doesn't exist or permission issues)
+  }
+
+  return files;
 }

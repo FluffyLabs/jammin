@@ -1,13 +1,16 @@
 import * as p from "@clack/prompts";
+import { bytes } from "@typeberry/lib";
 import { Command } from "commander";
+import { getJamFiles } from "../../utils/file-utils";
+import { generateState, type ServiceBuildOutput, saveStateFile } from "../../utils/genesis-state-generator";
+import { getServiceConfigs } from "../../utils/get-service-configs";
+import { buildService } from "./build-command";
 
-// TODO: [MaSo] dummy command
 export const deployCommand = new Command("deploy")
   .description("deploy your services to target environment")
-  .requiredOption("-e, --env <environment>", "target environment (mainnet, testnet, local)")
-  .option("-s, --service <name>", "deploy specific service only")
-  // TODO: [MaSo] Ideally this should happen automatically if the build artifacts are already there.
+  .argument("[service]", "service name to deploy")
   .option("--skip-build", "skip building before deploy")
+  .option("--build-config <path>", "path to build config file")
   .addHelpText(
     "after",
     `
@@ -16,23 +19,50 @@ Examples:
   $ jammin deploy --env local --service api
 `,
   )
-  .action(async (options) => {
-    p.intro(`🚀 Deploying to ${options.env}...`);
+  .action(async (serviceName, options) => {
+    const targetLabel = serviceName ?? "project";
+    const projectRoot = process.cwd();
+    p.intro(`🚀 Deploying ${targetLabel}...`);
+
     const s = p.spinner();
+    const services = await getServiceConfigs(options.config, serviceName, s);
+
     if (!options.skipBuild) {
       s.start("🔨 Building...");
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      for (const service of services) {
+        await buildService(service, projectRoot);
+      }
       s.stop("✅ Building was successful!");
     }
 
-    if (options.service) {
-      s.start(`Deploying only ${options.service} service`);
-    } else {
-      s.start("Deploying all services");
+    s.start("Generating Genesis State...");
+
+    const jamFiles: string[] = [];
+    for (const service of services) {
+      // NOTE: Taking only first jam blob (closest to service path directory)
+      // since each service should produce one blob
+      // if they produce more its propably for testing purpouses
+      const jamFile = Array.from((await getJamFiles(service.path)).keys())[0];
+      if (jamFile) {
+        jamFiles.push(jamFile);
+      }
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    s.stop("✅ Deployment was succesful!");
+    const buildOutputs: ServiceBuildOutput[] = await Promise.all(
+      jamFiles.map(async (file, index) => ({
+        id: index,
+        code: bytes.BytesBlob.blobFrom(await Bun.file(file).bytes()),
+      })),
+    );
 
-    p.outro("✅ Finished!");
+    const genesisOutput = `${projectRoot}/genesis.json`;
+    await saveStateFile(generateState(buildOutputs), genesisOutput);
+
+    s.stop("✅ Genesis state generated!");
+
+    p.log.info(`Found ${jamFiles.length} jam file(s):\n${jamFiles.join("\n")}`);
+
+    p.note(`🎁 Genesis file: ${genesisOutput}`);
+
+    p.outro("✅ Deployment was succesful!");
   });
