@@ -30,18 +30,7 @@ describe("create -> build -> test", () => {
         stderr: "inherit",
       });
 
-      const [createOutput, createExitCode] = await Promise.all([
-        new Response(createProc.stdout).text(),
-        createProc.exited,
-      ]);
-
-      if (createExitCode !== 0) {
-        const stderr = await new Response(createProc.stderr).text();
-        throw new Error(
-          `'jammin create' failed with exit code ${createExitCode}\nSTDOUT: ${createOutput}\nSTDERR: ${stderr}`,
-        );
-      }
-
+      const createExitCode = await createProc.exited;
       expect(createExitCode).toBe(0);
 
       // 'jammin build'
@@ -51,15 +40,7 @@ describe("create -> build -> test", () => {
         stderr: "inherit",
       });
 
-      const [buildOutput, buildExitCode] = await Promise.all([new Response(buildProc.stdout).text(), buildProc.exited]);
-
-      if (buildExitCode !== 0) {
-        const stderr = await new Response(buildProc.stderr).text();
-        throw new Error(
-          `'jammin build' failed with exit code ${buildExitCode}\nSTDOUT: ${buildOutput}\nSTDERR: ${stderr}`,
-        );
-      }
-
+      const buildExitCode = await buildProc.exited;
       expect(buildExitCode).toBe(0);
 
       // 'jammin test'
@@ -69,15 +50,7 @@ describe("create -> build -> test", () => {
         stderr: "inherit",
       });
 
-      const [testOutput, testExitCode] = await Promise.all([new Response(testProc.stdout).text(), testProc.exited]);
-
-      if (testExitCode !== 0) {
-        const stderr = await new Response(testProc.stderr).text();
-        throw new Error(
-          `'jammin test' failed with exit code ${testExitCode}\nSTDOUT: ${testOutput}\nSTDERR: ${stderr}`,
-        );
-      }
-
+      const testExitCode = await testProc.exited;
       expect(testExitCode).toBe(0);
     },
     { timeout: TIMEOUT },
