@@ -1,42 +1,112 @@
+import { mkdir } from "node:fs/promises";
+import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { Command } from "commander";
+import type { ServiceConfig } from "../../types/config";
+import { getServiceConfigs } from "../../utils/get-service-configs";
+import { SDK_CONFIGS } from "../../utils/sdk-configs";
 
-// TODO: [MaSo] dummy command
+export class DockerError extends Error {
+  constructor(
+    message: string,
+    public output: string,
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * Test a single service using Docker
+ */
+export async function testService(service: ServiceConfig, projectRoot: string): Promise<string> {
+  const sdk = typeof service.sdk === "string" ? SDK_CONFIGS[service.sdk] : service.sdk;
+  const servicePath = resolve(projectRoot, service.path);
+
+  const dockerArgs = ["run", "--rm", "-v", `${servicePath}:/app`, sdk.image, ...sdk.test.split(" ")];
+  const dockerCommand = `docker ${dockerArgs.join(" ")}`;
+
+  const proc = Bun.spawn(["sh", "-c", `${dockerCommand} 2>&1`], {
+    stdout: "pipe",
+    stderr: "pipe",
+    cwd: projectRoot,
+  });
+
+  const [combinedOutput, exitCode] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+
+  if (exitCode !== 0) {
+    throw new DockerError(`Tests failed for service '${service.name}' with exit code ${exitCode}`, combinedOutput);
+  }
+
+  return combinedOutput;
+}
+
+/**
+ *  Test command definition
+ */
 export const testCommand = new Command("test")
-  .description("run tests for your project")
-  .argument("[pattern]", "test file pattern")
-  .option("-w, --watch", "watch files and re-run tests on changes")
+  .description("run tests for your entire project or a specific service")
+  .argument("[service]", "service name to test")
+  .option("-c, --config <path>", "path to build config file")
   .addHelpText(
     "after",
     `
 Examples:
   $ jammin test
-  $ jammin test **/*-pattern.{test,spec}.{ts,js}
-  $ jammin test /my-tests/*.ts --watch
+  $ jammin test auth-service
+  $ jammin test --config ./custom.build.yml
 `,
   )
-  .action(async (pattern, options) => {
-    let tests = 5;
-    if (pattern) {
-      p.intro(`🏃 Running test ${pattern}...`);
-      tests = 1;
-    } else {
-      p.intro("🏃 Running tests..");
-    }
+  .action(async (serviceName, options) => {
+    const targetLabel = serviceName ? "service" : "project";
+    p.intro(`🧪 Testing ${targetLabel}`);
 
-    for (let i = 0; i < tests; i++) {
-      p.log.info(`Testing service ${i}...`);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      if (i === 3) {
-        p.log.error(`Service ${i} failed!`);
-      } else {
-        p.log.success(`Service ${i} passed!`);
+    const s = p.spinner();
+    const services = await getServiceConfigs(options.config, serviceName, s);
+
+    const projectRoot = process.cwd();
+    const logsDir = join(projectRoot, "logs");
+    await mkdir(logsDir, { recursive: true });
+
+    let testFailed = false;
+
+    for (const service of services) {
+      p.log.info("--------------------------------");
+      s.start(`Running tests for service '${service.name}'...`);
+      const timestamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
+      const logFileName = `jammin-test-${service.name}-${timestamp}.log`;
+      const logFilePath = join(logsDir, logFileName);
+
+      let output: string | undefined;
+
+      // Test service and save log
+      try {
+        output = await testService(service, projectRoot);
+        s.stop(`✅ Service '${service.name}' tests passed`);
+      } catch (error) {
+        testFailed = true;
+        let errorMessage: string;
+        if (error instanceof DockerError) {
+          output = error.output;
+          errorMessage = error.message;
+        } else {
+          const errorObj = error instanceof Error ? error : new Error(String(error));
+          errorMessage = errorObj.message;
+        }
+        s.stop(`❌ Service '${service.name}' tests failed: ${errorMessage}`);
+      }
+
+      if (output) {
+        await Bun.write(logFilePath, output);
+        p.log.info(`📝 Log saved: ${relative(projectRoot, logFilePath)}`);
       }
     }
 
-    if (options.watch) {
-      p.note("👀 watching for changes");
+    p.log.info("--------------------------------");
+
+    if (testFailed) {
+      p.outro("❌ Some tests failed. See the output above and check the logs for more details.");
+      process.exit(1);
     } else {
-      p.outro("📊 Finished testing!");
+      p.outro("✅ All tests passed!");
     }
   });

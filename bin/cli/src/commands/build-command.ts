@@ -2,10 +2,8 @@ import { mkdir, readdir, stat } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { Command } from "commander";
-import z, { ZodError } from "zod";
-import type { JamminBuildConfig, ServiceConfig } from "../../types/config";
-import { ConfigError } from "../../types/errors";
-import { loadBuildConfig } from "../../utils/config-loader";
+import type { ServiceConfig } from "../../types/config";
+import { getServiceConfigs } from "../../utils/get-service-configs";
 import { SDK_CONFIGS } from "../../utils/sdk-configs";
 
 /**
@@ -86,32 +84,11 @@ Examples:
 `,
   )
   .action(async (serviceName, options) => {
-    let config: JamminBuildConfig;
     const targetLabel = serviceName ? "service" : "project";
     p.intro(`🔨 Building ${targetLabel}`);
 
     const s = p.spinner();
-    s.start("Loading build configuration...");
-    try {
-      config = await loadBuildConfig(options.config);
-    } catch (error) {
-      if (error instanceof ConfigError && error.cause instanceof ZodError) {
-        s.stop("❌ Failed to load build configuration");
-        p.log.error(z.prettifyError(error.cause));
-        process.exit(1);
-      }
-      throw error;
-    }
-    s.stop("✅ Configuration loaded");
-
-    let servicesToBuild = config.services;
-    if (serviceName) {
-      servicesToBuild = config.services.filter((s) => s.name === serviceName);
-      if (servicesToBuild.length === 0) {
-        p.log.error(`Service '${serviceName}' not found in configuration`);
-        process.exit(1);
-      }
-    }
+    const services = await getServiceConfigs(options.config, serviceName, s);
 
     const projectRoot = process.cwd();
     const logsDir = join(projectRoot, "logs");
@@ -119,7 +96,7 @@ Examples:
 
     let buildFailed = false;
 
-    for (const service of servicesToBuild) {
+    for (const service of services) {
       p.log.info("--------------------------------");
       s.start(`Building service '${service.name}'...`);
       const timestamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
