@@ -6,9 +6,6 @@ import type { ServiceConfig } from "../../types/config";
 import { getServiceConfigs } from "../../utils/get-service-configs";
 import { SDK_CONFIGS } from "../../utils/sdk-configs";
 
-/**
- * Test a single service using Docker
- */
 export class DockerError extends Error {
   constructor(
     message: string,
@@ -18,6 +15,9 @@ export class DockerError extends Error {
   }
 }
 
+/**
+ * Test a single service using Docker
+ */
 export async function testService(service: ServiceConfig, projectRoot: string): Promise<string> {
   const sdk = typeof service.sdk === "string" ? SDK_CONFIGS[service.sdk] : service.sdk;
   const servicePath = resolve(projectRoot, service.path);
