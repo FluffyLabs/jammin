@@ -9,7 +9,7 @@ import { buildService } from "./build-command";
 export class DeployError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "DeplyError";
+    this.name = "DeployError";
   }
 }
 
