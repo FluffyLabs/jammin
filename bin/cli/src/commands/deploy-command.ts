@@ -16,32 +16,27 @@ export class DeployError extends Error {
 export const deployCommand = new Command("deploy")
   .description("deploy your services to target environment")
   .argument("[service]", "service name to deploy")
-  .option("--skip-build", "skip building before deploy")
-  .option("--build-config <path>", "path to build config file")
   .addHelpText(
     "after",
     `
 Examples:
   $ jammin deploy
-  $ jammin deploy test-service --skip-build
-  $ jammin deploy --build-config ./my.config.yml
+  $ jammin deploy test-service
 `,
   )
-  .action(async (serviceName, options) => {
+  .action(async (serviceName) => {
     const targetLabel = serviceName ?? "project";
     const projectRoot = process.cwd();
     p.intro(`🚀 Deploying ${targetLabel}...`);
 
     const s = p.spinner();
-    const services = await getServiceConfigs(options.buildConfig, serviceName, s);
+    const services = await getServiceConfigs(undefined, serviceName, s);
 
-    if (!options.skipBuild) {
-      s.start("🔨 Building...");
-      for (const service of services) {
-        await buildService(service, projectRoot);
-      }
-      s.stop("✅ Building was successful!");
+    s.start("🔨 Building...");
+    for (const service of services) {
+      await buildService(service, projectRoot);
     }
+    s.stop("✅ Building was successful!");
 
     s.start("Generating Genesis State...");
 
@@ -53,6 +48,8 @@ Examples:
       const jamFile = (await getJamFiles(service.path)).keys().next().value;
       if (jamFile) {
         jamFiles.push(jamFile);
+      } else {
+        throw new DeployError(`Cannot find a jam file for ${service.name} service`);
       }
     }
 
