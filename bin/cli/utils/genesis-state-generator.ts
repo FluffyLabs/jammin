@@ -42,8 +42,8 @@ const BASE_SERVICE: jamState.ServiceAccountInfo = {
 };
 
 /** Creates genesis file on given path: JIP-4 Chainspec */
-export async function saveStateFile(genesis: Genesis, outputPath: string): Promise<void> {
-  await Bun.write(outputPath, JSON.stringify(toJip4Schema(genesis), null, 2));
+export async function saveStateFile(genesis: Genesis, outputFile: string): Promise<void> {
+  await Bun.write(outputFile, JSON.stringify(toJip4Schema(genesis), null, 2));
 }
 
 export function toJip4Schema(genesis: Genesis) {
