@@ -1,8 +1,9 @@
-import { mkdir, readdir, stat } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { Command } from "commander";
 import type { ServiceConfig } from "../../types/config";
+import { getJamFiles } from "../../utils/file-utils";
 import { getServiceConfigs } from "../../utils/get-service-configs";
 import { SDK_CONFIGS } from "../../utils/sdk-configs";
 
@@ -16,33 +17,6 @@ export class DockerError extends Error {
   ) {
     super(message);
   }
-}
-
-/**
- * Recursively get all files in a directory with their modification times
- */
-async function getAllFiles(dirPath: string): Promise<Map<string, number>> {
-  const files = new Map<string, number>();
-
-  try {
-    const entries = await readdir(dirPath, { withFileTypes: true, recursive: true });
-
-    for (const entry of entries) {
-      if (entry.name.endsWith(".jam")) {
-        try {
-          const fullPath = resolve(entry.parentPath, entry.name);
-          const stats = await stat(fullPath);
-          files.set(fullPath, stats.mtimeMs);
-        } catch {
-          // Ignore stat errors
-        }
-      }
-    }
-  } catch {
-    // Ignore errors (e.g., directory doesn't exist or permission issues)
-  }
-
-  return files;
 }
 
 export async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {
@@ -104,7 +78,7 @@ Examples:
       const logFilePath = join(logsDir, logFileName);
 
       const servicePath = resolve(projectRoot, service.path);
-      const filesBefore = await getAllFiles(servicePath);
+      const filesBefore = await getJamFiles(servicePath);
 
       let output: string | undefined;
 
@@ -126,7 +100,7 @@ Examples:
       }
 
       // Find new or updated .jam files
-      const filesAfter = await getAllFiles(servicePath);
+      const filesAfter = await getJamFiles(servicePath);
       const newFiles: string[] = [];
 
       for (const [file, mtimeAfter] of filesAfter) {
