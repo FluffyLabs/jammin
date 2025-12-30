@@ -1,6 +1,6 @@
 # Introduction
 
-jammin is Fluffy Labs’ toolbox for Typeberry builders. You can use it to spin up a project, build services, ship them to a network, and keep an eye on what happens after deploy.
+jammin is Fluffy Labs’ toolbox for JAM service builders. You can use it to spin up a project, build services, ship them to a network, and keep an eye on what happens after deploy.
 
 - **jammin cli** starts projects, builds services, deploys testnets, and runs tests. Works well in scripts and CI.
 - **jammin studio** will be a desktop or IDE front-end for folks who prefer clicks over shells.
