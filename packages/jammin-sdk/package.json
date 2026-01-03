@@ -2,8 +2,16 @@
   "name": "@fluffylabs/jammin-sdk",
   "version": "0.0.2",
   "description": "JAM SDK for e2e integration tests and object encoding",
-  "module": "index.ts",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist", "LICENSE"],
   "scripts": {
     "build": "tsc"
   },
