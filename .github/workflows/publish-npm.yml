@@ -64,6 +64,7 @@ jobs:
           if [ "$CURRENT_VERSION" != "$TAG_VERSION" ]; then
             echo "Aligning package.json version ($CURRENT_VERSION) -> $TAG_VERSION"
             bun pm pkg set version=$TAG_VERSION
+            cd packages/jammin-sdk && bun pm pkg set version=$TAG_VERSION
           fi
 
       - name: Bump version for next tag
@@ -75,10 +76,19 @@ jobs:
           NEW_VERSION="${CURRENT_VERSION}-${COMMIT_SHORT}"
           echo "Publishing version: ${NEW_VERSION}"
           bun pm pkg set version=$NEW_VERSION
+          cd packages/jammin-sdk && bun pm pkg set version=$NEW_VERSION
 
-      - name: Pack with Bun
+      - name: Pack CLI with Bun
         run: bun pm pack
 
-      - name: Publish to npm
+      - name: Publish CLI to npm
         run: npm publish fluffylabs-jammin-*.tgz --access public --tag ${{ steps.publish-info.outputs.tag }}
+
+      - name: Pack SDK with Bun
+        working-directory: packages/jammin-sdk
+        run: bun pm pack
+
+      - name: Publish SDK to npm
+        working-directory: packages/jammin-sdk
+        run: npm publish fluffylabs-jammin-sdk-*.tgz --access public --tag ${{ steps.publish-info.outputs.tag }}
 
