@@ -36,7 +36,7 @@
       "name": "@fluffylabs/jammin-sdk",
       "version": "0.0.2",
       "dependencies": {
-        "@typeberry/lib": "^0.5.1",
+        "@typeberry/lib": "0.5.1-31343a9",
       },
       "devDependencies": {
         "@tsconfig/node20": "^20.1.8",
@@ -100,7 +100,7 @@
 
     "@fluffylabs/jammin-cli/@types/bun": ["@types/bun@1.3.4", "", { "dependencies": { "bun-types": "1.3.4" } }, "sha512-EEPTKXHP+zKGPkhRLv+HI0UEX8/o+65hqARxLy8Ov5rIxMBPNTjeZww00CIihrIQGEQBYg+0roO5qOnS/7boGA=="],
 
-    "@fluffylabs/jammin-sdk/@typeberry/lib": ["@typeberry/lib@0.5.1", "", {}, "sha512-jl1sd8ihlmjr49mPsI43+OXqVlMiUSkOHK9I80r0Gn3AgFDjlowYHXxWGNkFGg7X1J/7NT3VpRiHcLum+lC1zA=="],
+    "@fluffylabs/jammin-sdk/@typeberry/lib": ["@typeberry/lib@0.5.1-31343a9", "", {}, "sha512-i6WS2xR9yT8ROZk6w8utyaXq9OYfCgJg+QrLZ7nja0kab3+k9YbHYH4icqN4qfwUDsfEk1qW+JDomrn+etuBJg=="],
 
     "@fluffylabs/jammin-sdk/@types/bun": ["@types/bun@1.3.5", "", { "dependencies": { "bun-types": "1.3.5" } }, "sha512-RnygCqNrd3srIPEWBd5LFeUYG7plCoH2Yw9WaZGyNmdTEei+gWaHqydbaIRkIkcbXwhBT94q78QljxN0Sk838w=="],
 

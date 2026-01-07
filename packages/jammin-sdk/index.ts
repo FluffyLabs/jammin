@@ -9,6 +9,8 @@ export {
   state,
   state_merkleization,
 } from "@typeberry/lib";
+export * from "./types.js";
+export * from "./work-report.js";
 
 export function getSDKInfo() {
   return {
