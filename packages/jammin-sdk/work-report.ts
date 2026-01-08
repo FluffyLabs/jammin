@@ -12,11 +12,17 @@ const ResultKind = block.workResult.WorkExecResultKind;
 
 type OpaqueHash = h.OpaqueHash;
 
-/** Converts Uint8Array to 32 byte size hash or zero_hash if given undefined */
+/**
+ * Converts Uint8Array to 32 byte size hash or zero_hash if given undefined.
+ */
 function toHash(hash?: Uint8Array): OpaqueHash {
   return hash !== undefined ? bytes.Bytes.fromBlob(hash, 32) : h.ZERO_HASH;
 }
 
+/**
+ * Creates a WorkRefineLoad object with validated numeric types.
+ * All fields are optional in the input and default to 0 if not provided.
+ */
 function createRefineLoad(load: Partial<WorkRefineLoad>): WorkRefineLoad {
   return {
     exportedSegments: numbers.tryAsU32(load.exportedSegments ?? 0),
@@ -27,12 +33,17 @@ function createRefineLoad(load: Partial<WorkRefineLoad>): WorkRefineLoad {
   };
 }
 
-/** Returns hash of given data */
+/**
+ * Computes Blake2b hash of the given data.
+ */
 async function hashData(data: Uint8Array): Promise<OpaqueHash> {
   const hasher = await h.Blake2b.createHasher();
   return hasher.hashBytes(data);
 }
 
+/**
+ * Creates a WorkResult representing the outcome of a work item execution.
+ */
 export async function createWorkResult(options: {
   serviceId: number;
   codeHash?: Uint8Array;
@@ -56,6 +67,9 @@ export async function createWorkResult(options: {
   };
 }
 
+/**
+ * Creates a RefineContext specifying the blockchain state context for work package execution.
+ */
 export function createRefineContext(options: {
   anchor?: Uint8Array;
   stateRoot?: Uint8Array;
@@ -75,6 +89,9 @@ export function createRefineContext(options: {
   };
 }
 
+/**
+ * Creates a WorkPackageSpec describing the specification of a work package.
+ */
 export function createWorkPackageSpec(options: {
   hash?: Uint8Array;
   length?: number;
@@ -91,6 +108,10 @@ export function createWorkPackageSpec(options: {
   };
 }
 
+/**
+ * Creates a complete WorkReport for work package accumulation.
+ * This is the main entry point for constructing work reports to submit to the chain.
+ */
 export async function createWorkReport(options: {
   workPackageSpec?: Parameters<typeof createWorkPackageSpec>[0];
   context?: Parameters<typeof createRefineContext>[0];
