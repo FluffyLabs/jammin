@@ -8,6 +8,8 @@ import type {
   WorkResult,
 } from "./types.js";
 
+const ResultKind = block.workResult.WorkExecResultKind;
+
 type OpaqueHash = h.OpaqueHash;
 
 /** Converts Uint8Array to 32 byte size hash or zero_hash if given undefined */
@@ -40,11 +42,10 @@ export async function createWorkResult(options: {
   isError?: boolean;
   load?: Partial<WorkRefineLoad>;
 }): Promise<WorkResult> {
-  const payload = options.payload ?? new Uint8Array();
-  const payloadHash = await hashData(payload);
-  const result = !options.isError
-    ? { kind: 0, okBlob: bytes.BytesBlob.blobFrom(options.output ?? new Uint8Array()) }
-    : { kind: 1, okBlob: null };
+  const payloadHash = await hashData(options.payload ?? new Uint8Array());
+  const result = options.isError
+    ? { kind: ResultKind.panic, okBlob: null }
+    : { kind: ResultKind.ok, okBlob: bytes.BytesBlob.blobFrom(options.output ?? new Uint8Array()) };
   return {
     serviceId: block.tryAsServiceId(options.serviceId),
     codeHash: toHash(options.codeHash).asOpaque(),
@@ -63,8 +64,7 @@ export function createRefineContext(options: {
   lookupAnchorSlot?: number;
   prerequisites?: Uint8Array[];
 }): RefineContext {
-  const prerequisites =
-    options.prerequisites !== undefined && options.prerequisites.length > 0 ? options.prerequisites.map(toHash) : [];
+  const prerequisites = options.prerequisites !== undefined ? options.prerequisites.map(toHash) : [];
   return {
     anchor: toHash(options.anchor).asOpaque(),
     stateRoot: toHash(options.stateRoot).asOpaque(),
@@ -112,7 +112,7 @@ export async function createWorkReport(options: {
       ? bytes.BytesBlob.blobFrom(options.authorizationOutput)
       : bytes.BytesBlob.blobFrom(new Uint8Array(0)),
     segmentRootLookup: options.segmentRootLookup ?? [],
-    results: collections.FixedSizeArray.new(results, numbers.tryAsU8(results.length)),
+    results: collections.FixedSizeArray.new(results, block.workPackage.tryAsWorkItemsCount(results.length)),
     authorizationGasUsed: block.tryAsServiceGas(options.authorizationGasUsed ?? 0),
   };
 }
