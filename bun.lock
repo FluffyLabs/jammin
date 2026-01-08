@@ -36,7 +36,7 @@
       "name": "@fluffylabs/jammin-sdk",
       "version": "0.0.2",
       "dependencies": {
-        "@typeberry/lib": "0.5.1-31343a9",
+        "@typeberry/lib": "^0.5.1-31343a9",
       },
       "devDependencies": {
         "@tsconfig/node20": "^20.1.8",
