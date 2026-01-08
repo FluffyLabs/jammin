@@ -20,6 +20,14 @@ function toHash(hash?: Uint8Array): OpaqueHash {
 }
 
 /**
+ * Computes Blake2b hash of the given data.
+ */
+async function hashData(data: Uint8Array): Promise<OpaqueHash> {
+  const hasher = await h.Blake2b.createHasher();
+  return hasher.hashBytes(data);
+}
+
+/**
  * Creates a WorkRefineLoad object with validated numeric types.
  * All fields are optional in the input and default to 0 if not provided.
  */
@@ -31,14 +39,6 @@ function createRefineLoad(load: Partial<WorkRefineLoad>): WorkRefineLoad {
     gasUsed: block.tryAsServiceGas(load.gasUsed ?? 0),
     importedSegments: numbers.tryAsU32(load.importedSegments ?? 0),
   };
-}
-
-/**
- * Computes Blake2b hash of the given data.
- */
-async function hashData(data: Uint8Array): Promise<OpaqueHash> {
-  const hasher = await h.Blake2b.createHasher();
-  return hasher.hashBytes(data);
 }
 
 /**
