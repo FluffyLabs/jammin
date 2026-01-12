@@ -23,7 +23,9 @@ export async function buildService(service: ServiceConfig, projectRoot: string):
   const sdk = typeof service.sdk === "string" ? SDK_CONFIGS[service.sdk] : service.sdk;
   const servicePath = resolve(projectRoot, service.path);
 
-  const dockerArgs = ["run", "--rm", "-v", `${servicePath}:/app`, sdk.image, ...sdk.build.split(" ")];
+  const buildCommand = sdk.build.replace(/\{name\}/g, service.name).replace(/\{path\}/g, service.path);
+
+  const dockerArgs = ["run", "--rm", "-v", `${servicePath}:/app`, sdk.image, ...buildCommand.split(" ")];
   const dockerCommand = `docker ${dockerArgs.join(" ")}`;
 
   const proc = Bun.spawn(["sh", "-c", `${dockerCommand} 2>&1`], {

@@ -17,4 +17,9 @@ export const SDK_CONFIGS = {
     build: "build",
     test: "test",
   },
+  "ajanta-0.1.0": {
+    image: "ajanta", // TODO replace with pushed image name
+    build: "ajanta build {name}.py -o {name}.jam",
+    test: "true",
+  },
 } as const satisfies Record<string, SdkConfig>;
