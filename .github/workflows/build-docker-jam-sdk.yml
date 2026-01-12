@@ -3,6 +3,8 @@ name: Build - Docker - JAM SDK
 on:
   push:
     branches: ["main"]
+    paths:
+      - "docker/jam-sdk/VERSION"
   pull_request:
     branches: ["main"]
 
@@ -13,15 +15,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check if VERSION file changed
-        id: version-changed
-        uses: tj-actions/changed-files@v47
-        with:
-          files: |
-            docker/jam-sdk/VERSION
 
       - name: Extract version
         id: image-version
@@ -53,7 +46,7 @@ jobs:
           docker run --rm -v ./jam-sdk-example/services/example:/app jam-sdk:${{ steps.image-version.outputs.version }} jam-pvm-build -m service
 
       - name: Log in to GitHub Container Registry
-        if: github.event_name == 'push' && steps.version-changed.outputs.any_changed == 'true'
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -61,7 +54,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        if: github.event_name == 'push' && steps.version-changed.outputs.any_changed == 'true'
+        if: github.event_name == 'push'
         uses: docker/build-push-action@v5
         with:
           context: .
