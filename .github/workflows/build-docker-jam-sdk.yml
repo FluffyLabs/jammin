@@ -46,11 +46,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: jammin-create/jammin-create-jam-sdk
-          path: jam-sdk-example/services/example
+          path: jam-sdk-example
 
       - name: Test Docker image
         run: |
-          docker run --rm -v ./jam-sdk-example:/app jam-sdk jam-pvm-build -m service
+          docker run --rm -v ./jam-sdk-example/services/example:/app jam-sdk jam-pvm-build -m service
 
       - name: Log in to GitHub Container Registry
         if: github.event_name == 'push' && steps.dockerfile-changed.outputs.changed == 'true'
