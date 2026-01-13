@@ -1,6 +1,6 @@
 services:
   polkajam:
-    image: polkajam:v0.1.27
+    image: ghcr.io/fluffylabs/jammin-polkajam:v0.1.27
     platform: linux/arm64
     command:
       - polkajam-testnet
