@@ -45,6 +45,17 @@ jobs:
         run: |
           docker run --rm -v ./jam-sdk-example/services/example:/app jam-sdk:${{ steps.image-version.outputs.version }} jam-pvm-build -m service
 
+      - name: Save Docker image
+        run: |
+          docker save jam-sdk:${{ steps.image-version.outputs.version }} | gzip > jam-sdk-image.tar.gz
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jam-sdk-docker-image
+          path: jam-sdk-image.tar.gz
+          retention-days: 1
+
       - name: Log in to GitHub Container Registry
         if: github.event_name == 'push'
         uses: docker/login-action@v3
