@@ -8,13 +8,12 @@ import type {
   WorkResult,
 } from "./types.js";
 
-type OpaqueHash = h.OpaqueHash;
+const ResultKind = block.workResult.WorkExecResultKind;
 
-/** Converts Uint8Array to 32 byte size hash or zero_hash if given undefined */
-function toHash(hash?: Uint8Array): OpaqueHash {
-  return hash !== undefined ? bytes.Bytes.fromBlob(hash, 32) : h.ZERO_HASH;
-}
-
+/**
+ * Creates a WorkRefineLoad object with validated numeric types.
+ * All fields are optional in the input and default to 0 if not provided.
+ */
 function createRefineLoad(load: Partial<WorkRefineLoad>): WorkRefineLoad {
   return {
     exportedSegments: numbers.tryAsU32(load.exportedSegments ?? 0),
@@ -25,29 +24,31 @@ function createRefineLoad(load: Partial<WorkRefineLoad>): WorkRefineLoad {
   };
 }
 
-/** Returns hash of given data */
-async function hashData(data: Uint8Array): Promise<OpaqueHash> {
-  const hasher = await h.Blake2b.createHasher();
-  return hasher.hashBytes(data);
-}
-
-export async function createWorkResult(options: {
-  serviceId: number;
-  codeHash?: Uint8Array;
-  payload?: Uint8Array;
-  gas?: bigint;
-  output?: Uint8Array;
-  isError?: boolean;
-  load?: Partial<WorkRefineLoad>;
-}): Promise<WorkResult> {
-  const payload = options.payload ?? new Uint8Array();
-  const payloadHash = await hashData(payload);
-  const result = !options.isError
-    ? { kind: 0, okBlob: bytes.BytesBlob.blobFrom(options.output ?? new Uint8Array()) }
-    : { kind: 1, okBlob: null };
+/**
+ * Creates a WorkResult representing the outcome of a work item execution.
+ *
+ * @param blake2b - Blake2b hasher instance for computing payload hash
+ * @param options - Work result configuration
+ */
+export function createWorkResult(
+  blake2b: h.Blake2b,
+  options: {
+    serviceId: number;
+    codeHash?: h.OpaqueHash;
+    payload?: bytes.BytesBlob;
+    gas?: bigint;
+    output?: bytes.BytesBlob;
+    isError?: boolean;
+    load?: Partial<WorkRefineLoad>;
+  },
+): WorkResult {
+  const payloadHash = blake2b.hashBytes(options.payload ?? bytes.BytesBlob.blobFrom(new Uint8Array()));
+  const result = options.isError
+    ? { kind: ResultKind.panic, okBlob: null }
+    : { kind: ResultKind.ok, okBlob: options.output ?? bytes.BytesBlob.blobFrom(new Uint8Array()) };
   return {
     serviceId: block.tryAsServiceId(options.serviceId),
-    codeHash: toHash(options.codeHash).asOpaque(),
+    codeHash: options.codeHash?.asOpaque() ?? h.ZERO_HASH.asOpaque(),
     payloadHash: payloadHash,
     gas: block.tryAsServiceGas(options.gas ?? 0),
     result,
@@ -55,62 +56,77 @@ export async function createWorkResult(options: {
   };
 }
 
+/**
+ * Creates a RefineContext specifying the blockchain state context for work package execution.
+ *
+ * @param options - Refine context configuration using typeberry types
+ */
 export function createRefineContext(options: {
-  anchor?: Uint8Array;
-  stateRoot?: Uint8Array;
-  beefyRoot?: Uint8Array;
-  lookupAnchor?: Uint8Array;
+  anchor?: h.OpaqueHash;
+  stateRoot?: h.OpaqueHash;
+  beefyRoot?: h.OpaqueHash;
+  lookupAnchor?: h.OpaqueHash;
   lookupAnchorSlot?: number;
-  prerequisites?: Uint8Array[];
+  prerequisites?: h.OpaqueHash[];
 }): RefineContext {
-  const prerequisites =
-    options.prerequisites !== undefined && options.prerequisites.length > 0 ? options.prerequisites.map(toHash) : [];
   return {
-    anchor: toHash(options.anchor).asOpaque(),
-    stateRoot: toHash(options.stateRoot).asOpaque(),
-    beefyRoot: toHash(options.beefyRoot).asOpaque(),
-    lookupAnchor: toHash(options.lookupAnchor).asOpaque(),
+    anchor: options.anchor?.asOpaque() ?? h.ZERO_HASH.asOpaque(),
+    stateRoot: options.stateRoot?.asOpaque() ?? h.ZERO_HASH.asOpaque(),
+    beefyRoot: options.beefyRoot?.asOpaque() ?? h.ZERO_HASH.asOpaque(),
+    lookupAnchor: options.lookupAnchor?.asOpaque() ?? h.ZERO_HASH.asOpaque(),
     lookupAnchorSlot: block.tryAsTimeSlot(options.lookupAnchorSlot ?? 0),
-    prerequisites: prerequisites.map((hash) => hash.asOpaque()),
+    prerequisites: (options.prerequisites ?? []).map((hash) => hash.asOpaque()),
   };
 }
 
+/**
+ * Creates a WorkPackageSpec describing the specification of a work package.
+ *
+ * @param options - Work package specification configuration using typeberry types
+ */
 export function createWorkPackageSpec(options: {
-  hash?: Uint8Array;
+  hash?: h.OpaqueHash;
   length?: number;
-  erasureRoot?: Uint8Array;
-  exportsRoot?: Uint8Array;
+  erasureRoot?: h.OpaqueHash;
+  exportsRoot?: h.OpaqueHash;
   exportsCount?: number;
 }): WorkPackageSpec {
   return {
-    hash: toHash(options.hash).asOpaque(),
+    hash: options.hash?.asOpaque() ?? h.ZERO_HASH.asOpaque(),
     length: numbers.tryAsU32(options.length ?? 0),
-    erasureRoot: toHash(options.erasureRoot).asOpaque(),
-    exportsRoot: toHash(options.exportsRoot).asOpaque(),
+    erasureRoot: options.erasureRoot?.asOpaque() ?? h.ZERO_HASH.asOpaque(),
+    exportsRoot: options.exportsRoot?.asOpaque() ?? h.ZERO_HASH.asOpaque(),
     exportsCount: numbers.tryAsU16(options.exportsCount ?? 0),
   };
 }
 
-export async function createWorkReport(options: {
-  workPackageSpec?: Parameters<typeof createWorkPackageSpec>[0];
-  context?: Parameters<typeof createRefineContext>[0];
-  coreIndex?: number;
-  authorizerHash?: Uint8Array;
-  authorizationOutput?: Uint8Array;
-  segmentRootLookup?: WorkPackageInfo[];
-  results: Parameters<typeof createWorkResult>[0][];
-  authorizationGasUsed?: bigint;
-}): Promise<WorkReport> {
-  const results = await Promise.all(options.results.map((result) => createWorkResult(result)));
-
+/**
+ * Creates a complete WorkReport for work package accumulation.
+ * This is the main entry point for constructing work reports to submit to the chain.
+ *
+ * @param blake2b - Blake2b hasher instance for hashing work result payloads
+ * @param options - Work report configuration using typeberry types
+ */
+export function createWorkReport(
+  blake2b: h.Blake2b,
+  options: {
+    workPackageSpec?: Parameters<typeof createWorkPackageSpec>[0];
+    context?: Parameters<typeof createRefineContext>[0];
+    coreIndex?: number;
+    authorizerHash?: h.OpaqueHash;
+    authorizationOutput?: bytes.BytesBlob;
+    segmentRootLookup?: WorkPackageInfo[];
+    results: Parameters<typeof createWorkResult>[1][];
+    authorizationGasUsed?: bigint;
+  },
+): WorkReport {
+  const results = options.results.map((result) => createWorkResult(blake2b, result));
   return {
     workPackageSpec: createWorkPackageSpec(options.workPackageSpec ?? {}),
     context: createRefineContext(options.context ?? {}),
     coreIndex: block.tryAsCoreIndex(options.coreIndex ?? 0),
-    authorizerHash: toHash(options.authorizerHash).asOpaque(),
-    authorizationOutput: options.authorizationOutput
-      ? bytes.BytesBlob.blobFrom(options.authorizationOutput)
-      : bytes.BytesBlob.blobFrom(new Uint8Array(0)),
+    authorizerHash: options.authorizerHash?.asOpaque() ?? h.ZERO_HASH.asOpaque(),
+    authorizationOutput: options.authorizationOutput ?? bytes.BytesBlob.blobFrom(new Uint8Array(0)),
     segmentRootLookup: options.segmentRootLookup ?? [],
     results: collections.FixedSizeArray.new(results, numbers.tryAsU8(results.length)),
     authorizationGasUsed: block.tryAsServiceGas(options.authorizationGasUsed ?? 0),

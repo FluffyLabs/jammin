@@ -16,11 +16,11 @@
       "name": "@fluffylabs/jammin-cli",
       "version": "0.0.2",
       "bin": {
-        "jammin": "dist/index.js",
+        "jammin": "./dist/index.js",
       },
       "dependencies": {
         "@clack/prompts": "^0.11.0",
-        "@typeberry/lib": "^0.5.0-ad8249b",
+        "@typeberry/lib": "0.5.1-398786b",
         "commander": "^14.0.2",
         "zod": "^4.1.13",
       },
@@ -70,13 +70,19 @@
 
     "@clack/prompts": ["@clack/prompts@0.11.0", "", { "dependencies": { "@clack/core": "0.5.0", "picocolors": "^1.0.0", "sisteransi": "^1.0.5" } }, "sha512-pMN5FcrEw9hUkZA4f+zLlzivQSeQf5dRGJjSUbvVYDLvpKCdQx5OaknvKzgbtXOizhP+SJJJjqEbOe55uKKfAw=="],
 
+    "@fluffylabs/anan-as": ["@fluffylabs/anan-as@1.1.4", "", {}, "sha512-cy23of0kdfcQ5c7VOi9qCBdn38WZagKMtApfvp/aaptDuKxvqrkoD3RXmj5kZJbiRi9iF/nfPMoY1dCWlPXOlg=="],
+
     "@fluffylabs/jammin-cli": ["@fluffylabs/jammin-cli@workspace:bin/cli"],
 
     "@fluffylabs/jammin-sdk": ["@fluffylabs/jammin-sdk@workspace:packages/jammin-sdk"],
 
+    "@noble/ed25519": ["@noble/ed25519@2.2.3", "", {}, "sha512-iHV8eI2mRcUmOx159QNrU8vTpQ/Xm70yJ2cTk3Trc86++02usfqFoNl6x0p3JN81ZDS/1gx6xiK0OwrgqCT43g=="],
+
     "@tsconfig/node20": ["@tsconfig/node20@20.1.8", "", {}, "sha512-Em+IdPfByIzWRRpqWL4Z7ArLHZGxmc36BxE3jCz9nBFSm+5aLaPMZyjwu4yetvyKXeogWcxik4L1jB5JTWfw7A=="],
 
-    "@typeberry/lib": ["@typeberry/lib@0.5.0-ad8249b", "", {}, "sha512-ueQ0+cgGcbGACZK/U4O4tx4Qwrv45/O2H4mtiX055T708ESs3/yUBBS5zcBOaRNiZF6A85U0DaANi40q4HHOOQ=="],
+    "@typeberry/lib": ["@typeberry/lib@0.5.1-398786b", "", { "dependencies": { "@fluffylabs/anan-as": "^1.1.3", "@noble/ed25519": "2.2.3", "@typeberry/native": "0.0.4-4c0cd28", "hash-wasm": "4.12.0" } }, "sha512-PIMLZQdb6ZVVJCUcJBkN1BE4v5nLINbaSiqvkHInil/sGmJEnzk8/Som6QDQ/1BfXOBeyogWZ0L5yNBGqf5j7Q=="],
+
+    "@typeberry/native": ["@typeberry/native@0.0.4-4c0cd28", "", {}, "sha512-VhZiiSYex3/jDk1I8PlcwPxiM9GslryGxdG+4sbbjNvpr1JxRkH0fAdUnKzxAxGYPNz2MOfwHTmTdVcrk1a5rA=="],
 
     "@types/blake2b": ["@types/blake2b@2.1.3", "", {}, "sha512-MFCdX0MNxFBP/xEILO5Td0kv6nI7+Q2iRWZbTL/yzH2/eDVZS5Wd1LHdsmXClvsCyzqaZfHFzZaN6BUeUCfSDA=="],
 
@@ -88,6 +94,8 @@
 
     "commander": ["commander@14.0.2", "", {}, "sha512-TywoWNNRbhoD0BXs1P3ZEScW8W5iKrnbithIl0YH+uCmBd0QpPOA8yc82DS3BIE5Ma6FnBVUsJ7wVUDz4dvOWQ=="],
 
+    "hash-wasm": ["hash-wasm@4.12.0", "", {}, "sha512-+/2B2rYLb48I/evdOIhP+K/DD2ca2fgBjp6O+GBEnCDk2e4rpeXIK8GvIyRPjTezgmWn9gmKwkQjjx6BtqDHVQ=="],
+
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
     "sisteransi": ["sisteransi@1.0.5", "", {}, "sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg=="],
@@ -98,13 +106,11 @@
 
     "zod": ["zod@4.1.13", "", {}, "sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig=="],
 
-    "@fluffylabs/jammin-cli/@types/bun": ["@types/bun@1.3.4", "", { "dependencies": { "bun-types": "1.3.4" } }, "sha512-EEPTKXHP+zKGPkhRLv+HI0UEX8/o+65hqARxLy8Ov5rIxMBPNTjeZww00CIihrIQGEQBYg+0roO5qOnS/7boGA=="],
-
-    "@fluffylabs/jammin-sdk/@typeberry/lib": ["@typeberry/lib@0.5.1-31343a9", "", {}, "sha512-i6WS2xR9yT8ROZk6w8utyaXq9OYfCgJg+QrLZ7nja0kab3+k9YbHYH4icqN4qfwUDsfEk1qW+JDomrn+etuBJg=="],
+    "@fluffylabs/jammin-cli/@types/bun": ["@types/bun@1.3.5", "", { "dependencies": { "bun-types": "1.3.5" } }, "sha512-RnygCqNrd3srIPEWBd5LFeUYG7plCoH2Yw9WaZGyNmdTEei+gWaHqydbaIRkIkcbXwhBT94q78QljxN0Sk838w=="],
 
     "@fluffylabs/jammin-sdk/@types/bun": ["@types/bun@1.3.5", "", { "dependencies": { "bun-types": "1.3.5" } }, "sha512-RnygCqNrd3srIPEWBd5LFeUYG7plCoH2Yw9WaZGyNmdTEei+gWaHqydbaIRkIkcbXwhBT94q78QljxN0Sk838w=="],
 
-    "@fluffylabs/jammin-cli/@types/bun/bun-types": ["bun-types@1.3.4", "", { "dependencies": { "@types/node": "*" } }, "sha512-5ua817+BZPZOlNaRgGBpZJOSAQ9RQ17pkwPD0yR7CfJg+r8DgIILByFifDTa+IPDDxzf5VNhtNlcKqFzDgJvlQ=="],
+    "@fluffylabs/jammin-cli/@types/bun/bun-types": ["bun-types@1.3.5", "", { "dependencies": { "@types/node": "*" } }, "sha512-inmAYe2PFLs0SUbFOWSVD24sg1jFlMPxOjOSSCYqUgn4Hsc3rDc7dFvfVYjFPNHtov6kgUeulV4SxbuIV/stPw=="],
 
     "@fluffylabs/jammin-sdk/@types/bun/bun-types": ["bun-types@1.3.5", "", { "dependencies": { "@types/node": "*" } }, "sha512-inmAYe2PFLs0SUbFOWSVD24sg1jFlMPxOjOSSCYqUgn4Hsc3rDc7dFvfVYjFPNHtov6kgUeulV4SxbuIV/stPw=="],
   }
