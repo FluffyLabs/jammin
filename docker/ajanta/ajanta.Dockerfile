@@ -40,8 +40,6 @@ RUN git clone https://github.com/Chainscore/ajanta.git && \
     git checkout ${AJANTA_COMMIT} && \
     git submodule update --init --recursive
 
-WORKDIR /opt/ajanta
-
 # Build ajanta-build-tool
 WORKDIR /opt/ajanta/ajanta-build-tool
 RUN cargo build --release && \
