@@ -35,7 +35,7 @@ At container startup: 1. The first argument passed to the container is read as t
 #### command examples
 
 ```bash
-docker build -t polkajam:v0.1.27 .
+docker build -t ghcr.io/fluffylabs/jammin-polkajam:v0.1.27 .
 ```
 
 this command by default uses the:
