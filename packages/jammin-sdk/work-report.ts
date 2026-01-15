@@ -1,14 +1,25 @@
-import { block, type bytes, collections, hash as h } from "@typeberry/lib";
-import { BytesBlob, Gas, U8, U16, U32 } from "./types.js";
+import {
+  type refineContext,
+  tryAsCoreIndex,
+  tryAsServiceId,
+  tryAsTimeSlot,
+  workPackage,
+  type workReport,
+  workResult,
+} from "@typeberry/lib/block";
+import type { BytesBlob } from "@typeberry/lib/bytes";
+import { FixedSizeArray } from "@typeberry/lib/collections";
+import { Blake2b, type Blake2bHash, ZERO_HASH } from "@typeberry/lib/hash";
+import { Blob, Gas, U8, U16, U32 } from "./types.js";
 
-const ResultKind = block.workResult.WorkExecResultKind;
+const ResultKind = workResult.WorkExecResultKind;
 
-type WorkReport = ReturnType<typeof block.workReport.WorkReport.create>;
-type WorkPackageSpec = ReturnType<typeof block.workReport.WorkPackageSpec.create>;
-type RefineContext = ReturnType<typeof block.refineContext.RefineContext.create>;
-type WorkPackageInfo = ReturnType<typeof block.refineContext.WorkPackageInfo.create>;
-type WorkResult = ReturnType<typeof block.workResult.WorkResult.create>;
-type WorkRefineLoad = ReturnType<typeof block.workResult.WorkRefineLoad.create>;
+type WorkReport = ReturnType<typeof workReport.WorkReport.create>;
+type WorkPackageSpec = ReturnType<typeof workReport.WorkPackageSpec.create>;
+type RefineContext = ReturnType<typeof refineContext.RefineContext.create>;
+type WorkPackageInfo = ReturnType<typeof refineContext.WorkPackageInfo.create>;
+type WorkResult = ReturnType<typeof workResult.WorkResult.create>;
+type WorkRefineLoad = ReturnType<typeof workResult.WorkRefineLoad.create>;
 
 /** Configuration for work refinement load metrics */
 export interface WorkRefineLoadConfig {
@@ -27,44 +38,44 @@ export interface WorkRefineLoadConfig {
 /** Configuration for blockchain state context */
 export interface RefineContextConfig {
   /** Block hash anchor point */
-  anchor?: h.Blake2bHash;
+  anchor?: Blake2bHash;
   /** State root hash */
-  stateRoot?: h.Blake2bHash;
+  stateRoot?: Blake2bHash;
   /** BEEFY root hash */
-  beefyRoot?: h.Blake2bHash;
+  beefyRoot?: Blake2bHash;
   /** Lookup anchor hash */
-  lookupAnchor?: h.Blake2bHash;
+  lookupAnchor?: Blake2bHash;
   /** Timeslot for lookup anchor */
   lookupAnchorSlot?: number;
   /** Array of prerequisite hashes */
-  prerequisites?: h.Blake2bHash[];
+  prerequisites?: Blake2bHash[];
 }
 
 /** Configuration for work package specification */
 export interface WorkPackageSpecConfig {
   /** Work package hash */
-  hash?: h.Blake2bHash;
+  hash?: Blake2bHash;
   /** Length of work package in bytes */
   length?: number;
   /** Erasure coding root hash */
-  erasureRoot?: h.Blake2bHash;
+  erasureRoot?: Blake2bHash;
   /** Exports root hash */
-  exportsRoot?: h.Blake2bHash;
+  exportsRoot?: Blake2bHash;
   /** Number of exports */
   exportsCount?: number;
 }
 
 /** Work result status types for better type safety */
-export type WorkResultStatus = { type: "ok"; output?: Uint8Array | bytes.BytesBlob } | { type: "panic" };
+export type WorkResultStatus = { type: "ok"; output?: Uint8Array | BytesBlob } | { type: "panic" };
 
 /** Configuration for a single work result */
 export interface WorkResultConfig {
   /** Service ID that executed the work */
   serviceId: number;
   /** Code hash of the service */
-  codeHash?: h.Blake2bHash;
+  codeHash?: Blake2bHash;
   /** Input payload for the work item */
-  payload?: Uint8Array | bytes.BytesBlob;
+  payload?: Uint8Array | BytesBlob;
   /** Gas limit allocated for execution */
   gas?: number | bigint;
   /** Execution result (ok with optional output, or panic) */
@@ -82,9 +93,9 @@ export interface WorkReportConfig {
   /** Core index that produced this report */
   coreIndex?: number;
   /** Hash of the authorizer code */
-  authorizerHash?: h.Blake2bHash;
+  authorizerHash?: Blake2bHash;
   /** Output from authorization check */
-  authorizationOutput?: Uint8Array | bytes.BytesBlob;
+  authorizationOutput?: Uint8Array | BytesBlob;
   /** Segment root lookup table */
   segmentRootLookup?: WorkPackageInfo[];
   /** Array of work results */
@@ -108,13 +119,13 @@ export interface WorkReportConfig {
  */
 export class WorkReportBuilder {
   private config: WorkReportConfig = { results: [] };
-  private hasher?: h.Blake2b;
+  private hasher?: Blake2b;
 
   /**
    * Sets the Blake2b hasher instance.
    * If not set, a new hasher will be created automatically when building.
    */
-  withHasher(hasher: h.Blake2b): this {
+  withHasher(hasher: Blake2b): this {
     this.hasher = hasher;
     return this;
   }
@@ -138,13 +149,13 @@ export class WorkReportBuilder {
   }
 
   /** Sets the authorizer hash */
-  withAuthorizerHash(hash: h.Blake2bHash | h.OpaqueHash): this {
+  withAuthorizerHash(hash: Blake2bHash): this {
     this.config.authorizerHash = hash;
     return this;
   }
 
   /** Sets the authorization output */
-  withAuthorizationOutput(output: Uint8Array | bytes.BytesBlob): this {
+  withAuthorizationOutput(output: Uint8Array | BytesBlob): this {
     this.config.authorizationOutput = output;
     return this;
   }
@@ -169,7 +180,7 @@ export class WorkReportBuilder {
 
   /** Builds the final WorkReport */
   async build(): Promise<WorkReport> {
-    const hasher = this.hasher ?? (await h.Blake2b.createHasher());
+    const hasher = this.hasher ?? (await Blake2b.createHasher());
     return createWorkReport(hasher, this.config);
   }
 
@@ -232,8 +243,8 @@ export function createRefineLoad(config: WorkRefineLoadConfig = {}): WorkRefineL
  * });
  * ```
  */
-export function createWorkResult(blake2b: h.Blake2b, config: WorkResultConfig): WorkResult {
-  const payloadBlob = BytesBlob(config.payload);
+export function createWorkResult(blake2b: Blake2b, config: WorkResultConfig): WorkResult {
+  const payloadBlob = Blob(config.payload);
   const payloadHash = blake2b.hashBytes(payloadBlob);
 
   const resultStatus = config.result ?? { type: "ok" };
@@ -242,12 +253,12 @@ export function createWorkResult(blake2b: h.Blake2b, config: WorkResultConfig): 
       ? { kind: ResultKind.panic, okBlob: null }
       : {
           kind: ResultKind.ok,
-          okBlob: BytesBlob(resultStatus.output),
+          okBlob: Blob(resultStatus.output),
         };
 
   return {
-    serviceId: block.tryAsServiceId(config.serviceId),
-    codeHash: (config.codeHash ?? h.ZERO_HASH).asOpaque(),
+    serviceId: tryAsServiceId(config.serviceId),
+    codeHash: (config.codeHash ?? ZERO_HASH).asOpaque(),
     payloadHash,
     gas: Gas(config.gas ?? 0n, "gas"),
     result: execResult,
@@ -276,12 +287,12 @@ export function createRefineContext(config: RefineContextConfig = {}): RefineCon
   const prerequisites = config.prerequisites ?? [];
 
   return {
-    anchor: (config.anchor ?? h.ZERO_HASH).asOpaque(),
-    stateRoot: (config.stateRoot ?? h.ZERO_HASH).asOpaque(),
-    beefyRoot: (config.beefyRoot ?? h.ZERO_HASH).asOpaque(),
-    lookupAnchor: (config.lookupAnchor ?? h.ZERO_HASH).asOpaque(),
-    lookupAnchorSlot: block.tryAsTimeSlot(config.lookupAnchorSlot ?? 0),
-    prerequisites: prerequisites.map((hash) => (hash ?? h.ZERO_HASH).asOpaque()),
+    anchor: (config.anchor ?? ZERO_HASH).asOpaque(),
+    stateRoot: (config.stateRoot ?? ZERO_HASH).asOpaque(),
+    beefyRoot: (config.beefyRoot ?? ZERO_HASH).asOpaque(),
+    lookupAnchor: (config.lookupAnchor ?? ZERO_HASH).asOpaque(),
+    lookupAnchorSlot: tryAsTimeSlot(config.lookupAnchorSlot ?? 0),
+    prerequisites: prerequisites.map((hash) => (hash ?? ZERO_HASH).asOpaque()),
   };
 }
 
@@ -303,10 +314,10 @@ export function createRefineContext(config: RefineContextConfig = {}): RefineCon
  */
 export function createWorkPackageSpec(config: WorkPackageSpecConfig = {}): WorkPackageSpec {
   return {
-    hash: (config.hash ?? h.ZERO_HASH).asOpaque(),
+    hash: (config.hash ?? ZERO_HASH).asOpaque(),
     length: U32(config.length ?? 0, "length"),
-    erasureRoot: (config.erasureRoot ?? h.ZERO_HASH).asOpaque(),
-    exportsRoot: (config.exportsRoot ?? h.ZERO_HASH).asOpaque(),
+    erasureRoot: (config.erasureRoot ?? ZERO_HASH).asOpaque(),
+    exportsRoot: (config.exportsRoot ?? ZERO_HASH).asOpaque(),
     exportsCount: U16(config.exportsCount ?? 0, "exportsCount"),
   };
 }
@@ -337,13 +348,13 @@ export function createWorkPackageSpec(config: WorkPackageSpecConfig = {}): WorkP
  * });
  * ```
  */
-export function createWorkReport(blake2b: h.Blake2b, config: WorkReportConfig): WorkReport {
-  if (config.results.length < block.workPackage.MIN_NUMBER_OF_WORK_ITEMS) {
-    throw new Error(`WorkReport cannot contain less than ${block.workPackage.MIN_NUMBER_OF_WORK_ITEMS} results`);
+export function createWorkReport(blake2b: Blake2b, config: WorkReportConfig): WorkReport {
+  if (config.results.length < workPackage.MIN_NUMBER_OF_WORK_ITEMS) {
+    throw new Error(`WorkReport cannot contain less than ${workPackage.MIN_NUMBER_OF_WORK_ITEMS} results`);
   }
 
-  if (config.results.length > block.workPackage.MAX_NUMBER_OF_WORK_ITEMS) {
-    throw new Error(`WorkReport cannot contain more than ${block.workPackage.MAX_NUMBER_OF_WORK_ITEMS} results`);
+  if (config.results.length > workPackage.MAX_NUMBER_OF_WORK_ITEMS) {
+    throw new Error(`WorkReport cannot contain more than ${workPackage.MAX_NUMBER_OF_WORK_ITEMS} results`);
   }
 
   const results = config.results.map((resultConfig) => createWorkResult(blake2b, resultConfig));
@@ -351,11 +362,11 @@ export function createWorkReport(blake2b: h.Blake2b, config: WorkReportConfig): 
   return {
     workPackageSpec: createWorkPackageSpec(config.workPackageSpec ?? {}),
     context: createRefineContext(config.context ?? {}),
-    coreIndex: block.tryAsCoreIndex(config.coreIndex ?? 0),
-    authorizerHash: (config.authorizerHash ?? h.ZERO_HASH).asOpaque(),
-    authorizationOutput: BytesBlob(config.authorizationOutput),
+    coreIndex: tryAsCoreIndex(config.coreIndex ?? 0),
+    authorizerHash: (config.authorizerHash ?? ZERO_HASH).asOpaque(),
+    authorizationOutput: Blob(config.authorizationOutput),
     segmentRootLookup: config.segmentRootLookup ?? [],
-    results: collections.FixedSizeArray.new(results, U8(results.length, "results.length")),
+    results: FixedSizeArray.new(results, U8(results.length, "results.length")),
     authorizationGasUsed: Gas(config.authorizationGasUsed ?? 0n, "authorizationGasUsed"),
   };
 }
@@ -376,6 +387,6 @@ export function createWorkReport(blake2b: h.Blake2b, config: WorkReportConfig): 
  * ```
  */
 export async function createWorkReportAsync(config: WorkReportConfig): Promise<WorkReport> {
-  const blake2b = await h.Blake2b.createHasher();
+  const blake2b = await Blake2b.createHasher();
   return createWorkReport(blake2b, config);
 }

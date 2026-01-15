@@ -1,14 +1,12 @@
-import {
-  block,
-  type bytes,
-  codec,
-  config,
-  config_node,
-  hash,
-  state as jamState,
-  numbers,
-  state_merkleization,
-} from "@typeberry/lib";
+import * as block from "@typeberry/lib/block";
+import type * as bytes from "@typeberry/lib/bytes";
+import * as codec from "@typeberry/lib/codec";
+import * as config from "@typeberry/lib/config";
+import * as config_node from "@typeberry/lib/config-node";
+import * as hash from "@typeberry/lib/hash";
+import * as numbers from "@typeberry/lib/numbers";
+import * as jamState from "@typeberry/lib/state";
+import * as state_merkleization from "@typeberry/lib/state-merkleization";
 
 const blake2b = await hash.Blake2b.createHasher();
 const spec = config.tinyChainSpec;

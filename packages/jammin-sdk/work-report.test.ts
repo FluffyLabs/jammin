@@ -1,5 +1,7 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import { block, bytes, hash as h } from "@typeberry/lib";
+import * as block from "@typeberry/lib/block";
+import * as bytes from "@typeberry/lib/bytes";
+import * as h from "@typeberry/lib/hash";
 import {
   createRefineContext,
   createWorkPackageSpec,
@@ -419,7 +421,7 @@ describe("createWorkReport", () => {
       createWorkReport(blake2b, {
         results: [],
       });
-    }).toThrow("WorkReport must contain at least one result");
+    }).toThrow("WorkReport cannot contain less than 1 results");
   });
 
   test("throws error when results array exceeds 255 items", () => {
@@ -428,7 +430,7 @@ describe("createWorkReport", () => {
       createWorkReport(blake2b, {
         results,
       });
-    }).toThrow("WorkReport cannot contain more than 255 results");
+    }).toThrow("WorkReport cannot contain more than 16 results");
   });
 });
 

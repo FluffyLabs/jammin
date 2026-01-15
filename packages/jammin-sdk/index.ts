@@ -1,14 +1,12 @@
-export {
-  block,
-  bytes,
-  codec,
-  config,
-  config_node,
-  hash,
-  numbers,
-  state,
-  state_merkleization,
-} from "@typeberry/lib";
+export * as block from "@typeberry/lib/block";
+export * as bytes from "@typeberry/lib/bytes";
+export * as codec from "@typeberry/lib/codec";
+export * as config from "@typeberry/lib/config";
+export * as config_node from "@typeberry/lib/config-node";
+export * as hash from "@typeberry/lib/hash";
+export * as numbers from "@typeberry/lib/numbers";
+export * as state from "@typeberry/lib/state";
+export * as state_merkleization from "@typeberry/lib/state-merkleization";
 export * from "./types.js";
 export * from "./work-report.js";
 

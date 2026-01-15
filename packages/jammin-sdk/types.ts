@@ -2,7 +2,9 @@
  * SDK utility functions and helpers
  */
 
-import { block, bytes, numbers } from "@typeberry/lib";
+import { type ServiceGas, tryAsServiceGas } from "@typeberry/lib/block";
+import { BytesBlob } from "@typeberry/lib/bytes";
+import * as numbers from "@typeberry/lib/numbers";
 
 /**
  * Validates and converts a number to U8.
@@ -57,21 +59,21 @@ export function U64(value: number | bigint, fieldName?: string): numbers.U64 {
  * Converts gas value (number or bigint) to ServiceGas type.
  * @throws Error if gas value is negative
  */
-export function Gas(value: number | bigint, fieldName?: string): block.ServiceGas {
+export function Gas(value: number | bigint, fieldName?: string): ServiceGas {
   const gasValue = typeof value === "number" ? BigInt(value) : value;
   if (gasValue < 0n) {
     const field = fieldName ? `${fieldName} ` : "";
     throw new Error(`${field}must be non-negative, got: ${gasValue}`);
   }
-  return block.tryAsServiceGas(gasValue);
+  return tryAsServiceGas(gasValue);
 }
 
 /**
  * Normalizes bytes input to BytesBlob type.
  */
-export function BytesBlob(input: Uint8Array | bytes.BytesBlob | undefined): bytes.BytesBlob {
+export function Blob(input: Uint8Array | BytesBlob | undefined): BytesBlob {
   if (!input) {
-    return bytes.BytesBlob.blobFrom(new Uint8Array());
+    return BytesBlob.blobFrom(new Uint8Array());
   }
-  return input instanceof Uint8Array ? bytes.BytesBlob.blobFrom(input) : input;
+  return input instanceof Uint8Array ? BytesBlob.blobFrom(input) : input;
 }
