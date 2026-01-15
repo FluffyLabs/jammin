@@ -19,7 +19,7 @@ jobs:
       - name: Extract version
         id: image-version
         run: |
-          VERSION=$(cat docker/ajanta/VERSION | tr -d '[:space:]')
+          VERSION=$(cat docker/ajanta/VERSION | xargs)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
@@ -44,6 +44,11 @@ jobs:
       - name: Test Docker image
         run: |
           docker run --rm -v ./ajanta-example/services/example:/app ajanta:${{ steps.image-version.outputs.version }} ajanta main.py -o service.jam
+          if [ ! -f ./ajanta-example/services/example/service.jam ]; then
+            echo "Error: service.jam was not created"
+            exit 1
+          fi
+          echo "✓ service.jam created successfully"
 
       - name: Save Docker image
         run: |
@@ -71,7 +76,8 @@ jobs:
           context: .
           push: true
           file: docker/ajanta/ajanta.Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: ghcr.io/fluffylabs/jammin-ajanta:${{ steps.image-version.outputs.version }}
           cache-from: type=gha
+          cache-to: type=gha,mode=max
 
