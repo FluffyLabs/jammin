@@ -2,7 +2,7 @@ import type { SdkConfig } from "../types/config";
 
 export const SDK_CONFIGS = {
   "jam-sdk-0.1.26": {
-    image: "jam-sdk", // todo [seko] replace with pushed image name
+    image: "ghcr.io/fluffylabs/jammin-jam-sdk:0.1.26",
     build: "jam-pvm-build -m service",
     test: "cargo test",
   },
@@ -13,8 +13,13 @@ export const SDK_CONFIGS = {
     test: "true",
   },
   "jade-0.0.15-pre.1": {
-    image: "jade", // todo [seko] replace with pushed image name
+    image: "ghcr.io/fluffylabs/jammin-jade:0.0.15-pre.1",
     build: "build",
     test: "test",
+  },
+  "ajanta-0.1.0": {
+    image: "ajanta", // TODO replace with pushed image name
+    build: "ajanta build main.py -o service.jam",
+    test: "true",
   },
 } as const satisfies Record<string, SdkConfig>;
