@@ -1,5 +1,5 @@
 import { block, type bytes, collections, hash as h } from "@typeberry/lib";
-import { BytesBlob, Gas, Hash, U8, U16, U32 } from "./types.js";
+import { BytesBlob, Gas, U8, U16, U32 } from "./types.js";
 
 const ResultKind = block.workResult.WorkExecResultKind;
 
@@ -247,7 +247,7 @@ export function createWorkResult(blake2b: h.Blake2b, config: WorkResultConfig): 
 
   return {
     serviceId: block.tryAsServiceId(config.serviceId),
-    codeHash: (Hash(config.codeHash) ?? h.ZERO_HASH).asOpaque(),
+    codeHash: (config.codeHash ?? h.ZERO_HASH).asOpaque(),
     payloadHash,
     gas: Gas(config.gas ?? 0n, "gas"),
     result: execResult,
@@ -276,12 +276,12 @@ export function createRefineContext(config: RefineContextConfig = {}): RefineCon
   const prerequisites = config.prerequisites ?? [];
 
   return {
-    anchor: (Hash(config.anchor) ?? h.ZERO_HASH).asOpaque(),
-    stateRoot: (Hash(config.stateRoot) ?? h.ZERO_HASH).asOpaque(),
-    beefyRoot: (Hash(config.beefyRoot) ?? h.ZERO_HASH).asOpaque(),
-    lookupAnchor: (Hash(config.lookupAnchor) ?? h.ZERO_HASH).asOpaque(),
+    anchor: (config.anchor ?? h.ZERO_HASH).asOpaque(),
+    stateRoot: (config.stateRoot ?? h.ZERO_HASH).asOpaque(),
+    beefyRoot: (config.beefyRoot ?? h.ZERO_HASH).asOpaque(),
+    lookupAnchor: (config.lookupAnchor ?? h.ZERO_HASH).asOpaque(),
     lookupAnchorSlot: block.tryAsTimeSlot(config.lookupAnchorSlot ?? 0),
-    prerequisites: prerequisites.map((hash) => (Hash(hash) ?? h.ZERO_HASH).asOpaque()),
+    prerequisites: prerequisites.map((hash) => (hash ?? h.ZERO_HASH).asOpaque()),
   };
 }
 
@@ -303,10 +303,10 @@ export function createRefineContext(config: RefineContextConfig = {}): RefineCon
  */
 export function createWorkPackageSpec(config: WorkPackageSpecConfig = {}): WorkPackageSpec {
   return {
-    hash: (Hash(config.hash) ?? h.ZERO_HASH).asOpaque(),
+    hash: (config.hash ?? h.ZERO_HASH).asOpaque(),
     length: U32(config.length ?? 0, "length"),
-    erasureRoot: (Hash(config.erasureRoot) ?? h.ZERO_HASH).asOpaque(),
-    exportsRoot: (Hash(config.exportsRoot) ?? h.ZERO_HASH).asOpaque(),
+    erasureRoot: (config.erasureRoot ?? h.ZERO_HASH).asOpaque(),
+    exportsRoot: (config.exportsRoot ?? h.ZERO_HASH).asOpaque(),
     exportsCount: U16(config.exportsCount ?? 0, "exportsCount"),
   };
 }
@@ -352,7 +352,7 @@ export function createWorkReport(blake2b: h.Blake2b, config: WorkReportConfig): 
     workPackageSpec: createWorkPackageSpec(config.workPackageSpec ?? {}),
     context: createRefineContext(config.context ?? {}),
     coreIndex: block.tryAsCoreIndex(config.coreIndex ?? 0),
-    authorizerHash: (Hash(config.authorizerHash) ?? h.ZERO_HASH).asOpaque(),
+    authorizerHash: (config.authorizerHash ?? h.ZERO_HASH).asOpaque(),
     authorizationOutput: BytesBlob(config.authorizationOutput),
     segmentRootLookup: config.segmentRootLookup ?? [],
     results: collections.FixedSizeArray.new(results, U8(results.length, "results.length")),

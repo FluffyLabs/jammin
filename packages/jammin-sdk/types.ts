@@ -2,10 +2,10 @@
  * SDK utility functions and helpers
  */
 
-import { block, bytes, type hash as h, numbers } from "@typeberry/lib";
+import { block, bytes, numbers } from "@typeberry/lib";
 
 /**
- * Validates and converts a number to U8 with clear error messages.
+ * Validates and converts a number to U8.
  * @throws Error if value is out of valid U8 range
  */
 export function U8(value: number, fieldName?: string): numbers.U8 {
@@ -17,7 +17,7 @@ export function U8(value: number, fieldName?: string): numbers.U8 {
 }
 
 /**
- * Validates and converts a number to U16 with clear error messages.
+ * Validates and converts a number to U16.
  * @throws Error if value is out of valid U16 range
  */
 export function U16(value: number, fieldName?: string): numbers.U16 {
@@ -29,7 +29,7 @@ export function U16(value: number, fieldName?: string): numbers.U16 {
 }
 
 /**
- * Validates and converts a number to U32 with clear error messages.
+ * Validates and converts a number to U32.
  * @throws Error if value is out of valid U32 range
  */
 export function U32(value: number, fieldName?: string): numbers.U32 {
@@ -41,7 +41,7 @@ export function U32(value: number, fieldName?: string): numbers.U32 {
 }
 
 /**
- * Validates and converts a number to U64 with clear error messages.
+ * Validates and converts a value (number or bigint) to U64.
  * @throws Error if value is out of valid U64 range
  */
 export function U64(value: number | bigint, fieldName?: string): numbers.U64 {
@@ -54,7 +54,7 @@ export function U64(value: number | bigint, fieldName?: string): numbers.U64 {
 }
 
 /**
- * Converts gas value (number or bigint) to ServiceGas type with validation.
+ * Converts gas value (number or bigint) to ServiceGas type.
  * @throws Error if gas value is negative
  */
 export function Gas(value: number | bigint, fieldName?: string): block.ServiceGas {
@@ -74,15 +74,4 @@ export function BytesBlob(input: Uint8Array | bytes.BytesBlob | undefined): byte
     return bytes.BytesBlob.blobFrom(new Uint8Array());
   }
   return input instanceof Uint8Array ? bytes.BytesBlob.blobFrom(input) : input;
-}
-
-/**
- * Normalizes hash input.
- * Preserves the branded type using generics.
- */
-export function Hash<T extends h.OpaqueHash>(hash: T | undefined): T | undefined {
-  if (!hash) {
-    return undefined;
-  }
-  return hash as T;
 }
