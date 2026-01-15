@@ -1,35 +1,88 @@
 /**
- * Type extractions from @typeberry/lib
- *
- * These types are extracted from classes with private constructors,
- * so we use ReturnType of their static create methods.
+ * SDK utility functions and helpers
  */
 
-import type { block } from "@typeberry/lib";
+import { block, bytes, type hash as h, numbers } from "@typeberry/lib";
 
-// Helper type to extract return type from create method
-// biome-ignore lint/suspicious/noExplicitAny: Required for generic type constraint - we only extract return type, parameters are not used
-type CreateReturn<T extends { create: (...args: any[]) => any }> = ReturnType<T["create"]>;
+/**
+ * Validates and converts a number to U8 with clear error messages.
+ * @throws Error if value is out of valid U8 range
+ */
+export function U8(value: number, fieldName?: string): numbers.U8 {
+  if (!Number.isInteger(value) || value < 0 || value > 0xff) {
+    const field = fieldName ? `${fieldName} ` : "";
+    throw new Error(`${field}must be a valid U8 (0 to 255), got: ${value}`);
+  }
+  return numbers.tryAsU8(value);
+}
 
-// Work Report Types
-export type WorkReport = CreateReturn<typeof block.workReport.WorkReport>;
-export type WorkPackageSpec = CreateReturn<typeof block.workReport.WorkPackageSpec>;
-export type RefineContext = CreateReturn<typeof block.refineContext.RefineContext>;
-export type WorkPackageInfo = CreateReturn<typeof block.refineContext.WorkPackageInfo>;
+/**
+ * Validates and converts a number to U16 with clear error messages.
+ * @throws Error if value is out of valid U16 range
+ */
+export function U16(value: number, fieldName?: string): numbers.U16 {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffff) {
+    const field = fieldName ? `${fieldName} ` : "";
+    throw new Error(`${field}must be a valid U16 (0 to 65535), got: ${value}`);
+  }
+  return numbers.tryAsU16(value);
+}
 
-// Work Result Types
-export type WorkResult = CreateReturn<typeof block.workResult.WorkResult>;
-export type WorkRefineLoad = CreateReturn<typeof block.workResult.WorkRefineLoad>;
-export type WorkExecResult = InstanceType<typeof block.workResult.WorkExecResult>;
+/**
+ * Validates and converts a number to U32 with clear error messages.
+ * @throws Error if value is out of valid U32 range
+ */
+export function U32(value: number, fieldName?: string): numbers.U32 {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) {
+    const field = fieldName ? `${fieldName} ` : "";
+    throw new Error(`${field}must be a valid U32 (0 to 4294967295), got: ${value}`);
+  }
+  return numbers.tryAsU32(value);
+}
 
-// Work Package Type
-export type WorkPackage = CreateReturn<typeof block.workPackage.WorkPackage>;
+/**
+ * Validates and converts a number to U64 with clear error messages.
+ * @throws Error if value is out of valid U64 range
+ */
+export function U64(value: number | bigint, fieldName?: string): numbers.U64 {
+  const bigintValue = typeof value === "number" ? BigInt(value) : value;
+  if (bigintValue < 0n) {
+    const field = fieldName ? `${fieldName} ` : "";
+    throw new Error(`${field}must be non-negative, got: ${bigintValue}`);
+  }
+  return numbers.tryAsU64(bigintValue);
+}
 
-// Work Item Type
-export type WorkItem = CreateReturn<typeof block.workItem.WorkItem>;
-export type ImportSpec = CreateReturn<typeof block.workItem.ImportSpec>;
+/**
+ * Converts gas value (number or bigint) to ServiceGas type with validation.
+ * @throws Error if gas value is negative
+ */
+export function Gas(value: number | bigint, fieldName?: string): block.ServiceGas {
+  const gasValue = typeof value === "number" ? BigInt(value) : value;
+  if (gasValue < 0n) {
+    const field = fieldName ? `${fieldName} ` : "";
+    throw new Error(`${field}must be non-negative, got: ${gasValue}`);
+  }
+  return block.tryAsServiceGas(gasValue);
+}
 
-// Block Types
-export type Block = CreateReturn<typeof block.Block>;
-export type Header = CreateReturn<typeof block.Header>;
-export type Extrinsic = CreateReturn<typeof block.Extrinsic>;
+/**
+ * Normalizes bytes input to BytesBlob type.
+ */
+export function BytesBlob(input: Uint8Array | bytes.BytesBlob | undefined): bytes.BytesBlob {
+  if (!input) {
+    return bytes.BytesBlob.blobFrom(new Uint8Array());
+  }
+  return input instanceof Uint8Array ? bytes.BytesBlob.blobFrom(input) : input;
+}
+
+/**
+ * Normalizes hash input.
+ * Preserves the branded type using generics.
+ */
+export function Hash<T extends h.OpaqueHash>(hash: T | undefined): T | undefined {
+  if (!hash) {
+    return undefined;
+  }
+  return hash as T;
+}
