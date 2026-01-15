@@ -2,12 +2,13 @@ import * as p from "@clack/prompts";
 import { Command, InvalidArgumentError } from "commander";
 import { fetchRepo } from "../../utils/fetch-repo";
 
-type Template = "jam-sdk" | "jade" | "jambrains" | "undecided";
+type Template = "jam-sdk" | "jade" | "jambrains" | "ajanta" | "undecided";
 
 const TARGETS: Record<Template, string> = {
   "jam-sdk": "jammin-create/jammin-create-jam-sdk",
   jade: "jammin-create/jammin-create-jade",
   jambrains: "jammin-create/jammin-create-jambrains",
+  ajanta: "jammin-create/jammin-create-ajanta",
   undecided: "jammin-create/jammin-create-undecided",
 };
 
