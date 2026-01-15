@@ -26,6 +26,6 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@typeberry/lib": "^0.5.1-31343a9"
+    "@typeberry/lib": "0.5.2-9afefa7"
   }
 }

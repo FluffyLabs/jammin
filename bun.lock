@@ -1,9 +1,9 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
+  "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "jammin",
+      "name": "@fluffylabs/jammin",
       "devDependencies": {
         "@biomejs/biome": "2.3.8",
         "@types/bun": "^1.3.3",
@@ -16,7 +16,7 @@
       "name": "@fluffylabs/jammin-cli",
       "version": "0.0.2",
       "bin": {
-        "jammin": "dist/index.js",
+        "jammin": "./dist/index.js",
       },
       "dependencies": {
         "@clack/prompts": "^0.11.0",
@@ -36,7 +36,7 @@
       "name": "@fluffylabs/jammin-sdk",
       "version": "0.0.2",
       "dependencies": {
-        "@typeberry/lib": "^0.5.1-31343a9",
+        "@typeberry/lib": "0.5.2-9afefa7",
       },
       "devDependencies": {
         "@tsconfig/node20": "^20.1.8",
@@ -70,23 +70,31 @@
 
     "@clack/prompts": ["@clack/prompts@0.11.0", "", { "dependencies": { "@clack/core": "0.5.0", "picocolors": "^1.0.0", "sisteransi": "^1.0.5" } }, "sha512-pMN5FcrEw9hUkZA4f+zLlzivQSeQf5dRGJjSUbvVYDLvpKCdQx5OaknvKzgbtXOizhP+SJJJjqEbOe55uKKfAw=="],
 
+    "@fluffylabs/anan-as": ["@fluffylabs/anan-as@1.1.5", "", {}, "sha512-TRCCd5npU38ozMBPPj/0wzCrZ+brsnXL9oZQ1lC38s6OnBeg8cznLMaMNU3GCpR2FpU52dusq7ZgNeoUcAmoSQ=="],
+
     "@fluffylabs/jammin-cli": ["@fluffylabs/jammin-cli@workspace:bin/cli"],
 
     "@fluffylabs/jammin-sdk": ["@fluffylabs/jammin-sdk@workspace:packages/jammin-sdk"],
 
+    "@noble/ed25519": ["@noble/ed25519@2.2.3", "", {}, "sha512-iHV8eI2mRcUmOx159QNrU8vTpQ/Xm70yJ2cTk3Trc86++02usfqFoNl6x0p3JN81ZDS/1gx6xiK0OwrgqCT43g=="],
+
     "@tsconfig/node20": ["@tsconfig/node20@20.1.8", "", {}, "sha512-Em+IdPfByIzWRRpqWL4Z7ArLHZGxmc36BxE3jCz9nBFSm+5aLaPMZyjwu4yetvyKXeogWcxik4L1jB5JTWfw7A=="],
 
-    "@typeberry/lib": ["@typeberry/lib@0.5.0-ad8249b", "", {}, "sha512-ueQ0+cgGcbGACZK/U4O4tx4Qwrv45/O2H4mtiX055T708ESs3/yUBBS5zcBOaRNiZF6A85U0DaANi40q4HHOOQ=="],
+    "@typeberry/lib": ["@typeberry/lib@0.5.2", "", { "dependencies": { "@fluffylabs/anan-as": "^1.1.3", "@noble/ed25519": "2.2.3", "@typeberry/native": "0.0.4-4c0cd28", "hash-wasm": "4.12.0" } }, "sha512-uTUKm5I89z0LHTCLEO6ouD1hHhB+aR5XeO1TG1HOuAvBDd7Kp/48le0fGuw2mtuahgN16pvLVUZbbR4SfAQaPw=="],
+
+    "@typeberry/native": ["@typeberry/native@0.0.4-4c0cd28", "", {}, "sha512-VhZiiSYex3/jDk1I8PlcwPxiM9GslryGxdG+4sbbjNvpr1JxRkH0fAdUnKzxAxGYPNz2MOfwHTmTdVcrk1a5rA=="],
 
     "@types/blake2b": ["@types/blake2b@2.1.3", "", {}, "sha512-MFCdX0MNxFBP/xEILO5Td0kv6nI7+Q2iRWZbTL/yzH2/eDVZS5Wd1LHdsmXClvsCyzqaZfHFzZaN6BUeUCfSDA=="],
 
-    "@types/bun": ["@types/bun@1.3.3", "", { "dependencies": { "bun-types": "1.3.3" } }, "sha512-ogrKbJ2X5N0kWLLFKeytG0eHDleBYtngtlbu9cyBKFtNL3cnpDZkNdQj8flVf6WTZUX5ulI9AY1oa7ljhSrp+g=="],
+    "@types/bun": ["@types/bun@1.3.6", "", { "dependencies": { "bun-types": "1.3.6" } }, "sha512-uWCv6FO/8LcpREhenN1d1b6fcspAB+cefwD7uti8C8VffIv0Um08TKMn98FynpTiU38+y2dUO55T11NgDt8VAA=="],
 
-    "@types/node": ["@types/node@24.10.1", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ=="],
+    "@types/node": ["@types/node@25.0.8", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-powIePYMmC3ibL0UJ2i2s0WIbq6cg6UyVFQxSCpaPxxzAaziRfimGivjdF943sSGV6RADVbk0Nvlm5P/FB44Zg=="],
 
-    "bun-types": ["bun-types@1.3.3", "", { "dependencies": { "@types/node": "*" } }, "sha512-z3Xwlg7j2l9JY27x5Qn3Wlyos8YAp0kKRlrePAOjgjMGS5IG6E7Jnlx736vH9UVI4wUICwwhC9anYL++XeOgTQ=="],
+    "bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
 
     "commander": ["commander@14.0.2", "", {}, "sha512-TywoWNNRbhoD0BXs1P3ZEScW8W5iKrnbithIl0YH+uCmBd0QpPOA8yc82DS3BIE5Ma6FnBVUsJ7wVUDz4dvOWQ=="],
+
+    "hash-wasm": ["hash-wasm@4.12.0", "", {}, "sha512-+/2B2rYLb48I/evdOIhP+K/DD2ca2fgBjp6O+GBEnCDk2e4rpeXIK8GvIyRPjTezgmWn9gmKwkQjjx6BtqDHVQ=="],
 
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
@@ -96,16 +104,8 @@
 
     "undici-types": ["undici-types@7.16.0", "", {}, "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="],
 
-    "zod": ["zod@4.1.13", "", {}, "sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig=="],
+    "zod": ["zod@4.3.5", "", {}, "sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g=="],
 
-    "@fluffylabs/jammin-cli/@types/bun": ["@types/bun@1.3.4", "", { "dependencies": { "bun-types": "1.3.4" } }, "sha512-EEPTKXHP+zKGPkhRLv+HI0UEX8/o+65hqARxLy8Ov5rIxMBPNTjeZww00CIihrIQGEQBYg+0roO5qOnS/7boGA=="],
-
-    "@fluffylabs/jammin-sdk/@typeberry/lib": ["@typeberry/lib@0.5.1-31343a9", "", {}, "sha512-i6WS2xR9yT8ROZk6w8utyaXq9OYfCgJg+QrLZ7nja0kab3+k9YbHYH4icqN4qfwUDsfEk1qW+JDomrn+etuBJg=="],
-
-    "@fluffylabs/jammin-sdk/@types/bun": ["@types/bun@1.3.5", "", { "dependencies": { "bun-types": "1.3.5" } }, "sha512-RnygCqNrd3srIPEWBd5LFeUYG7plCoH2Yw9WaZGyNmdTEei+gWaHqydbaIRkIkcbXwhBT94q78QljxN0Sk838w=="],
-
-    "@fluffylabs/jammin-cli/@types/bun/bun-types": ["bun-types@1.3.4", "", { "dependencies": { "@types/node": "*" } }, "sha512-5ua817+BZPZOlNaRgGBpZJOSAQ9RQ17pkwPD0yR7CfJg+r8DgIILByFifDTa+IPDDxzf5VNhtNlcKqFzDgJvlQ=="],
-
-    "@fluffylabs/jammin-sdk/@types/bun/bun-types": ["bun-types@1.3.5", "", { "dependencies": { "@types/node": "*" } }, "sha512-inmAYe2PFLs0SUbFOWSVD24sg1jFlMPxOjOSSCYqUgn4Hsc3rDc7dFvfVYjFPNHtov6kgUeulV4SxbuIV/stPw=="],
+    "@fluffylabs/jammin-sdk/@typeberry/lib": ["@typeberry/lib@0.5.2-9afefa7", "", { "dependencies": { "@fluffylabs/anan-as": "^1.1.5", "@noble/ed25519": "2.2.3", "@typeberry/native": "0.0.4-4c0cd28", "hash-wasm": "4.12.0" } }, "sha512-8RgtMK29flVgYRF8FEoTuwc249NLajBuQ7/fc+24bc8gNDkJH39mJiPz5TQKPcOPNQ6MSKnayMNO6u+i125RJA=="],
   }
 }
