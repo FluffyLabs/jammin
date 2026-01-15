@@ -23,14 +23,77 @@ const ServiceConfigSchema = z.object({
   ),
 });
 
-const DeploymentConfigSchema = z.object({
-  spawn: z.string().min(1),
+const StorageKeySchema = z.string().refine(
+  (key) => {
+    // Allow any string
+    if (!key.startsWith("0x")) {
+      return true;
+    }
+    // If 0x-prefixed, must be valid hex and match specific byte lengths
+    const hexPart = key.slice(2);
+    if (!/^[0-9a-fA-F]+$/.test(hexPart)) {
+      return false;
+    }
+    const byteLength = hexPart.length / 2;
+    return byteLength === 32 || byteLength === 31 || byteLength === 24;
+  }
+);
+
+const ServiceDeploymentConfigSchema = z.object({
+  id: z
+    .number()
+    .int("Service ID must be an integer")
+    .min(0, "Service ID must be >= 0")
+    .max(4294967295, "Service ID must be <= 4294967295 (u32 max)")
+    .optional(),
+  storage: z.record(StorageKeySchema, z.string(), { error: (issue) => issue.code === "invalid_key" ? "Storage key must be a string or 0x-prefixed hex hash of 32, 31, or 24 bytes" : undefined }).optional(),
 });
 
-export const JamminBuildConfigSchema = z.object({
-  services: z.array(ServiceConfigSchema).min(1, "At least one service is required"),
-  deployment: DeploymentConfigSchema.optional(),
+const DeploymentConfigSchema = z.object({
+  spawn: z.string().min(1),
+  services: z.record(z.string(), ServiceDeploymentConfigSchema).optional(),
 });
+
+export const JamminBuildConfigSchema = z
+  .object({
+    services: z.array(ServiceConfigSchema).min(1, "At least one service is required"),
+    deployment: DeploymentConfigSchema.optional(),
+  })
+  .superRefine((data, ctx) => {
+    // Cross-validate: service names in deployment must match services in build config
+    if (!data.deployment || !data.deployment.services) {
+      return;
+    }
+    const buildServiceNames = new Set(data.services.map((s) => s.name));
+    const deploymentServiceNames = Object.keys(data.deployment.services);
+
+    const serviceIds = new Map<number, string>();
+
+    for (const serviceName of deploymentServiceNames) {
+      if (!buildServiceNames.has(serviceName)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["deployment", "services", serviceName],
+          message: `Service '${serviceName}' not found in build config`,
+        });
+      }
+
+      // Check for duplicate service IDs
+      const serviceConfig = data.deployment.services[serviceName];
+      if (serviceConfig?.id !== undefined) {
+        if (serviceIds.has(serviceConfig.id)) {
+          const conflictingService = serviceIds.get(serviceConfig.id);
+          ctx.addIssue({
+            code: "custom",
+            path: ["deployment", "services", serviceName, "id"],
+            message: `Service ID ${serviceConfig.id} is already used by service '${conflictingService}'`,
+          });
+        } else {
+          serviceIds.set(serviceConfig.id, serviceName);
+        }
+      }
+    }
+  });
 
 // jammin.network.yml schema
 
@@ -66,3 +129,4 @@ export function validateBuildConfig(data: unknown) {
 export function validateNetworksConfig(data: unknown) {
   return JamminNetworksConfigSchema.parse(data);
 }
+
