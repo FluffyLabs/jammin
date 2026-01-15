@@ -43,7 +43,7 @@ jobs:
 
       - name: Test Docker image
         run: |
-          docker run --rm -v ./ajanta-example/services/example:/app ajanta:${{ steps.image-version.outputs.version }} ajanta main.py -o service.jam
+          docker run --rm -v ./ajanta-example/services/example:/app ajanta:${{ steps.image-version.outputs.version }} ajanta build main.py -o service.jam
           if [ ! -f ./ajanta-example/services/example/service.jam ]; then
             echo "Error: service.jam was not created"
             exit 1
