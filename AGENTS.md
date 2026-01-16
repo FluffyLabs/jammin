@@ -9,12 +9,20 @@ jammin (always lowercase) is JAM development tooling for creating, building, dep
 - **jammin studio**: Future Electron app/VS Code extension for GUI-based development
 - **jammin inspect**: Future web app for inspecting deployed JAM services and networks
 
-## Naming Rules
+## Naming Conventions
 
+### Product Names
 - Always spell `jammin` in lowercase, even at sentence starts, headings, or product names such as `jammin cli`, `jammin studio`, and `jammin inspect`.
 - Preserve existing casing for other product names (e.g., `typeberry`, `Polkajam`, `JAMNP`).
 
-## Style Expectations
+### Code Naming
+- **Files**: kebab-case (enforced by Biome: `build-command.ts`, `get-service-configs.ts`)
+- **Types/Interfaces**: PascalCase (`ServiceConfig`, `DockerError`, `ProjectConfig`)
+- **Functions/Variables**: camelCase (`buildService`, `getJamFiles`, `projectRoot`)
+- **Constants**: SCREAMING_SNAKE_CASE for config objects (`SDK_CONFIGS`, `TARGETS`)
+- **Classes**: PascalCase, prefer static methods over instances when appropriate
+
+## Writing Style
 
 - Prefer concise, task-focused prose with short paragraphs.
 - Align terminology with the documentation set in `docs/src`; when in doubt, reference `docs/src/jammin-suite.md` for the canonical wording of suite components.
@@ -28,16 +36,6 @@ This is a **monorepo using Bun workspaces**:
 - `bin/cli/` contains the CLI implementation (`@fluffylabs/jammin-cli`)
 - Commands are organized in `bin/cli/src/commands/` using Commander.js
 - CLI uses `@clack/prompts` for interactive user experiences
-
-### CLI Command Structure
-
-The CLI entry point is `bin/cli/index.ts` which registers commands:
-- `new`: Initialize new jammin projects with SDK selection (polkajam, jade, jambrains)
-- `build`: Build multi-service projects (supports `-s, --service` flag for specific services)
-- `test`: Run tests with optional pattern matching and watch mode
-- `deploy`: Deploy multi-service projects
-
-Each command is in a separate file (`bin/cli/src/commands/*-command.ts`) and exports a Commander `Command` object. Commands should support both interactive mode (using clack prompts) and non-interactive mode (using command-line arguments).
 
 ## Development Commands
 
@@ -59,22 +57,95 @@ bun run lint                   # Lint and fix with Biome
 
 ### Testing
 ```bash
-bun test                       # Run all tests (uses Bun's built-in test runner)
-bun test bin/cli/src/commands/new-command.test.ts  # Run specific test file
+bun test                                            # Run all tests (uses Bun's built-in test runner)
+bun test bin/cli/src/commands/create-command.test.ts  # Run specific test file
+bun test --watch                                    # Run tests in watch mode
 ```
 
 ## Code Style & Conventions
 
-### Linting & Formatting
-- Use Biome (configured in `biome.json`)
-- Line width: 120 characters
-- Indent: 2 spaces
-- Line ending: LF
+### Linting & Formatting (Biome)
+- **Line width**: 120 characters
+- **Indent**: 2 spaces
+- **Line ending**: LF
+- **Quote style**: Double quotes (`"string"`)
+- **Array types**: Shorthand syntax (`string[]` not `Array<string>`)
+- **Block statements**: Always use blocks (no single-line if statements)
+- **Unused imports**: Auto-removed (configured in Biome)
+- **File naming**: kebab-case only (enforced)
+
+Run `bun run qa` before committing to catch all issues.
 
 ### TypeScript
-- Strict mode enabled with modern ESNext features
-- Module system: Preserve (bundler mode)
-- Use `.ts` file extensions in imports
+- **Strict mode**: Enabled with all strict flags
+- **Module system**: Preserve (bundler mode) with `.ts` extensions in imports
+- **Target**: ESNext with ESNext libs
+- **Type safety**: Avoid `any`, prefer explicit types or `unknown`
+- **Unused vars**: Linted by Biome (errors on unused locals/params/imports)
+- **Type imports**: Use `import type { ... }` for type-only imports when possible
+
+### Import Organization
+```typescript
+// 1. Node built-ins (node: prefix)
+import { mkdir } from "node:fs/promises";
+import { join, resolve } from "node:path";
+
+// 2. External dependencies
+import * as p from "@clack/prompts";
+import { Command } from "commander";
+
+// 3. Internal imports (types first, then code)
+import type { ServiceConfig } from "../../types/config";
+import { getServiceConfigs } from "../../utils/get-service-configs";
+import { SDK_CONFIGS } from "../../utils/sdk-configs";
+```
+
+Biome will auto-organize imports when you run `bun run format`.
+
+### Error Handling
+```typescript
+// Custom errors should extend Error with additional context
+export class DockerError extends Error {
+  constructor(
+    message: string,
+    public output: string,  // Additional context
+  ) {
+    super(message);
+  }
+}
+
+// Throw errors with descriptive messages
+if (exitCode !== 0) {
+  throw new DockerError(
+    `Build failed for service '${service.name}' with exit code ${exitCode}`,
+    combinedOutput
+  );
+}
+
+// Use type guards for validation
+export function validate(name: string) {
+  if (!name || name.trim().length === 0) {
+    return new InvalidArgumentError("Project name is required");
+  }
+  // ... more validation
+  return trimmed;
+}
+```
+
+### Comments & Documentation
+```typescript
+// Use JSDoc for public APIs
+/**
+ * Build a single service using Docker
+ */
+export async function buildService(service: ServiceConfig, projectRoot: string): Promise<string>
+
+// Use inline TODO comments with author tag
+// TODO: [AuthorName] Description of what needs to be done
+
+// Keep inline comments concise and explain "why" not "what"
+const dockerArgs = ["run", "--rm", "-v", `${servicePath}:/app`, sdk.image, ...sdk.build.split(" ")];
+```
 
 ## Important Implementation Notes
 
@@ -93,128 +164,32 @@ See `docs/src/jammin-suite.md` for detailed feature plans.
 
 ## Documentation
 
-Documentation is in `docs/` using mdBook:
-```bash
-mdbook serve docs --open       # Preview documentation locally (requires mdbook installation)
-```
-
-When adding new documentation pages, update `docs/src/SUMMARY.md` for navigation.
-
-## Related Documentation
-
-- `docs/src/jammin-suite.md`: Comprehensive feature roadmap
-- `docs/src/development.md`: Sprint planning and task breakdown
+Documentation is in `docs/` using mdBook. When adding new pages, update `docs/src/SUMMARY.md` for navigation. See `docs/src/jammin-suite.md` for the feature roadmap.
 
 ## Bun-Native Development
 
-This project uses **Bun** as the primary runtime and toolchain. Always prefer Bun-native APIs over Node.js or
-third-party alternatives.
+This project uses **Bun** as the primary runtime and toolchain. Always prefer Bun-native APIs over Node.js or third-party alternatives.
 
-### Default to using Bun instead of Node.js.
-
+### Prefer Bun over Node.js
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`
 - Use `bun test` instead of `jest` or `vitest`
-- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
 - Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
-- Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
-- Bun automatically loads .env, so don't use dotenv.
+- Bun automatically loads .env, so don't use dotenv
 
-### APIs
+### Bun-Native APIs
+- `Bun.file` for file operations instead of `node:fs` readFile/writeFile when possible
+- `Bun.spawn()` for running shell commands instead of `child_process`
+- `bun:sqlite` for SQLite instead of `better-sqlite3`
+- Built-in `WebSocket` instead of `ws` package
 
-- `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
-- `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
-- `Bun.redis` for Redis. Don't use `ioredis`.
-- `Bun.sql` for Postgres. Don't use `pg` or `postgres.js`.
-- `WebSocket` is built-in. Don't use `ws`.
-- Prefer `Bun.file` over `node:fs`'s readFile/writeFile
-- Bun.$`ls` instead of execa.
-
-### Testing
-
-Use `bun test` to run tests.
-
-```ts#index.test.ts
+### Testing Pattern
+```typescript
 import { test, expect } from "bun:test";
 
-test("hello world", () => {
-  expect(1).toBe(1);
+test("description", () => {
+  expect(value).toBe(expected);
 });
 ```
-
-### Frontend
-
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
-
-Server:
-
-```ts#index.ts
-import index from "./index.html"
-
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
-  },
-  // optional websocket support
-  websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
-  },
-  development: {
-    hmr: true,
-    console: true,
-  }
-})
-```
-
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
-
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
-```
-
-With the following `frontend.tsx`:
-
-```tsx#frontend.tsx
-import React from "react";
-
-// import .css files directly and it works
-import './index.css';
-
-import { createRoot } from "react-dom/client";
-
-const root = createRoot(document.body);
-
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
-}
-
-root.render(<Frontend />);
-```
-
-Then, run index.ts
-
-```sh
-bun --hot ./index.ts
-```
-
-For more information, read the Bun API docs in `node_modules/bun-types/docs/**.md`.
 
 ---
 
