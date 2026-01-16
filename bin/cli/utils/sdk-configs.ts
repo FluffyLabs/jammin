@@ -18,7 +18,7 @@ export const SDK_CONFIGS = {
     test: "test",
   },
   "ajanta-0.1.0": {
-    image: "ajanta", // TODO replace with pushed image name
+    image: "ghcr.io/fluffylabs/jammin-ajanta:0.1.0",
     build: "ajanta build main.py -o service.jam",
     test: "true",
   },
