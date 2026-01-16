@@ -25,7 +25,7 @@ jammin (always lowercase) is JAM development tooling for creating, building, dep
 ## Writing Style
 
 - Prefer concise, task-focused prose with short paragraphs.
-- Align terminology with the documentation set in `docs/src`; when in doubt, reference `docs/src/jammin-suite.md` for the canonical wording of suite components.
+- Align terminology with the documentation set in `docs/src`; when in doubt, reference `docs/src/bootstrap/jammin-suite.md` for the canonical wording of suite components.
 - Update `docs/src/SUMMARY.md` whenever new pages are added so the mdBook navigation stays accurate.
 - Use direct, plain language that reads like an experienced (non-native) open source developer explaining the work. Avoid marketing fluff or overly formal sentences; keep the tone practical and grounded.
 
@@ -159,12 +159,9 @@ When adding new commands:
 5. Register command in `bin/cli/index.ts`
 6. Add tests in `bin/cli/src/commands/your-command.test.ts` using Bun's test runner
 
-### Future Architecture Plans
-See `docs/src/jammin-suite.md` for detailed feature plans.
-
 ## Documentation
 
-Documentation is in `docs/` using mdBook. When adding new pages, update `docs/src/SUMMARY.md` for navigation. See `docs/src/jammin-suite.md` for the feature roadmap.
+Documentation is in `docs/` using mdBook. When adding new pages, update `docs/src/SUMMARY.md` for navigation. See `docs/src/bootstrap/jammin-suite.md` for the feature roadmap.
 
 ## Bun-Native Development
 
