@@ -60,7 +60,16 @@ export const JamminBuildConfigSchema = z
     deployment: DeploymentConfigSchema.optional(),
   })
   .superRefine((data, ctx) => {
-    // Cross-validate: service names in deployment must match services in build config
+    // Check for duplicate service names
+    const serviceNames = new Set(data.services.map((s) => s.name));
+    if (serviceNames.size !== data.services.length) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["services"],
+        message: "Service names must be unique",
+      });
+    }
+
     if (!data.deployment || !data.deployment.services) {
       return;
     }
@@ -70,6 +79,7 @@ export const JamminBuildConfigSchema = z
     const serviceIds = new Map<number, string>();
 
     for (const serviceName of deploymentServiceNames) {
+      // Check if service name is defined in build config
       if (!buildServiceNames.has(serviceName)) {
         ctx.addIssue({
           code: "custom",
