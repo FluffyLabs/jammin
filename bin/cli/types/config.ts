@@ -61,4 +61,3 @@ export interface ComposeNetworkConfig {
   /** Path to docker-compose file */
   compose: string;
 }
-

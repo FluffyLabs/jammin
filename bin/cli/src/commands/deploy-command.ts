@@ -1,10 +1,10 @@
 import * as p from "@clack/prompts";
 import { bytes } from "@typeberry/lib";
 import { Command } from "commander";
+import { loadBuildConfig } from "../../utils/config-loader";
 import { getJamFiles } from "../../utils/file-utils";
 import { generateState, type ServiceBuildOutput, saveStateFile } from "../../utils/genesis-state-generator";
 import { getServiceConfigs } from "../../utils/get-service-configs";
-import { loadBuildConfig } from "../../utils/config-loader";
 import { buildService } from "./build-command";
 
 export class DeployError extends Error {
