@@ -1,14 +1,8 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import * as block from "@typeberry/lib/block";
 import * as bytes from "@typeberry/lib/bytes";
 import * as h from "@typeberry/lib/hash";
-import {
-  createRefineContext,
-  createWorkPackageSpec,
-  createWorkReport,
-  createWorkReportAsync,
-  createWorkResult,
-} from "./work-report.js";
+import { CoreId, Gas, ServiceId, Slot, U16, U32 } from "./types.js";
+import { createWorkReport, createWorkReportAsync, createWorkResult } from "./work-report.js";
 
 describe("createWorkResult", () => {
   let blake2b: h.Blake2b;
@@ -19,58 +13,51 @@ describe("createWorkResult", () => {
 
   test("creates a work result with minimal options", () => {
     const result = createWorkResult(blake2b, {
-      serviceId: 1,
+      serviceId: ServiceId(1),
     });
 
-    expect(result.serviceId).toBe(block.tryAsServiceId(1));
+    expect(result.serviceId).toBe(ServiceId(1));
     expect(result.codeHash).toEqual(h.ZERO_HASH.asOpaque());
-    expect(result.gas).toBe(block.tryAsServiceGas(0n));
+    expect(result.gas).toBe(Gas(0n));
     expect(result.result.kind).toBe(0); // ok
     expect(result.result.okBlob).toEqual(bytes.BytesBlob.blobFrom(new Uint8Array()));
   });
 
   test("creates a work result with all options", () => {
-    const codeHash = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([1, 2, 3])));
-    const payload = bytes.BytesBlob.blobFrom(new Uint8Array([4, 5, 6]));
-    const output = bytes.BytesBlob.blobFrom(new Uint8Array([7, 8, 9]));
+    const codeHash = blake2b.hashBytes(bytes.BytesBlob.blobFromNumbers([1, 2, 3]));
+    const payload = bytes.BytesBlob.blobFromNumbers([4, 5, 6]);
+    const output = bytes.BytesBlob.blobFromNumbers([7, 8, 9]);
 
     const result = createWorkResult(blake2b, {
-      serviceId: 42,
+      serviceId: ServiceId(42),
       codeHash,
       payload,
-      gas: 1000n,
+      gas: Gas(1000n),
       result: { type: "ok", output },
       load: {
-        exportedSegments: 5,
-        extrinsicCount: 10,
-        extrinsicSize: 200,
-        gasUsed: 500n,
-        importedSegments: 3,
+        exportedSegments: U32(5),
+        extrinsicCount: U32(10),
+        extrinsicSize: U32(200),
+        gasUsed: Gas(500n),
+        importedSegments: U32(3),
       },
     });
 
-    // @ts-expect-error - comparing branded type to plain number
-    expect(result.serviceId).toBe(42);
+    expect(result.serviceId).toBe(ServiceId(42));
     expect(result.codeHash).toEqual(codeHash.asOpaque());
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(result.gas).toBe(1000n);
+    expect(result.gas).toBe(Gas(1000n));
     expect(result.result.kind).toBe(0); // ok
     expect(result.result.okBlob).toEqual(output);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(result.load.exportedSegments).toBe(5);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(result.load.extrinsicCount).toBe(10);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(result.load.extrinsicSize).toBe(200);
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(result.load.gasUsed).toBe(500n);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(result.load.importedSegments).toBe(3);
+    expect(result.load.exportedSegments).toBe(U32(5));
+    expect(result.load.extrinsicCount).toBe(U32(10));
+    expect(result.load.extrinsicSize).toBe(U32(200));
+    expect(result.load.gasUsed).toBe(Gas(500n));
+    expect(result.load.importedSegments).toBe(U32(3));
   });
 
   test("creates an error result when result type is panic", () => {
     const result = createWorkResult(blake2b, {
-      serviceId: 1,
+      serviceId: ServiceId(1),
       result: { type: "panic" },
     });
 
@@ -79,11 +66,11 @@ describe("createWorkResult", () => {
   });
 
   test("computes correct payload hash", () => {
-    const payload = bytes.BytesBlob.blobFrom(new Uint8Array([1, 2, 3, 4, 5]));
+    const payload = bytes.BytesBlob.blobFromNumbers([1, 2, 3, 4, 5]);
     const expectedHash = blake2b.hashBytes(payload);
 
     const result = createWorkResult(blake2b, {
-      serviceId: 1,
+      serviceId: ServiceId(1),
       payload,
     });
 
@@ -92,145 +79,18 @@ describe("createWorkResult", () => {
 
   test("handles partial load options with defaults", () => {
     const result = createWorkResult(blake2b, {
-      serviceId: 1,
+      serviceId: ServiceId(1),
       load: {
-        exportedSegments: 10,
+        exportedSegments: U32(10),
         // Other fields should default to 0
       },
     });
 
-    // @ts-expect-error - comparing branded type to plain number
-    expect(result.load.exportedSegments).toBe(10);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(result.load.extrinsicCount).toBe(0);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(result.load.extrinsicSize).toBe(0);
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(result.load.gasUsed).toBe(0n);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(result.load.importedSegments).toBe(0);
-  });
-});
-
-describe("createRefineContext", () => {
-  let blake2b: h.Blake2b;
-
-  beforeAll(async () => {
-    blake2b = await h.Blake2b.createHasher();
-  });
-
-  test("creates a refine context with minimal options", () => {
-    const context = createRefineContext({});
-
-    expect(context.anchor).toEqual(h.ZERO_HASH.asOpaque());
-    expect(context.stateRoot).toEqual(h.ZERO_HASH.asOpaque());
-    expect(context.beefyRoot).toEqual(h.ZERO_HASH.asOpaque());
-    expect(context.lookupAnchor).toEqual(h.ZERO_HASH.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(context.lookupAnchorSlot).toBe(0);
-    expect(context.prerequisites).toEqual([]);
-  });
-
-  test("creates a refine context with all options", () => {
-    const anchor = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([1])));
-    const stateRoot = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([2])));
-    const beefyRoot = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([3])));
-    const lookupAnchor = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([4])));
-    const prereq1 = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([5])));
-    const prereq2 = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([6])));
-
-    const context = createRefineContext({
-      anchor,
-      stateRoot,
-      beefyRoot,
-      lookupAnchor,
-      lookupAnchorSlot: 100,
-      prerequisites: [prereq1, prereq2],
-    });
-
-    expect(context.anchor).toEqual(anchor.asOpaque());
-    expect(context.stateRoot).toEqual(stateRoot.asOpaque());
-    expect(context.beefyRoot).toEqual(beefyRoot.asOpaque());
-    expect(context.lookupAnchor).toEqual(lookupAnchor.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(context.lookupAnchorSlot).toBe(100);
-    expect(context.prerequisites).toEqual([prereq1.asOpaque(), prereq2.asOpaque()]);
-  });
-
-  test("handles partial options", () => {
-    const anchor = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([1])));
-
-    const context = createRefineContext({
-      anchor,
-      lookupAnchorSlot: 50,
-    });
-
-    expect(context.anchor).toEqual(anchor.asOpaque());
-    expect(context.stateRoot).toEqual(h.ZERO_HASH.asOpaque());
-    expect(context.beefyRoot).toEqual(h.ZERO_HASH.asOpaque());
-    expect(context.lookupAnchor).toEqual(h.ZERO_HASH.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(context.lookupAnchorSlot).toBe(50);
-    expect(context.prerequisites).toEqual([]);
-  });
-});
-
-describe("createWorkPackageSpec", () => {
-  let blake2b: h.Blake2b;
-
-  beforeAll(async () => {
-    blake2b = await h.Blake2b.createHasher();
-  });
-
-  test("creates a work package spec with minimal options", () => {
-    const spec = createWorkPackageSpec({});
-
-    expect(spec.hash).toEqual(h.ZERO_HASH.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(spec.length).toBe(0);
-    expect(spec.erasureRoot).toEqual(h.ZERO_HASH.asOpaque());
-    expect(spec.exportsRoot).toEqual(h.ZERO_HASH.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(spec.exportsCount).toBe(0);
-  });
-
-  test("creates a work package spec with all options", () => {
-    const hash = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([1])));
-    const erasureRoot = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([2])));
-    const exportsRoot = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([3])));
-
-    const spec = createWorkPackageSpec({
-      hash,
-      length: 1024,
-      erasureRoot,
-      exportsRoot,
-      exportsCount: 5,
-    });
-
-    expect(spec.hash).toEqual(hash.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(spec.length).toBe(1024);
-    expect(spec.erasureRoot).toEqual(erasureRoot.asOpaque());
-    expect(spec.exportsRoot).toEqual(exportsRoot.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(spec.exportsCount).toBe(5);
-  });
-
-  test("handles partial options", () => {
-    const hash = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([1])));
-
-    const spec = createWorkPackageSpec({
-      hash,
-      length: 512,
-    });
-
-    expect(spec.hash).toEqual(hash.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(spec.length).toBe(512);
-    expect(spec.erasureRoot).toEqual(h.ZERO_HASH.asOpaque());
-    expect(spec.exportsRoot).toEqual(h.ZERO_HASH.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(spec.exportsCount).toBe(0);
+    expect(result.load.exportedSegments).toBe(U32(10));
+    expect(result.load.extrinsicCount).toBe(U32(0));
+    expect(result.load.extrinsicSize).toBe(U32(0));
+    expect(result.load.gasUsed).toBe(Gas(0n));
+    expect(result.load.importedSegments).toBe(U32(0));
   });
 });
 
@@ -243,176 +103,149 @@ describe("createWorkReport", () => {
 
   test("creates a work report with minimal options", () => {
     const report = createWorkReport(blake2b, {
-      results: [{ serviceId: 1 }],
+      results: [{ serviceId: ServiceId(1) }],
     });
 
     expect(report.workPackageSpec.hash).toEqual(h.ZERO_HASH.asOpaque());
     expect(report.context.anchor).toEqual(h.ZERO_HASH.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.coreIndex).toBe(0);
+    expect(report.coreIndex).toBe(CoreId(0));
     expect(report.authorizerHash).toEqual(h.ZERO_HASH.asOpaque());
     expect(report.authorizationOutput).toEqual(bytes.BytesBlob.blobFrom(new Uint8Array(0)));
     expect(report.segmentRootLookup).toEqual([]);
     expect(report.results.length).toBe(1);
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(report.authorizationGasUsed).toBe(0n);
+    expect(report.authorizationGasUsed).toBe(Gas(0n));
   });
 
   test("creates a work report with all options", () => {
-    const hash = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([1])));
-    const anchor = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([2])));
-    const authorizerHash = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([3])));
-    const authOutput = bytes.BytesBlob.blobFrom(new Uint8Array([10, 11, 12]));
+    const hash = blake2b.hashBytes(bytes.BytesBlob.blobFromNumbers([1]));
+    const anchor = blake2b.hashBytes(bytes.BytesBlob.blobFromNumbers([2]));
+    const authorizerHash = blake2b.hashBytes(bytes.BytesBlob.blobFromNumbers([3]));
+    const authOutput = bytes.BytesBlob.blobFromNumbers([10, 11, 12]);
 
     const report = createWorkReport(blake2b, {
       workPackageSpec: {
-        hash,
-        length: 2048,
+        hash: hash.asOpaque(),
+        length: U32(2048),
       },
       context: {
-        anchor,
-        lookupAnchorSlot: 42,
+        anchor: anchor.asOpaque(),
+        lookupAnchorSlot: Slot(42),
       },
-      coreIndex: 5,
+      coreIndex: CoreId(5),
       authorizerHash,
       authorizationOutput: authOutput,
       segmentRootLookup: [],
       results: [
-        { serviceId: 1, gas: 100n },
-        { serviceId: 2, gas: 200n },
+        { serviceId: ServiceId(1), gas: Gas(100n) },
+        { serviceId: ServiceId(2), gas: Gas(200n) },
       ],
-      authorizationGasUsed: 50n,
+      authorizationGasUsed: Gas(50n),
     });
 
     expect(report.workPackageSpec.hash).toEqual(hash.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.workPackageSpec.length).toBe(2048);
+    expect(report.workPackageSpec.length).toBe(U32(2048));
     expect(report.context.anchor).toEqual(anchor.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.context.lookupAnchorSlot).toBe(42);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.coreIndex).toBe(5);
+    expect(report.context.lookupAnchorSlot).toBe(Slot(42));
+    expect(report.coreIndex).toBe(CoreId(5));
     expect(report.authorizerHash).toEqual(authorizerHash.asOpaque());
     expect(report.authorizationOutput).toEqual(authOutput);
     expect(report.results.length).toBe(2);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.results[0].serviceId).toBe(1);
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(report.results[0].gas).toBe(100n);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.results[1].serviceId).toBe(2);
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(report.results[1].gas).toBe(200n);
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(report.authorizationGasUsed).toBe(50n);
+    expect(report.results[0]?.serviceId).toBe(ServiceId(1));
+    expect(report.results[0]?.gas).toBe(Gas(100n));
+    expect(report.results[1]?.serviceId).toBe(ServiceId(2));
+    expect(report.results[1]?.gas).toBe(Gas(200n));
+    expect(report.authorizationGasUsed).toBe(Gas(50n));
   });
 
   test("creates work results from result specifications", () => {
-    const codeHash = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([1, 2, 3])));
-    const payload = bytes.BytesBlob.blobFrom(new Uint8Array([4, 5, 6]));
+    const codeHash = blake2b.hashBytes(bytes.BytesBlob.blobFromNumbers([1, 2, 3]));
+    const payload = bytes.BytesBlob.blobFromNumbers([4, 5, 6]);
 
     const report = createWorkReport(blake2b, {
       results: [
         {
-          serviceId: 10,
+          serviceId: ServiceId(10),
           codeHash,
           payload,
-          gas: 500n,
+          gas: Gas(500n),
           result: { type: "ok" },
         },
         {
-          serviceId: 20,
+          serviceId: ServiceId(20),
           result: { type: "panic" },
         },
       ],
     });
 
     expect(report.results.length).toBe(2);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.results[0].serviceId).toBe(10);
-    // @ts-expect-error - comparing branded type to OpaqueHash
-    expect(report.results[0].codeHash).toEqual(codeHash.asOpaque());
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(report.results[0].gas).toBe(500n);
-    // @ts-expect-error - comparing enum to plain number
-    expect(report.results[0].result.kind).toBe(0); // ok
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.results[1].serviceId).toBe(20);
-    // @ts-expect-error - comparing enum to plain number
-    expect(report.results[1].result.kind).toBe(2); // panic
+    expect(report.results[0]?.serviceId).toBe(ServiceId(10));
+    expect(report.results[0]?.codeHash).toEqual(codeHash.asOpaque());
+    expect(report.results[0]?.gas).toBe(Gas(500n));
+    expect(report.results[0]?.result.kind).toBe(0); // ok
+    expect(report.results[1]?.serviceId).toBe(ServiceId(20));
+    expect(report.results[1]?.result.kind).toBe(2); // panic
   });
 
   test("integrates all components correctly", () => {
-    const wpHash = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([1])));
-    const anchor = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([2])));
-    const authHash = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([3])));
-    const codeHash = blake2b.hashBytes(bytes.BytesBlob.blobFrom(new Uint8Array([4])));
+    const wpHash = blake2b.hashBytes(bytes.BytesBlob.blobFromNumbers([1]));
+    const anchor = blake2b.hashBytes(bytes.BytesBlob.blobFromNumbers([2]));
+    const authHash = blake2b.hashBytes(bytes.BytesBlob.blobFromNumbers([3]));
+    const codeHash = blake2b.hashBytes(bytes.BytesBlob.blobFromNumbers([4]));
 
     const report = createWorkReport(blake2b, {
       workPackageSpec: {
-        hash: wpHash,
-        length: 4096,
-        exportsCount: 10,
+        hash: wpHash.asOpaque(),
+        length: U32(4096),
+        exportsCount: U16(10),
       },
       context: {
-        anchor,
-        lookupAnchorSlot: 100,
-        prerequisites: [wpHash],
+        anchor: anchor.asOpaque(),
+        lookupAnchorSlot: Slot(100),
+        prerequisites: [wpHash.asOpaque()],
       },
-      coreIndex: 3,
+      coreIndex: CoreId(3),
       authorizerHash: authHash,
-      authorizationOutput: bytes.BytesBlob.blobFrom(new Uint8Array([1, 2, 3, 4])),
+      authorizationOutput: bytes.BytesBlob.blobFromNumbers([1, 2, 3, 4]),
       results: [
         {
-          serviceId: 1,
+          serviceId: ServiceId(1),
           codeHash,
-          gas: 1000n,
+          gas: Gas(1000n),
           load: {
-            exportedSegments: 2,
-            extrinsicCount: 5,
-            extrinsicSize: 100,
-            gasUsed: 800n,
-            importedSegments: 1,
+            exportedSegments: U32(2),
+            extrinsicCount: U32(5),
+            extrinsicSize: U32(100),
+            gasUsed: Gas(800n),
+            importedSegments: U32(1),
           },
         },
       ],
-      authorizationGasUsed: 200n,
+      authorizationGasUsed: Gas(200n),
     });
 
     // Verify work package spec
     expect(report.workPackageSpec.hash).toEqual(wpHash.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.workPackageSpec.length).toBe(4096);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.workPackageSpec.exportsCount).toBe(10);
+    expect(report.workPackageSpec.length).toBe(U32(4096));
+    expect(report.workPackageSpec.exportsCount).toBe(U16(10));
 
     // Verify context
     expect(report.context.anchor).toEqual(anchor.asOpaque());
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.context.lookupAnchorSlot).toBe(100);
+    expect(report.context.lookupAnchorSlot).toBe(Slot(100));
     expect(report.context.prerequisites.length).toBe(1);
 
     // Verify core details
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.coreIndex).toBe(3);
+    expect(report.coreIndex).toBe(CoreId(3));
     expect(report.authorizerHash).toEqual(authHash.asOpaque());
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(report.authorizationGasUsed).toBe(200n);
+    expect(report.authorizationGasUsed).toBe(Gas(200n));
 
     // Verify results
     expect(report.results.length).toBe(1);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.results[0].serviceId).toBe(1);
-    // @ts-expect-error - comparing branded type to OpaqueHash
-    expect(report.results[0].codeHash).toEqual(codeHash.asOpaque());
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(report.results[0].gas).toBe(1000n);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.results[0].load.exportedSegments).toBe(2);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.results[0].load.extrinsicCount).toBe(5);
-    // @ts-expect-error - comparing branded type to plain bigint
-    expect(report.results[0].load.gasUsed).toBe(800n);
+    expect(report.results[0]?.serviceId).toBe(ServiceId(1));
+    expect(report.results[0]?.codeHash).toEqual(codeHash.asOpaque());
+    expect(report.results[0]?.gas).toBe(Gas(1000n));
+    expect(report.results[0]?.load.exportedSegments).toBe(U32(2));
+    expect(report.results[0]?.load.extrinsicCount).toBe(U32(5));
+    expect(report.results[0]?.load.gasUsed).toBe(Gas(800n));
   });
 
   test("throws error when results array is empty", () => {
@@ -423,8 +256,8 @@ describe("createWorkReport", () => {
     }).toThrow("WorkReport cannot contain less than 1 results");
   });
 
-  test("throws error when results array exceeds 255 items", () => {
-    const results = Array.from({ length: 256 }, (_, i) => ({ serviceId: i }));
+  test("throws error when results array exceeds maximum", () => {
+    const results = Array.from({ length: 17 }, (_, i) => ({ serviceId: ServiceId(i) }));
     expect(() => {
       createWorkReport(blake2b, {
         results,
@@ -436,52 +269,10 @@ describe("createWorkReport", () => {
 describe("createWorkReportAsync", () => {
   test("creates work report without requiring hasher", async () => {
     const report = await createWorkReportAsync({
-      results: [{ serviceId: 1 }],
+      results: [{ serviceId: ServiceId(1) }],
     });
 
     expect(report.results.length).toBe(1);
-    // @ts-expect-error - comparing branded type to plain number
-    expect(report.results[0].serviceId).toBe(1);
-  });
-});
-
-describe("validation", () => {
-  let blake2b: h.Blake2b;
-
-  beforeAll(async () => {
-    blake2b = await h.Blake2b.createHasher();
-  });
-
-  test("throws error for invalid U32 value", () => {
-    expect(() => {
-      createWorkResult(blake2b, {
-        serviceId: 1,
-        load: { exportedSegments: -1 },
-      });
-    }).toThrow("exportedSegments must be a valid U32");
-
-    expect(() => {
-      createWorkResult(blake2b, {
-        serviceId: 1,
-        load: { exportedSegments: 0x100000000 }, // 2^32
-      });
-    }).toThrow("exportedSegments must be a valid U32");
-  });
-
-  test("throws error for negative gas", () => {
-    expect(() => {
-      createWorkResult(blake2b, {
-        serviceId: 1,
-        gas: -100n,
-      });
-    }).toThrow("gas must be non-negative");
-  });
-
-  test("throws error for invalid U16 value", () => {
-    expect(() => {
-      createWorkPackageSpec({
-        exportsCount: 0x10000, // 2^16
-      });
-    }).toThrow("exportsCount must be a valid U16");
+    expect(report.results[0]?.serviceId).toBe(ServiceId(1));
   });
 });

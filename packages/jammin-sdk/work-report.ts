@@ -1,132 +1,72 @@
 import {
-  type refineContext,
-  tryAsCoreIndex,
-  tryAsServiceId,
-  tryAsTimeSlot,
+  type CoreIndex,
+  refineContext,
+  type ServiceGas,
+  type ServiceId,
   workPackage,
-  type workReport,
+  workReport,
   workResult,
 } from "@typeberry/lib/block";
-import type { BytesBlob } from "@typeberry/lib/bytes";
+import { BytesBlob } from "@typeberry/lib/bytes";
+import type { CodecRecord } from "@typeberry/lib/codec";
 import { FixedSizeArray } from "@typeberry/lib/collections";
-import { Blake2b, type Blake2bHash, ZERO_HASH } from "@typeberry/lib/hash";
-import { Blob, Gas, U8, U16, U32 } from "./types.js";
+import { type Blake2b, type Blake2bHash, ZERO_HASH } from "@typeberry/lib/hash";
+import { CoreId, Gas, Slot, U8, U16, U32 } from "./types.js";
 
-const ResultKind = workResult.WorkExecResultKind;
-
-type WorkReport = ReturnType<typeof workReport.WorkReport.create>;
-type WorkPackageSpec = ReturnType<typeof workReport.WorkPackageSpec.create>;
 type RefineContext = ReturnType<typeof refineContext.RefineContext.create>;
 type WorkPackageInfo = ReturnType<typeof refineContext.WorkPackageInfo.create>;
-type WorkResult = ReturnType<typeof workResult.WorkResult.create>;
+type WorkPackageSpec = ReturnType<typeof workReport.WorkPackageSpec.create>;
+type WorkReport = ReturnType<typeof workReport.WorkReport.create>;
 type WorkRefineLoad = ReturnType<typeof workResult.WorkRefineLoad.create>;
+type WorkResult = ReturnType<typeof workResult.WorkResult.create>;
 
-/** Configuration for work refinement load metrics */
-export interface WorkRefineLoadConfig {
-  /** Number of segments exported during execution */
-  exportedSegments?: number;
-  /** Number of extrinsics processed */
-  extrinsicCount?: number;
-  /** Total size of extrinsics in bytes */
-  extrinsicSize?: number;
-  /** Amount of gas consumed */
-  gasUsed?: number | bigint;
-  /** Number of segments imported during execution */
-  importedSegments?: number;
-}
+// Re-export types for convenience
+export type { RefineContext, WorkPackageInfo, WorkPackageSpec, WorkReport, WorkRefineLoad, WorkResult };
 
-/** Configuration for blockchain state context */
-export interface RefineContextConfig {
-  /** Block hash anchor point */
-  anchor?: Blake2bHash;
-  /** State root hash */
-  stateRoot?: Blake2bHash;
-  /** BEEFY root hash */
-  beefyRoot?: Blake2bHash;
-  /** Lookup anchor hash */
-  lookupAnchor?: Blake2bHash;
-  /** Timeslot for lookup anchor */
-  lookupAnchorSlot?: number;
-  /** Array of prerequisite hashes */
-  prerequisites?: Blake2bHash[];
-}
+const { WorkExecResult, WorkExecResultKind } = workResult;
 
-/** Configuration for work package specification */
-export interface WorkPackageSpecConfig {
-  /** Work package hash */
-  hash?: Blake2bHash;
-  /** Length of work package in bytes */
-  length?: number;
-  /** Erasure coding root hash */
-  erasureRoot?: Blake2bHash;
-  /** Exports root hash */
-  exportsRoot?: Blake2bHash;
-  /** Number of exports */
-  exportsCount?: number;
-}
+/** Work result status types */
+export type WorkResultStatus =
+  | { type: "ok"; output?: BytesBlob }
+  | { type: "panic" }
+  | { type: "outOfGas" }
+  | { type: "badCode" }
+  | { type: "codeOversize" };
 
-/** Work result status types for better type safety */
-export type WorkResultStatus = { type: "ok"; output?: Uint8Array | BytesBlob } | { type: "panic" };
-
-/** Configuration for a single work result */
+/** Configuration for a single work result with optional fields */
 export interface WorkResultConfig {
-  /** Service ID that executed the work */
-  serviceId: number;
+  /** Service ID that executed the work (required) */
+  serviceId: ServiceId;
   /** Code hash of the service */
   codeHash?: Blake2bHash;
   /** Input payload for the work item */
-  payload?: Uint8Array | BytesBlob;
+  payload?: BytesBlob;
   /** Gas limit allocated for execution */
-  gas?: number | bigint;
-  /** Execution result (ok with optional output, or panic) */
+  gas?: ServiceGas;
+  /** Execution result */
   result?: WorkResultStatus;
   /** Refinement load metrics */
-  load?: WorkRefineLoadConfig;
+  load?: Partial<CodecRecord<WorkRefineLoad>>;
 }
 
-/** Configuration for complete work report */
+/** Configuration for complete work report with optional fields */
 export interface WorkReportConfig {
-  /** Work package specification */
-  workPackageSpec?: WorkPackageSpecConfig;
-  /** Blockchain state context */
-  context?: RefineContextConfig;
+  /** Work package specification - use U32/U16 from types.ts for branded types */
+  workPackageSpec?: Partial<CodecRecord<WorkPackageSpec>>;
+  /** Blockchain state context - use Slot from types.ts for branded types */
+  context?: Partial<CodecRecord<RefineContext>>;
   /** Core index that produced this report */
-  coreIndex?: number;
+  coreIndex?: CoreIndex;
   /** Hash of the authorizer code */
   authorizerHash?: Blake2bHash;
   /** Output from authorization check */
-  authorizationOutput?: Uint8Array | BytesBlob;
+  authorizationOutput?: BytesBlob;
   /** Segment root lookup table */
   segmentRootLookup?: WorkPackageInfo[];
-  /** Array of work results */
+  /** Array of work results (required) */
   results: WorkResultConfig[];
   /** Gas used during authorization */
-  authorizationGasUsed?: number | bigint;
-}
-
-/**
- * Creates a WorkRefineLoad object with validated numeric types.
- *
- * @param config - Refinement load configuration with all fields optional
- * @returns Validated WorkRefineLoad object
- * @throws Error if any numeric value is out of valid range
- *
- * @example
- * ```typescript
- * const load = createRefineLoad({
- *   exportedSegments: 5,
- *   gasUsed: 1000n,
- * });
- * ```
- */
-export function createRefineLoad(config: WorkRefineLoadConfig = {}): WorkRefineLoad {
-  return {
-    exportedSegments: U32(config.exportedSegments ?? 0, "exportedSegments"),
-    extrinsicCount: U32(config.extrinsicCount ?? 0, "extrinsicCount"),
-    extrinsicSize: U32(config.extrinsicSize ?? 0, "extrinsicSize"),
-    gasUsed: Gas(config.gasUsed ?? 0n, "gasUsed"),
-    importedSegments: U32(config.importedSegments ?? 0, "importedSegments"),
-  };
+  authorizationGasUsed?: ServiceGas;
 }
 
 /**
@@ -134,103 +74,62 @@ export function createRefineLoad(config: WorkRefineLoadConfig = {}): WorkRefineL
  *
  * @param blake2b - Blake2b hasher instance for computing payload hash
  * @param config - Work result configuration
- * @returns Validated WorkResult object
- * @throws Error if validation fails
+ * @returns WorkResult instance
  *
  * @example
  * ```typescript
- * // Success result
  * const result = createWorkResult(blake2b, {
  *   serviceId: 1,
- *   payload: new Uint8Array([1, 2, 3]),
+ *   payload: bytes.BytesBlob.blobFromNumbers([1, 2, 3]),
  *   gas: 1000n,
- *   result: { type: "ok", output: new Uint8Array([4, 5, 6]) },
- * });
- *
- * // Error result
- * const errorResult = createWorkResult(blake2b, {
- *   serviceId: 2,
- *   result: { type: "panic" },
+ *   result: { type: "ok", output: bytes.BytesBlob.blobFromNumbers([4, 5, 6]) },
  * });
  * ```
  */
 export function createWorkResult(blake2b: Blake2b, config: WorkResultConfig): WorkResult {
-  const payloadBlob = Blob(config.payload);
+  const payloadBlob = config.payload ?? BytesBlob.blobFrom(new Uint8Array());
   const payloadHash = blake2b.hashBytes(payloadBlob);
 
   const resultStatus = config.result ?? { type: "ok" };
-  const execResult =
-    resultStatus.type === "panic"
-      ? { kind: ResultKind.panic, okBlob: null }
-      : {
-          kind: ResultKind.ok,
-          okBlob: Blob(resultStatus.output),
-        };
+  let execResult: InstanceType<typeof WorkExecResult>;
 
-  return {
-    serviceId: tryAsServiceId(config.serviceId),
+  switch (resultStatus.type) {
+    case "ok":
+      execResult = new WorkExecResult(
+        WorkExecResultKind.ok,
+        resultStatus.output ?? BytesBlob.blobFrom(new Uint8Array()),
+      );
+      break;
+    case "panic":
+      execResult = new WorkExecResult(WorkExecResultKind.panic);
+      break;
+    case "outOfGas":
+      execResult = new WorkExecResult(WorkExecResultKind.outOfGas);
+      break;
+    case "badCode":
+      execResult = new WorkExecResult(WorkExecResultKind.badCode);
+      break;
+    case "codeOversize":
+      execResult = new WorkExecResult(WorkExecResultKind.codeOversize);
+      break;
+  }
+
+  const load = config.load ?? {};
+
+  return workResult.WorkResult.create({
+    serviceId: config.serviceId,
     codeHash: (config.codeHash ?? ZERO_HASH).asOpaque(),
     payloadHash,
-    gas: Gas(config.gas ?? 0n, "gas"),
+    gas: config.gas ?? Gas(0n),
     result: execResult,
-    load: createRefineLoad(config.load ?? {}),
-  };
-}
-
-/**
- * Creates a RefineContext specifying the blockchain state context for work package execution.
- *
- * @param config - Refine context configuration with all fields optional
- * @returns Validated RefineContext object
- * @throws Error if validation fails
- *
- * @example
- * ```typescript
- * const context = createRefineContext({
- *   anchor: anchorHash,
- *   stateRoot: stateRootHash,
- *   lookupAnchorSlot: 42,
- *   prerequisites: [prereq1Hash, prereq2Hash],
- * });
- * ```
- */
-export function createRefineContext(config: RefineContextConfig = {}): RefineContext {
-  const prerequisites = config.prerequisites ?? [];
-
-  return {
-    anchor: (config.anchor ?? ZERO_HASH).asOpaque(),
-    stateRoot: (config.stateRoot ?? ZERO_HASH).asOpaque(),
-    beefyRoot: (config.beefyRoot ?? ZERO_HASH).asOpaque(),
-    lookupAnchor: (config.lookupAnchor ?? ZERO_HASH).asOpaque(),
-    lookupAnchorSlot: tryAsTimeSlot(config.lookupAnchorSlot ?? 0),
-    prerequisites: prerequisites.map((hash) => (hash ?? ZERO_HASH).asOpaque()),
-  };
-}
-
-/**
- * Creates a WorkPackageSpec describing the specification of a work package.
- *
- * @param config - Work package specification configuration with all fields optional
- * @returns Validated WorkPackageSpec object
- * @throws Error if validation fails
- *
- * @example
- * ```typescript
- * const spec = createWorkPackageSpec({
- *   hash: packageHash,
- *   length: 1024,
- *   exportsCount: 5,
- * });
- * ```
- */
-export function createWorkPackageSpec(config: WorkPackageSpecConfig = {}): WorkPackageSpec {
-  return {
-    hash: (config.hash ?? ZERO_HASH).asOpaque(),
-    length: U32(config.length ?? 0, "length"),
-    erasureRoot: (config.erasureRoot ?? ZERO_HASH).asOpaque(),
-    exportsRoot: (config.exportsRoot ?? ZERO_HASH).asOpaque(),
-    exportsCount: U16(config.exportsCount ?? 0, "exportsCount"),
-  };
+    load: workResult.WorkRefineLoad.create({
+      gasUsed: load.gasUsed ?? Gas(0n),
+      importedSegments: load.importedSegments ?? U32(0),
+      exportedSegments: load.exportedSegments ?? U32(0),
+      extrinsicCount: load.extrinsicCount ?? U32(0),
+      extrinsicSize: load.extrinsicSize ?? U32(0),
+    }),
+  });
 }
 
 /**
@@ -239,19 +138,15 @@ export function createWorkPackageSpec(config: WorkPackageSpecConfig = {}): WorkP
  *
  * @param blake2b - Blake2b hasher instance for hashing work result payloads
  * @param config - Work report configuration
- * @returns Validated WorkReport object
+ * @returns WorkReport instance
  * @throws Error if validation fails or results array is empty
  *
  * @example
  * ```typescript
- * const blake2b = await h.Blake2b.createHasher();
+ * const blake2b = await Blake2b.createHasher();
  *
  * const report = createWorkReport(blake2b, {
  *   coreIndex: 5,
- *   context: {
- *     anchor: anchorHash,
- *     lookupAnchorSlot: 42,
- *   },
  *   results: [
  *     { serviceId: 1, gas: 1000n },
  *     { serviceId: 2, gas: 2000n },
@@ -270,16 +165,32 @@ export function createWorkReport(blake2b: Blake2b, config: WorkReportConfig): Wo
 
   const results = config.results.map((resultConfig) => createWorkResult(blake2b, resultConfig));
 
-  return {
-    workPackageSpec: createWorkPackageSpec(config.workPackageSpec ?? {}),
-    context: createRefineContext(config.context ?? {}),
-    coreIndex: tryAsCoreIndex(config.coreIndex ?? 0),
+  const wpSpec = config.workPackageSpec ?? {};
+  const ctx = config.context ?? {};
+
+  return workReport.WorkReport.create({
+    workPackageSpec: workReport.WorkPackageSpec.create({
+      hash: wpSpec.hash ?? ZERO_HASH.asOpaque(),
+      length: wpSpec.length ?? U32(0),
+      erasureRoot: wpSpec.erasureRoot ?? ZERO_HASH.asOpaque(),
+      exportsRoot: wpSpec.exportsRoot ?? ZERO_HASH.asOpaque(),
+      exportsCount: wpSpec.exportsCount ?? U16(0),
+    }),
+    context: refineContext.RefineContext.create({
+      anchor: ctx.anchor ?? ZERO_HASH.asOpaque(),
+      stateRoot: ctx.stateRoot ?? ZERO_HASH.asOpaque(),
+      beefyRoot: ctx.beefyRoot ?? ZERO_HASH.asOpaque(),
+      lookupAnchor: ctx.lookupAnchor ?? ZERO_HASH.asOpaque(),
+      lookupAnchorSlot: ctx.lookupAnchorSlot ?? Slot(0),
+      prerequisites: ctx.prerequisites ?? [],
+    }),
+    coreIndex: config.coreIndex ?? CoreId(0),
     authorizerHash: (config.authorizerHash ?? ZERO_HASH).asOpaque(),
-    authorizationOutput: Blob(config.authorizationOutput),
+    authorizationOutput: config.authorizationOutput ?? BytesBlob.blobFrom(new Uint8Array()),
     segmentRootLookup: config.segmentRootLookup ?? [],
-    results: FixedSizeArray.new(results, U8(results.length, "results.length")),
-    authorizationGasUsed: Gas(config.authorizationGasUsed ?? 0n, "authorizationGasUsed"),
-  };
+    results: FixedSizeArray.new(results, U8(results.length)),
+    authorizationGasUsed: config.authorizationGasUsed ?? Gas(0n),
+  });
 }
 
 /**
@@ -287,7 +198,7 @@ export function createWorkReport(blake2b: Blake2b, config: WorkReportConfig): Wo
  * Useful for one-off work report creation without managing the hasher instance.
  *
  * @param config - Work report configuration
- * @returns Promise resolving to validated WorkReport object
+ * @returns Promise resolving to WorkReport instance
  *
  * @example
  * ```typescript
@@ -298,6 +209,7 @@ export function createWorkReport(blake2b: Blake2b, config: WorkReportConfig): Wo
  * ```
  */
 export async function createWorkReportAsync(config: WorkReportConfig): Promise<WorkReport> {
+  const { Blake2b } = await import("@typeberry/lib/hash");
   const blake2b = await Blake2b.createHasher();
   return createWorkReport(blake2b, config);
 }

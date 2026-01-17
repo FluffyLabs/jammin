@@ -2,9 +2,21 @@
  * SDK utility functions and helpers
  */
 
-import { type ServiceGas, tryAsServiceGas } from "@typeberry/lib/block";
-import { BytesBlob } from "@typeberry/lib/bytes";
+import {
+  type CoreIndex,
+  type ServiceGas,
+  type ServiceId as ServiceIdType,
+  type TimeSlot,
+  tryAsCoreIndex,
+  tryAsServiceGas,
+  tryAsServiceId,
+  tryAsTimeSlot,
+  tryAsValidatorIndex,
+  type ValidatorIndex,
+} from "@typeberry/lib/block";
 import * as numbers from "@typeberry/lib/numbers";
+
+// Number types
 
 /**
  * Validates and converts a number to U8.
@@ -55,6 +67,8 @@ export function U64(value: number | bigint, fieldName?: string): numbers.U64 {
   return numbers.tryAsU64(bigintValue);
 }
 
+// Block types
+
 /**
  * Converts gas value (number or bigint) to ServiceGas type.
  * @throws Error if gas value is negative
@@ -69,11 +83,49 @@ export function Gas(value: number | bigint, fieldName?: string): ServiceGas {
 }
 
 /**
- * Normalizes bytes input to BytesBlob type.
+ * Validates and converts a number to TimeSlot.
+ * @throws Error if value is out of valid TimeSlot range
  */
-export function Blob(input: Uint8Array | BytesBlob | undefined): BytesBlob {
-  if (!input) {
-    return BytesBlob.blobFrom(new Uint8Array());
+export function Slot(value: number, fieldName?: string): TimeSlot {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) {
+    const field = fieldName ? `${fieldName} ` : "";
+    throw new Error(`${field}must be a valid TimeSlot (0 to 4294967295), got: ${value}`);
   }
-  return input instanceof Uint8Array ? BytesBlob.blobFrom(input) : input;
+  return tryAsTimeSlot(value);
+}
+
+/**
+ * Validates and converts a number to ServiceId.
+ * @throws Error if value is out of valid ServiceId range
+ */
+export function ServiceId(value: number, fieldName?: string): ServiceIdType {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) {
+    const field = fieldName ? `${fieldName} ` : "";
+    throw new Error(`${field}must be a valid ServiceId (0 to 4294967295), got: ${value}`);
+  }
+  return tryAsServiceId(value);
+}
+
+/**
+ * Validates and converts a number to CoreIndex.
+ * @throws Error if value is out of valid CoreIndex range
+ */
+export function CoreId(value: number, fieldName?: string): CoreIndex {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffff) {
+    const field = fieldName ? `${fieldName} ` : "";
+    throw new Error(`${field}must be a valid CoreIndex (0 to 65535), got: ${value}`);
+  }
+  return tryAsCoreIndex(value);
+}
+
+/**
+ * Validates and converts a number to ValidatorIndex.
+ * @throws Error if value is out of valid ValidatorIndex range
+ */
+export function ValidatorId(value: number, fieldName?: string): ValidatorIndex {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffff) {
+    const field = fieldName ? `${fieldName} ` : "";
+    throw new Error(`${field}must be a valid ValidatorIndex (0 to 65535), got: ${value}`);
+  }
+  return tryAsValidatorIndex(value);
 }
