@@ -2,7 +2,7 @@ import * as p from "@clack/prompts";
 import { bytes } from "@typeberry/lib";
 import { Command } from "commander";
 import { getJamFiles } from "../../utils/file-utils";
-import { generateState, type ServiceBuildOutput, saveStateFile } from "../../utils/genesis-state-generator";
+import { generateState, type ServiceBuildOutput, saveStateFile } from "@fluffylabs/jammin-sdk";
 import { getServiceConfigs } from "../../utils/get-service-configs";
 import { buildService } from "./build-command";
 
