@@ -158,6 +158,373 @@ describe("Validate Build Config", () => {
 
     expect(() => validateBuildConfig(config)).toThrow("SDK image is required");
   });
+
+  describe("Deployment Config Validation", () => {
+    test("Should parse valid deployment config with spawn and services", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+          {
+            path: "./services/calculator.ts",
+            name: "calculator",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              id: 12345,
+            },
+            calculator: {
+              id: 1234,
+              storage: {
+                key1: "value1",
+                key2: "value2",
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      expect(result.deployment?.spawn).toBe("local");
+      expect(result.deployment?.services).toBeDefined();
+      expect(result.deployment?.services?.["auth-service"]?.id).toBe(12345);
+      expect(result.deployment?.services?.calculator?.id).toBe(1234);
+      expect(result.deployment?.services?.calculator?.storage).toEqual({
+        key1: "value1",
+        key2: "value2",
+      });
+    });
+
+    test("Should parse valid deployment config with only spawn", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "testnet",
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      expect(result.deployment?.spawn).toBe("testnet");
+      expect(result.deployment?.services).toBeUndefined();
+    });
+
+    test("Should parse valid deployment config with services but no IDs", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              storage: {
+                key: "value",
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      expect(result.deployment?.services?.["auth-service"]?.id).toBeUndefined();
+      expect(result.deployment?.services?.["auth-service"]?.storage).toEqual({
+        key: "value",
+      });
+    });
+
+    test("Should reject deployment config with empty spawn string", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "",
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject deployment config with missing spawn field", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {},
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject deployment config with service not in build config", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "non-existent-service": {
+              id: 12345,
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow(
+        "Service 'non-existent-service' not found in build config",
+      );
+    });
+
+    test("Should reject deployment config with duplicate service IDs", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+          {
+            path: "./services/calculator.ts",
+            name: "calculator",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              id: 12345,
+            },
+            calculator: {
+              id: 12345, // Duplicate ID
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow(
+        "Service ID 12345 is already used by service 'auth-service'",
+      );
+    });
+
+    test("Should reject deployment config with negative service ID", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              id: -1,
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow("Service ID must be >= 0");
+    });
+
+    test("Should reject deployment config with service ID exceeding u32 max", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              id: 4294967296, // u32 max + 1
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow(
+        "Service ID must be <= 4294967295 (u32 max)",
+      );
+    });
+
+    test("Should accept deployment config with service ID at u32 max", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              id: 4294967295, // u32 max
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      expect(result.deployment?.services?.["auth-service"]?.id).toBe(4294967295);
+    });
+
+    test("Should reject deployment config with non-integer service ID", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              id: 123.45,
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow("Service ID must be an integer");
+    });
+
+    test("Should accept deployment config with service ID of zero", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              id: 0,
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      expect(result.deployment?.services?.["auth-service"]?.id).toBe(0);
+    });
+
+    test("Should accept deployment config with multiple services and mixed configurations", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+          {
+            path: "./services/calculator.ts",
+            name: "calculator",
+            sdk: "jam-sdk-0.1.26",
+          },
+          {
+            path: "./services/storage.ts",
+            name: "storage",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              id: 1,
+              storage: {
+                key1: "value1",
+              },
+            },
+            calculator: {
+              id: 2,
+            },
+            storage: {
+              storage: {
+                key2: "value2",
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      expect(result.deployment?.services?.["auth-service"]?.id).toBe(1);
+      expect(result.deployment?.services?.calculator?.id).toBe(2);
+      expect(result.deployment?.services?.storage?.id).toBeUndefined();
+      expect(result.deployment?.services?.storage?.storage).toEqual({
+        key2: "value2",
+      });
+    });
+
+    test("Should reject deployment config with non-string storage values", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              id: 12345,
+              storage: {
+                key: true, // Boolean value should be rejected
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+  });
 });
 
 describe("Validate Networks Config", () => {

@@ -24,3 +24,10 @@ services:
 
 deployment:
   spawn: local
+  services:
+    auth-service:
+      id: 12345
+    calculator:
+      id: 1234
+      storage:
+        abcd: test
