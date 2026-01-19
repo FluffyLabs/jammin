@@ -8,6 +8,7 @@ export * as numbers from "@typeberry/lib/numbers";
 export * as state from "@typeberry/lib/state";
 export * as state_merkleization from "@typeberry/lib/state-merkleization";
 export * from "./genesis-state-generator.js";
+export * from "./simulator.js";
 export * from "./types.js";
 export * from "./work-report.js";
 
