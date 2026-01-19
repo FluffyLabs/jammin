@@ -64,7 +64,7 @@ export async function simulateAccumulation(
 ): Promise<AccumulateResult> {
   const chainSpec = options.chainSpec ?? tinyChainSpec;
   const pvmBackend = options.pvmBackend ?? PvmBackend.Ananas;
-  const sequential = options.sequential ?? true;
+  const isSequential = options.sequential ?? true;
   const slot = options.slot ?? state.timeslot;
   const entropy = options.entropy ?? ZERO_HASH.asOpaque();
 
@@ -89,7 +89,7 @@ export async function simulateAccumulation(
 
   const accumulate = new Accumulate(chainSpec, blake2b, state, {
     pvm: pvmBackend,
-    accumulateSequentially: sequential,
+    accumulateSequentially: isSequential,
   });
 
   const input: AccumulateInput = {
