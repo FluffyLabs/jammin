@@ -300,9 +300,7 @@ describe("Validate Build Config", () => {
         },
       };
 
-      expect(() => validateBuildConfig(config)).toThrow(
-        "Service 'non-existent-service' not found in build config",
-      );
+      expect(() => validateBuildConfig(config)).toThrow("Service 'non-existent-service' not found in build config");
     });
 
     test("Should reject deployment config with duplicate service IDs", () => {
@@ -332,9 +330,7 @@ describe("Validate Build Config", () => {
         },
       };
 
-      expect(() => validateBuildConfig(config)).toThrow(
-        "Service ID 12345 is already used by service 'auth-service'",
-      );
+      expect(() => validateBuildConfig(config)).toThrow("Service ID 12345 is already used by service 'auth-service'");
     });
 
     test("Should reject deployment config with negative service ID", () => {
@@ -378,9 +374,7 @@ describe("Validate Build Config", () => {
         },
       };
 
-      expect(() => validateBuildConfig(config)).toThrow(
-        "Service ID must be <= 4294967295 (u32 max)",
-      );
+      expect(() => validateBuildConfig(config)).toThrow("Service ID must be <= 4294967295 (u32 max)");
     });
 
     test("Should accept deployment config with service ID at u32 max", () => {

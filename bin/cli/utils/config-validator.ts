@@ -54,17 +54,16 @@ export const JamminBuildConfigSchema = z
       });
     }
 
+    // deployment config
     if (!data.deployment || !data.deployment.services) {
       return;
     }
-    const buildServiceNames = new Set(data.services.map((s) => s.name));
     const deploymentServiceNames = Object.keys(data.deployment.services);
-
     const serviceIds = new Map<number, string>();
 
     for (const serviceName of deploymentServiceNames) {
       // Check if service name is defined in build config
-      if (!buildServiceNames.has(serviceName)) {
+      if (!serviceNames.has(serviceName)) {
         ctx.addIssue({
           code: "custom",
           path: ["deployment", "services", serviceName],

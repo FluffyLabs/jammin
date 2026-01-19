@@ -60,17 +60,33 @@ Examples:
 
     // Get deployment config for services
     const buildConfig = await loadBuildConfig();
-    const deploymentServices = buildConfig.deployment?.services ?? {};
+    const serviceDeploymentConfigs = buildConfig.deployment?.services ?? {};
+
+    // generate ids avoiding collisions
+    const usedIds = new Set<number>();
+    for (const service of services) {
+      const deploymentConfig = serviceDeploymentConfigs[service.name];
+      if (deploymentConfig?.id !== undefined) {
+        usedIds.add(deploymentConfig.id);
+      }
+    }
+    let nextAvailableId = 0;
+    const getNextAvailableId = () => {
+      while (usedIds.has(nextAvailableId)) {
+        nextAvailableId++;
+      }
+      return nextAvailableId++;
+    };
 
     const buildOutputs: ServiceBuildOutput[] = await Promise.all(
-      services.map(async (service, index) => {
+      services.map(async (service) => {
         const jamFile = serviceJamFiles.get(service.name);
         if (!jamFile) {
           throw new DeployError(`Jam file not found for service ${service.name}`);
         }
 
-        const deploymentConfig = deploymentServices[service.name];
-        const serviceId = deploymentConfig?.id ?? index;
+        const deploymentConfig = serviceDeploymentConfigs[service.name];
+        const serviceId = deploymentConfig?.id ?? getNextAvailableId();
         const storage = deploymentConfig?.storage;
 
         return {
