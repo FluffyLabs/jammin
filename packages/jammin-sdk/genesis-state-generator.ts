@@ -16,6 +16,7 @@ export type Genesis = config_node.JipChainSpec;
 export interface ServiceBuildOutput {
   id: number;
   code: bytes.BytesBlob;
+  balance?: numbers.U64;
 }
 
 // Base ServiceInfo
@@ -26,8 +27,10 @@ const BASE_SERVICE: jamState.ServiceAccountInfo = {
   // https://graypaper.fluffylabs.dev/#/ab2cdbd/11ce0111ce01?v=0.7.2
   storageUtilisationBytes: numbers.tryAsU64(81),
 
-  // Preconfigured
+  // Default
   balance: numbers.tryAsU64(2n ** 20n),
+
+  // Preconfigured
   accumulateMinGas: block.tryAsServiceGas(0x0an),
   onTransferMinGas: block.tryAsServiceGas(0x0an),
   gratisStorage: numbers.tryAsU64(0),
@@ -58,7 +61,7 @@ export function toJip4Schema(genesis: Genesis) {
 }
 
 /** Creates a new state with provided services */
-export function generateState(services: ServiceBuildOutput[]): Genesis {
+export function generateState(services: ServiceBuildOutput[]): jamState.InMemoryState {
   const memState = jamState.InMemoryState.empty(spec);
 
   const timeSlot = block.tryAsTimeSlot(0);
@@ -90,6 +93,7 @@ export function generateState(services: ServiceBuildOutput[]): Genesis {
       jamState.UpdateService.create({
         serviceInfo: jamState.ServiceAccountInfo.create({
           ...BASE_SERVICE,
+          balance: service.balance ?? BASE_SERVICE.balance,
           codeHash: codeHash.asOpaque(),
           storageUtilisationBytes: numbers.sumU64(
             BASE_SERVICE.storageUtilisationBytes,
@@ -103,7 +107,12 @@ export function generateState(services: ServiceBuildOutput[]): Genesis {
 
   memState.applyUpdate(update);
 
-  const state = state_merkleization.StateEntries.serializeInMemory(spec, blake2b, memState);
+  return memState;
+}
+
+/** Creates a new genesis state with provided services */
+export function generateGenesis(services: ServiceBuildOutput[]): Genesis {
+  const state = state_merkleization.StateEntries.serializeInMemory(spec, blake2b, generateState(services));
 
   return config_node.JipChainSpec.create({
     id: "testnet",

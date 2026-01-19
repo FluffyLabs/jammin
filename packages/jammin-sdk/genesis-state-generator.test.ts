@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import * as bytes from "@typeberry/lib/bytes";
-import { generateState, type ServiceBuildOutput, toJip4Schema } from "./genesis-state-generator";
+import { generateGenesis, type ServiceBuildOutput, toJip4Schema } from "./genesis-state-generator";
 
 describe("genesis-generator", () => {
   const services: ServiceBuildOutput[] = [
@@ -20,7 +20,7 @@ describe("genesis-generator", () => {
 
   test("should generate genesis file", async () => {
     // when
-    const genesis = toJip4Schema(generateState(services));
+    const genesis = toJip4Schema(generateGenesis(services));
 
     // then
     expect(genesis.id).toBe("testnet");
