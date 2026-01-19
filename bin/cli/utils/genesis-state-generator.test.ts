@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { bytes } from "@typeberry/lib";
+import * as bytes from "@typeberry/lib/bytes";
 import { generateState, type ServiceBuildOutput, toJip4Schema } from "./genesis-state-generator";
 import { EXPECTED_JIP4_GENESIS } from "./test-files/test-jip4-genesis";
 
