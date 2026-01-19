@@ -1,5 +1,7 @@
+import { resolve } from "node:path";
+
 import * as block from "@typeberry/lib/block";
-import type * as bytes from "@typeberry/lib/bytes";
+import * as bytes from "@typeberry/lib/bytes";
 import * as codec from "@typeberry/lib/codec";
 import * as config from "@typeberry/lib/config";
 import * as config_node from "@typeberry/lib/config-node";
@@ -14,7 +16,7 @@ const spec = config.tinyChainSpec;
 export type Genesis = config_node.JipChainSpec;
 
 export interface ServiceBuildOutput {
-  id: number;
+  id: block.ServiceId;
   code: bytes.BytesBlob;
   balance?: numbers.U64;
 }
@@ -41,6 +43,22 @@ const BASE_SERVICE: jamState.ServiceAccountInfo = {
   lastAccumulation: block.tryAsTimeSlot(0),
   parentService: block.tryAsServiceId(0),
 };
+
+export async function generateServiceOutput(
+  jamFilePath: string,
+  serviceId = 0,
+  balance?: bigint,
+): Promise<ServiceBuildOutput> {
+  const absolutePath = resolve(jamFilePath);
+  const fileBytes = await Bun.file(absolutePath).bytes();
+  const code = bytes.BytesBlob.blobFrom(fileBytes);
+
+  return {
+    id: block.tryAsServiceId(serviceId),
+    code,
+    balance: balance ? numbers.tryAsU64(balance) : undefined,
+  };
+}
 
 /** Creates genesis file on given path: JIP-4 Chainspec */
 export async function saveStateFile(genesis: Genesis, outputFile: string): Promise<void> {

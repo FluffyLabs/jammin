@@ -1,6 +1,5 @@
 import * as p from "@clack/prompts";
-import { generateGenesis, type ServiceBuildOutput, saveStateFile } from "@fluffylabs/jammin-sdk";
-import { bytes } from "@typeberry/lib";
+import { generateGenesis, generateServiceOutput, type ServiceBuildOutput, saveStateFile } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
 import { getJamFiles } from "../../utils/file-utils";
 import { getServiceConfigs } from "../../utils/get-service-configs";
@@ -58,10 +57,7 @@ Examples:
     }
 
     const buildOutputs: ServiceBuildOutput[] = await Promise.all(
-      jamFiles.map(async (file, index) => ({
-        id: index,
-        code: bytes.BytesBlob.blobFrom(await Bun.file(file).bytes()),
-      })),
+      jamFiles.map(async (file, index) => generateServiceOutput(file, index)),
     );
 
     const genesisOutput = `${projectRoot}/genesis.json`;
