@@ -1,6 +1,6 @@
 import {
   block,
-  type bytes,
+  bytes,
   codec,
   config,
   config_node,
@@ -18,7 +18,11 @@ export type Genesis = config_node.JipChainSpec;
 export interface ServiceBuildOutput {
   id: number;
   code: bytes.BytesBlob;
+  storage?: Record<string, string>;
 }
+
+// https://graypaper.fluffylabs.dev/#/ab2cdbd/11e00111f001?v=0.7.2
+const BASE_STORAGE_BYTES = 34n;
 
 // Base ServiceInfo
 const BASE_SERVICE: jamState.ServiceAccountInfo = {
@@ -64,7 +68,7 @@ export function generateState(services: ServiceBuildOutput[]): Genesis {
   const memState = jamState.InMemoryState.empty(spec);
 
   const timeSlot = block.tryAsTimeSlot(0);
-  const update = {
+  const update: Partial<jamState.State & jamState.ServicesUpdate> = {
     created: [],
     removed: [],
     updated: new Map(),
@@ -73,6 +77,7 @@ export function generateState(services: ServiceBuildOutput[]): Genesis {
   };
 
   for (const service of services) {
+    // prepare service
     const serviceId = block.tryAsServiceId(service.id);
     const codeHash = blake2b.hashBytes(service.code);
     const lookupHistory = new jamState.LookupHistoryItem(
@@ -80,23 +85,53 @@ export function generateState(services: ServiceBuildOutput[]): Genesis {
       numbers.tryAsU32(service.code.length),
       jamState.tryAsLookupHistorySlots([timeSlot]),
     );
-    update.preimages.set(serviceId, [
+    update.preimages?.set(serviceId, [
       jamState.UpdatePreimage.provide({
         preimage: jamState.PreimageItem.create({ hash: codeHash.asOpaque(), blob: service.code }),
         providedFor: serviceId,
         slot: timeSlot,
       }),
     ]);
-    update.updated.set(
+
+    // storage
+    const storageUpdates: jamState.UpdateStorage[] = [];
+    let storageBytes = 0n;
+    const storageCount = service.storage ? Object.keys(service.storage).length : 0;
+
+    if (service.storage) {
+      for (const [keyStr, valueStr] of Object.entries(service.storage)) {
+        const key = bytes.BytesBlob.blobFromString(keyStr) as jamState.StorageKey;
+        const value = bytes.BytesBlob.blobFromString(valueStr);
+        const storageItem = jamState.StorageItem.create({ key, value });
+        storageUpdates.push(jamState.UpdateStorage.set({ storage: storageItem }));
+        storageBytes += BASE_STORAGE_BYTES + BigInt(key.length) + BigInt(value.length);
+      }
+    }
+
+    if (storageUpdates.length > 0) {
+      update.storage?.set(serviceId, storageUpdates);
+    }
+
+    const totalStorageBytes = numbers.sumU64(
+      BASE_SERVICE.storageUtilisationBytes,
+      numbers.tryAsU64(service.code.length),
+      numbers.tryAsU64(storageBytes),
+    ).value;
+
+    const totalStorageCount = numbers.sumU32(
+      BASE_SERVICE.storageUtilisationCount,
+      numbers.tryAsU32(storageCount),
+    ).value;
+
+    // create service
+    update.updated?.set(
       serviceId,
       jamState.UpdateService.create({
         serviceInfo: jamState.ServiceAccountInfo.create({
           ...BASE_SERVICE,
           codeHash: codeHash.asOpaque(),
-          storageUtilisationBytes: numbers.sumU64(
-            BASE_SERVICE.storageUtilisationBytes,
-            numbers.tryAsU64(service.code.length),
-          ).value,
+          storageUtilisationBytes: totalStorageBytes,
+          storageUtilisationCount: totalStorageCount,
         }),
         lookupHistory,
       }),

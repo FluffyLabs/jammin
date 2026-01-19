@@ -23,20 +23,6 @@ const ServiceConfigSchema = z.object({
   ),
 });
 
-const StorageKeySchema = z.string().refine((key) => {
-  // Allow any string
-  if (!key.startsWith("0x")) {
-    return true;
-  }
-  // If 0x-prefixed, must be valid hex and match specific byte lengths
-  const hexPart = key.slice(2);
-  if (!/^[0-9a-fA-F]+$/.test(hexPart)) {
-    return false;
-  }
-  const byteLength = hexPart.length / 2;
-  return byteLength === 32 || byteLength === 31 || byteLength === 24;
-});
-
 const ServiceDeploymentConfigSchema = z.object({
   id: z
     .number()
@@ -44,14 +30,7 @@ const ServiceDeploymentConfigSchema = z.object({
     .min(0, "Service ID must be >= 0")
     .max(4294967295, "Service ID must be <= 4294967295 (u32 max)")
     .optional(),
-  storage: z
-    .record(StorageKeySchema, z.string(), {
-      error: (issue) =>
-        issue.code === "invalid_key"
-          ? "Storage key must be a string or 0x-prefixed hex hash of 32, 31, or 24 bytes"
-          : undefined,
-    })
-    .optional(),
+  storage: z.record(z.string(), z.string()).optional(),
 });
 
 const DeploymentConfigSchema = z.object({

@@ -81,8 +81,6 @@ Examples:
       }),
     );
 
-    p.log.info(JSON.stringify(buildOutputs, null, 2));
-
     const genesisOutput = `${projectRoot}/genesis.json`;
     await saveStateFile(generateState(buildOutputs), genesisOutput);
 
