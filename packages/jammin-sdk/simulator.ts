@@ -70,19 +70,7 @@ export async function simulateAccumulation(
 
   // Configure logging if debug is enabled
   if (options.debug) {
-    try {
-      const loggerModule = await import("@typeberry/lib/logger");
-      if (loggerModule.Logger && loggerModule.Level) {
-        loggerModule.Logger.configureAll(
-          "info,host-calls=trace,accumulate=trace",
-          loggerModule.Level.LOG,
-          process.cwd(),
-        );
-      }
-    } catch {
-      // Silently ignore if logger configuration fails
-      console.warn("Warning: Could not configure typeberry logger");
-    }
+    await enableLogs();
   }
 
   const blake2b = await Blake2b.createHasher();
@@ -105,4 +93,19 @@ export async function simulateAccumulation(
     throw new Error(`Accumulation failed: ${result.error}`);
   }
   return result.ok;
+}
+
+async function enableLogs() {
+    try {
+      const loggerModule = await import("@typeberry/lib/logger");
+      if (loggerModule.Logger && loggerModule.Level) {
+        loggerModule.Logger.configureAll(
+          "info,host-calls=trace,accumulate=trace",
+          loggerModule.Level.LOG,
+          process.cwd(),
+        );
+      }
+    } catch {
+      console.warn("Warning: Could not configure typeberry logger");
+    }
 }
