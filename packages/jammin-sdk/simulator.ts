@@ -96,16 +96,12 @@ export async function simulateAccumulation(
 }
 
 async function enableLogs() {
-    try {
-      const loggerModule = await import("@typeberry/lib/logger");
-      if (loggerModule.Logger && loggerModule.Level) {
-        loggerModule.Logger.configureAll(
-          "info,host-calls=trace,accumulate=trace",
-          loggerModule.Level.LOG,
-          process.cwd(),
-        );
-      }
-    } catch {
-      console.warn("Warning: Could not configure typeberry logger");
+  try {
+    const loggerModule = await import("@typeberry/lib/logger");
+    if (loggerModule.Logger && loggerModule.Level) {
+      loggerModule.Logger.configureAll("info,host-calls=trace,accumulate=trace", loggerModule.Level.LOG, process.cwd());
     }
+  } catch {
+    console.warn("Warning: Could not configure typeberry logger");
+  }
 }
