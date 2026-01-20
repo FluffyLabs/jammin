@@ -30,6 +30,15 @@ export interface SdkConfig {
 export interface DeploymentConfig {
   /** Network name to spawn */
   spawn: string;
+  /** Service deployment configurations */
+  services?: Record<string, ServiceDeploymentConfig>;
+}
+
+export interface ServiceDeploymentConfig {
+  /** Service ID (u32) */
+  id?: number;
+  /** Storage key-value pairs */
+  storage?: Record<string, string>;
 }
 
 // jammin.network.yml types

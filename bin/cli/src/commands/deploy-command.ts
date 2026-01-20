@@ -1,6 +1,7 @@
 import * as p from "@clack/prompts";
 import { bytes } from "@typeberry/lib";
 import { Command } from "commander";
+import { loadBuildConfig } from "../../utils/config-loader";
 import { getJamFiles } from "../../utils/file-utils";
 import { generateState, type ServiceBuildOutput, saveStateFile } from "../../utils/genesis-state-generator";
 import { getServiceConfigs } from "../../utils/get-service-configs";
@@ -40,28 +41,60 @@ Examples:
 
     s.start("Generating Genesis State...");
 
-    const jamFiles: string[] = [];
+    const serviceJamFiles = new Map<string, string>();
     for (const service of services) {
       // NOTE: Taking only first jam blob (closest to service path directory)
       // since each service should produce one blob
       // if they produce more its probably for testing purposes
-      const jamFile = (await getJamFiles(service.path)).keys().next().value;
-      if (jamFile) {
-        jamFiles.push(jamFile);
-      } else {
+      const jamFiles = await getJamFiles(service.path);
+      const jamFile = jamFiles.keys().next().value;
+      if (!jamFile) {
         throw new DeployError(`Cannot find a jam file for ${service.name} service`);
       }
+      serviceJamFiles.set(service.name, jamFile);
     }
 
-    if (jamFiles.length === 0) {
+    if (serviceJamFiles.size === 0) {
       throw new DeployError("No JAM files found");
     }
 
+    // Get deployment config for services
+    const buildConfig = await loadBuildConfig();
+    const serviceDeploymentConfigs = buildConfig.deployment?.services ?? {};
+
+    // generate ids avoiding collisions
+    const usedIds = new Set<number>();
+    for (const service of services) {
+      const deploymentConfig = serviceDeploymentConfigs[service.name];
+      if (deploymentConfig?.id !== undefined) {
+        usedIds.add(deploymentConfig.id);
+      }
+    }
+    let nextAvailableId = 0;
+    const getNextAvailableId = () => {
+      while (usedIds.has(nextAvailableId)) {
+        nextAvailableId++;
+      }
+      return nextAvailableId++;
+    };
+
     const buildOutputs: ServiceBuildOutput[] = await Promise.all(
-      jamFiles.map(async (file, index) => ({
-        id: index,
-        code: bytes.BytesBlob.blobFrom(await Bun.file(file).bytes()),
-      })),
+      services.map(async (service) => {
+        const jamFile = serviceJamFiles.get(service.name);
+        if (!jamFile) {
+          throw new DeployError(`Jam file not found for service ${service.name}`);
+        }
+
+        const deploymentConfig = serviceDeploymentConfigs[service.name];
+        const serviceId = deploymentConfig?.id ?? getNextAvailableId();
+        const storage = deploymentConfig?.storage;
+
+        return {
+          id: serviceId,
+          code: bytes.BytesBlob.blobFrom(await Bun.file(jamFile).bytes()),
+          storage,
+        };
+      }),
     );
 
     const genesisOutput = `${projectRoot}/genesis.json`;
