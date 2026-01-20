@@ -7,6 +7,7 @@ import * as hash from "@typeberry/lib/hash";
 import * as numbers from "@typeberry/lib/numbers";
 import * as jamState from "@typeberry/lib/state";
 import * as state_merkleization from "@typeberry/lib/state-merkleization";
+import { asOpaqueType } from "@typeberry/lib/utils";
 
 const blake2b = await hash.Blake2b.createHasher();
 const spec = config.tinyChainSpec;
@@ -98,7 +99,7 @@ export function generateState(services: ServiceBuildOutput[]): Genesis {
 
     if (service.storage) {
       for (const [keyStr, valueStr] of Object.entries(service.storage)) {
-        const key = bytes.BytesBlob.blobFromString(keyStr) as jamState.StorageKey;
+        const key: jamState.StorageKey = asOpaqueType(bytes.BytesBlob.blobFromString(keyStr));
         const value = bytes.BytesBlob.blobFromString(valueStr);
         const storageItem = jamState.StorageItem.create({ key, value });
         storageUpdates.push(jamState.UpdateStorage.set({ storage: storageItem }));
