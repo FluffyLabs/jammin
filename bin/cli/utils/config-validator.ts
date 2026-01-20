@@ -23,14 +23,70 @@ const ServiceConfigSchema = z.object({
   ),
 });
 
-const DeploymentConfigSchema = z.object({
-  spawn: z.string().min(1),
+const ServiceDeploymentConfigSchema = z.object({
+  id: z
+    .number()
+    .int("Service ID must be an integer")
+    .min(0, "Service ID must be >= 0")
+    .max(4294967295, "Service ID must be <= 4294967295 (u32 max)")
+    .optional(),
+  storage: z.record(z.string(), z.string()).optional(),
 });
 
-export const JamminBuildConfigSchema = z.object({
-  services: z.array(ServiceConfigSchema).min(1, "At least one service is required"),
-  deployment: DeploymentConfigSchema.optional(),
+const DeploymentConfigSchema = z.object({
+  spawn: z.string().min(1),
+  services: z.record(z.string(), ServiceDeploymentConfigSchema).optional(),
 });
+
+export const JamminBuildConfigSchema = z
+  .object({
+    services: z.array(ServiceConfigSchema).min(1, "At least one service is required"),
+    deployment: DeploymentConfigSchema.optional(),
+  })
+  .superRefine((data, ctx) => {
+    // Check for duplicate service names
+    const serviceNames = new Set(data.services.map((s) => s.name));
+    if (serviceNames.size !== data.services.length) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["services"],
+        message: "Service names must be unique",
+      });
+    }
+
+    // deployment config
+    if (!data.deployment || !data.deployment.services) {
+      return;
+    }
+    const deploymentServiceNames = Object.keys(data.deployment.services);
+    const serviceIds = new Map<number, string>();
+
+    for (const serviceName of deploymentServiceNames) {
+      // Check if service name is defined in build config
+      if (!serviceNames.has(serviceName)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["deployment", "services", serviceName],
+          message: `Service '${serviceName}' not found in build config`,
+        });
+      }
+
+      // Check for duplicate service IDs
+      const serviceConfig = data.deployment.services[serviceName];
+      if (serviceConfig?.id !== undefined) {
+        if (serviceIds.has(serviceConfig.id)) {
+          const conflictingService = serviceIds.get(serviceConfig.id);
+          ctx.addIssue({
+            code: "custom",
+            path: ["deployment", "services", serviceName, "id"],
+            message: `Service ID ${serviceConfig.id} is already used by service '${conflictingService}'`,
+          });
+        } else {
+          serviceIds.set(serviceConfig.id, serviceName);
+        }
+      }
+    }
+  });
 
 // jammin.network.yml schema
 

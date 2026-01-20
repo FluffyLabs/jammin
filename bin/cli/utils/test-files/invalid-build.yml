@@ -34,3 +34,16 @@ sdks:
 
 deployment:
   spawn: local
+  services:
+    # Invalid:
+    # - service name does not exist in build config
+    # - ID is negative
+    # - storage key "1234" is not a string
+    # - storage value "true" is not a string
+    non-existing-service:
+      id: -4536455
+    calculator:
+      id: 832894
+      storage:
+        1234: test
+        abcd: true
