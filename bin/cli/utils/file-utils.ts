@@ -82,7 +82,7 @@ export async function getJamFiles(dirPath: string): Promise<Map<string, number>>
  */
 export async function updatePackageJson(
   projectPath: string,
-  options: {
+  fields: {
     name: string;
   },
 ): Promise<void> {
@@ -99,7 +99,7 @@ export async function updatePackageJson(
   const packageJson = JSON.parse(content);
 
   // Update name
-  packageJson.name = options.name;
+  packageJson.name = fields.name;
 
   // Write back with formatting
   await Bun.write(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
