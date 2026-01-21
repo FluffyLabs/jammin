@@ -4,6 +4,10 @@
   "description": "JAM development tooling",
   "author": "Fluffy Labs",
   "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FluffyLabs/jammin"
+  },
   "type": "module",
   "main": "./bin/cli/dist/index.js",
   "bin": {
