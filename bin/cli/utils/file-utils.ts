@@ -98,9 +98,8 @@ export async function updatePackageJson(
   const content = await file.text();
   const packageJson = JSON.parse(content);
 
-  // Update name
+  // Update
   packageJson.name = fields.name;
 
-  // Write back with formatting
   await Bun.write(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 }
