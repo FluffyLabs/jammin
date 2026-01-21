@@ -10,7 +10,7 @@
     "jammin": "./dist/index.js"
   },
   "scripts": {
-    "build": "bun build index.ts --outdir dist --target bun --external @typeberry/lib --external @typeberry/native",
+    "build": "bun build index.ts --outdir dist --target bun --external @typeberry/lib",
     "start": "bun run ./index.ts"
   },
   "peerDependencies": {
