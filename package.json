@@ -23,7 +23,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "bun run --filter '*' build",
+    "build": "bun run --filter '@fluffylabs/jammin-sdk' build && bun run --filter '@fluffylabs/jammin-cli' build",
     "cli": "bun run ./bin/cli/index.ts",
     "qa": "biome ci",
     "qa-fix": "npm run format; npm run lint",
