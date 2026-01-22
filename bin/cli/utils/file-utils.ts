@@ -76,3 +76,30 @@ export async function getJamFiles(dirPath: string): Promise<Map<string, number>>
 
   return files;
 }
+
+/**
+ * Update fields in package.json
+ */
+export async function updatePackageJson(
+  projectPath: string,
+  fields: {
+    name: string;
+  },
+): Promise<void> {
+  const packageJsonPath = `${projectPath}/package.json`;
+
+  const file = Bun.file(packageJsonPath);
+
+  if (!(await file.exists())) {
+    console.warn("⚠️  No package.json found in template, skipping metadata update");
+    return;
+  }
+
+  const content = await file.text();
+  const packageJson = JSON.parse(content);
+
+  // Update
+  packageJson.name = fields.name;
+
+  await Bun.write(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+}
