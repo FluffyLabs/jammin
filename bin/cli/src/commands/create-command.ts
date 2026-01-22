@@ -1,6 +1,7 @@
 import * as p from "@clack/prompts";
 import { Command, InvalidArgumentError } from "commander";
 import { fetchRepo } from "../../utils/fetch-repo";
+import { updatePackageJson } from "../../utils/file-utils";
 
 type Template = "jam-sdk" | "jade" | "jambrains" | "ajanta" | "undecided";
 
@@ -110,6 +111,7 @@ async function createProject(config: ProjectConfig) {
   s.start("📝 Creating project...");
   try {
     await fetchRepo(TARGETS[config.template], config.name);
+    await updatePackageJson(config.name, { name: config.name });
     s.stop(`✅ Created project using ${config.template} template`);
     p.note(`cd ${config.name}`);
   } catch (error) {
