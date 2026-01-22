@@ -10,7 +10,7 @@
     "jammin": "./dist/index.js"
   },
   "scripts": {
-    "build": "bun build index.ts --outdir dist --target bun --external @typeberry/lib",
+    "build": "bun build index.ts --outdir dist --target bun",
     "start": "bun run ./index.ts"
   },
   "peerDependencies": {
@@ -19,7 +19,6 @@
   "dependencies": {
     "@clack/prompts": "^0.11.0",
     "@fluffylabs/jammin-sdk": "workspace:*",
-    "@typeberry/lib": "0.5.2-9afefa7",
     "commander": "^14.0.2",
     "zod": "^4.1.13"
   },
