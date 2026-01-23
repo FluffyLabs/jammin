@@ -42,8 +42,10 @@ deployment:
     # - storage value "true" is not a string
     non-existing-service:
       id: -4536455
-    calculator:
+    storage:
       id: 832894
+      info:
+        balance: 121345 # should be a string
       storage:
         1234: test
         abcd: true

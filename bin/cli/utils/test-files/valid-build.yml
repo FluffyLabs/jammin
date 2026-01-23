@@ -27,6 +27,16 @@ deployment:
   services:
     auth-service:
       id: 12345
+      info:
+        balance: "100000000000"
+        accumulate_min_gas: "100000"
+        on_transfer_min_gas: "50000"
+        storage_utilisation_bytes: "2048"
+        gratis_storage: "1024"
+        storage_utilisation_count: 10
+        created: 100
+        last_accumulation: 200
+        parent_service: 1
     calculator:
       id: 1234
       storage:
