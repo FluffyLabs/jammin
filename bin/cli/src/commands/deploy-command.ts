@@ -1,6 +1,16 @@
 import * as p from "@clack/prompts";
-import { generateGenesis, generateServiceOutput, type ServiceBuildOutput, saveStateFile } from "@fluffylabs/jammin-sdk";
+import {
+  block,
+  type codec,
+  generateGenesis,
+  generateServiceOutput,
+  numbers,
+  type ServiceBuildOutput,
+  saveStateFile,
+  type state,
+} from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
+import type { ServiceAccountInfoConfig } from "../../types/config";
 import { loadBuildConfig } from "../../utils/config-loader";
 import { getJamFiles } from "../../utils/file-utils";
 import { getServiceConfigs } from "../../utils/get-service-configs";
@@ -11,6 +21,29 @@ export class DeployError extends Error {
     super(message);
     this.name = "DeployError";
   }
+}
+
+function serviceInfoCfgToTypeberry(
+  config: ServiceAccountInfoConfig,
+): Partial<codec.CodecRecord<state.ServiceAccountInfo>> {
+  return Object.fromEntries(
+    Object.entries({
+      balance: config.balance !== undefined ? numbers.tryAsU64(config.balance) : undefined,
+      accumulateMinGas:
+        config.accumulateMinGas !== undefined ? block.tryAsServiceGas(config.accumulateMinGas) : undefined,
+      onTransferMinGas:
+        config.onTransferMinGas !== undefined ? block.tryAsServiceGas(config.onTransferMinGas) : undefined,
+      storageUtilisationBytes:
+        config.storageUtilisationBytes !== undefined ? numbers.tryAsU64(config.storageUtilisationBytes) : undefined,
+      gratisStorage: config.gratisStorage !== undefined ? numbers.tryAsU64(config.gratisStorage) : undefined,
+      storageUtilisationCount:
+        config.storageUtilisationCount !== undefined ? numbers.tryAsU32(config.storageUtilisationCount) : undefined,
+      created: config.created !== undefined ? block.tryAsTimeSlot(config.created) : undefined,
+      lastAccumulation:
+        config.lastAccumulation !== undefined ? block.tryAsTimeSlot(config.lastAccumulation) : undefined,
+      parentService: config.parentService !== undefined ? block.tryAsServiceId(config.parentService) : undefined,
+    }).filter(([_, value]) => value !== undefined),
+  );
 }
 
 export const deployCommand = new Command("deploy")
@@ -87,8 +120,9 @@ Examples:
         const deploymentConfig = serviceDeploymentConfigs[service.name];
         const serviceId = deploymentConfig?.id ?? getNextAvailableId();
         const storage = deploymentConfig?.storage;
+        const info = deploymentConfig?.info;
 
-        return generateServiceOutput(jamFile, serviceId, { storage });
+        return generateServiceOutput(jamFile, serviceId, storage, serviceInfoCfgToTypeberry(info ?? {}));
       }),
     );
 

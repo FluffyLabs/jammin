@@ -5,7 +5,7 @@ import { Encoder } from "@typeberry/lib/codec";
 import { tinyChainSpec } from "@typeberry/lib/config";
 import { JipChainSpec } from "@typeberry/lib/config-node";
 import { Blake2b, ZERO_HASH } from "@typeberry/lib/hash";
-import { sumU32, sumU64, type U64 as U64Type } from "@typeberry/lib/numbers";
+import { sumU32, sumU64 } from "@typeberry/lib/numbers";
 import {
   InMemoryState,
   LookupHistoryItem,
@@ -33,7 +33,7 @@ export interface ServiceBuildOutput {
   id: ServiceIdType;
   code: BytesBlob;
   storage?: Record<string, string>;
-  balance?: U64Type;
+  info?: Partial<ServiceAccountInfo>;
 }
 
 // https://graypaper.fluffylabs.dev/#/ab2cdbd/11e00111f001?v=0.7.2
@@ -65,10 +65,8 @@ const BASE_SERVICE: ServiceAccountInfo = {
 export async function generateServiceOutput(
   jamFilePath: string,
   serviceId = 0,
-  serviceInfo: {
-    balance?: bigint;
-    storage?: Record<string, string>;
-  } = {},
+  storage?: Record<string, string>,
+  info?: Partial<ServiceAccountInfo>,
 ): Promise<ServiceBuildOutput> {
   const absolutePath = resolve(jamFilePath);
   const fileBytes = await Bun.file(absolutePath).bytes();
@@ -77,8 +75,8 @@ export async function generateServiceOutput(
   return {
     id: ServiceId(serviceId),
     code,
-    balance: serviceInfo.balance ? U64(serviceInfo.balance) : undefined,
-    storage: serviceInfo.storage,
+    storage,
+    info,
   };
 }
 
@@ -150,13 +148,21 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
       update.storage?.set(serviceId, storageUpdates);
     }
 
-    const totalStorageBytes = sumU64(
+    const calculatedStorageBytes = sumU64(
       BASE_SERVICE.storageUtilisationBytes,
       U64(service.code.length),
       U64(storageBytes),
     ).value;
 
-    const totalStorageCount = sumU32(BASE_SERVICE.storageUtilisationCount, U32(storageCount)).value;
+    const calculatedStorageCount = sumU32(BASE_SERVICE.storageUtilisationCount, U32(storageCount)).value;
+
+    console.log({
+      ...BASE_SERVICE,
+      codeHash: codeHash.asOpaque(),
+      storageUtilisationBytes: calculatedStorageBytes,
+      storageUtilisationCount: calculatedStorageCount,
+      ...service.info,
+    });
 
     // create service
     update.updated?.set(
@@ -164,10 +170,10 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
       UpdateService.create({
         serviceInfo: ServiceAccountInfo.create({
           ...BASE_SERVICE,
-          balance: service.balance ?? BASE_SERVICE.balance,
           codeHash: codeHash.asOpaque(),
-          storageUtilisationBytes: totalStorageBytes,
-          storageUtilisationCount: totalStorageCount,
+          storageUtilisationBytes: calculatedStorageBytes,
+          storageUtilisationCount: calculatedStorageCount,
+          ...service.info,
         }),
         lookupHistory,
       }),
