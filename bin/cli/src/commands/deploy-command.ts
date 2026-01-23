@@ -23,26 +23,30 @@ export class DeployError extends Error {
   }
 }
 
-function serviceInfoCfgToTypeberry(
-  config: ServiceAccountInfoConfig,
-): Partial<codec.CodecRecord<state.ServiceAccountInfo>> {
+const accountInfoSchemaMap = new Map<
+  string,
+  | typeof numbers.tryAsU64
+  | typeof block.tryAsServiceGas
+  | typeof numbers.tryAsU32
+  | typeof block.tryAsTimeSlot
+  | typeof block.tryAsServiceId
+>([
+  ["balance", numbers.tryAsU64],
+  ["accumulateMinGas", block.tryAsServiceGas],
+  ["onTransferMinGas", block.tryAsServiceGas],
+  ["storageUtilisationBytes", numbers.tryAsU64],
+  ["gratisStorage", numbers.tryAsU64],
+  ["storageUtilisationCount", numbers.tryAsU32],
+  ["created", block.tryAsTimeSlot],
+  ["lastAccumulation", block.tryAsTimeSlot],
+  ["parentService", block.tryAsServiceId],
+]);
+
+function accountInfoFromConfig(config: ServiceAccountInfoConfig): Partial<codec.CodecRecord<state.ServiceAccountInfo>> {
   return Object.fromEntries(
-    Object.entries({
-      balance: config.balance !== undefined ? numbers.tryAsU64(config.balance) : undefined,
-      accumulateMinGas:
-        config.accumulateMinGas !== undefined ? block.tryAsServiceGas(config.accumulateMinGas) : undefined,
-      onTransferMinGas:
-        config.onTransferMinGas !== undefined ? block.tryAsServiceGas(config.onTransferMinGas) : undefined,
-      storageUtilisationBytes:
-        config.storageUtilisationBytes !== undefined ? numbers.tryAsU64(config.storageUtilisationBytes) : undefined,
-      gratisStorage: config.gratisStorage !== undefined ? numbers.tryAsU64(config.gratisStorage) : undefined,
-      storageUtilisationCount:
-        config.storageUtilisationCount !== undefined ? numbers.tryAsU32(config.storageUtilisationCount) : undefined,
-      created: config.created !== undefined ? block.tryAsTimeSlot(config.created) : undefined,
-      lastAccumulation:
-        config.lastAccumulation !== undefined ? block.tryAsTimeSlot(config.lastAccumulation) : undefined,
-      parentService: config.parentService !== undefined ? block.tryAsServiceId(config.parentService) : undefined,
-    }).filter(([_, value]) => value !== undefined),
+    Object.entries(config)
+      .filter(([_, value]) => value !== undefined) // note [seko]: important, if undefineds remain they will overwrite default values
+      .map(([key, value]) => [key, accountInfoSchemaMap.get(key)?.(value)]),
   );
 }
 
@@ -122,7 +126,7 @@ Examples:
         const storage = deploymentConfig?.storage;
         const info = deploymentConfig?.info;
 
-        return generateServiceOutput(jamFile, serviceId, storage, serviceInfoCfgToTypeberry(info ?? {}));
+        return generateServiceOutput(jamFile, serviceId, storage, accountInfoFromConfig(info ?? {}));
       }),
     );
 
