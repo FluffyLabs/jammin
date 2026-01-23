@@ -156,14 +156,6 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
 
     const calculatedStorageCount = sumU32(BASE_SERVICE.storageUtilisationCount, U32(storageCount)).value;
 
-    console.log({
-      ...BASE_SERVICE,
-      codeHash: codeHash.asOpaque(),
-      storageUtilisationBytes: calculatedStorageBytes,
-      storageUtilisationCount: calculatedStorageCount,
-      ...service.info,
-    });
-
     // create service
     update.updated?.set(
       serviceId,

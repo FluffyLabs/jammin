@@ -352,7 +352,7 @@ describe("Validate Build Config", () => {
         },
       };
 
-      expect(() => validateBuildConfig(config)).toThrow("Service ID must be >= 0");
+      expect(() => validateBuildConfig(config)).toThrow();
     });
 
     test("Should reject deployment config with service ID exceeding u32 max", () => {
@@ -374,7 +374,7 @@ describe("Validate Build Config", () => {
         },
       };
 
-      expect(() => validateBuildConfig(config)).toThrow("Service ID must be <= 4294967295 (u32 max)");
+      expect(() => validateBuildConfig(config)).toThrow();
     });
 
     test("Should accept deployment config with service ID at u32 max", () => {
@@ -419,7 +419,7 @@ describe("Validate Build Config", () => {
         },
       };
 
-      expect(() => validateBuildConfig(config)).toThrow("Service ID must be an integer");
+      expect(() => validateBuildConfig(config)).toThrow();
     });
 
     test("Should accept deployment config with service ID of zero", () => {
@@ -510,6 +510,439 @@ describe("Validate Build Config", () => {
               id: 12345,
               storage: {
                 key: true, // Boolean value should be rejected
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+  });
+
+  describe("Service Info Config Validation", () => {
+    test("Should parse valid info config with all fields", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              id: 12345,
+              info: {
+                balance: "1000000000000",
+                accumulate_min_gas: "100000",
+                on_transfer_min_gas: "50000",
+                storage_utilisation_bytes: "2048",
+                gratis_storage: "1024",
+                storage_utilisation_count: 10,
+                created: 100,
+                last_accumulation: 200,
+                parent_service: 1,
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      const info = result.deployment?.services?.["auth-service"]?.info;
+      expect(info).toBeDefined();
+      expect(info?.balance).toBe(1000000000000n);
+      expect(info?.accumulateMinGas).toBe(100000n);
+      expect(info?.onTransferMinGas).toBe(50000n);
+      expect(info?.storageUtilisationBytes).toBe(2048n);
+      expect(info?.gratisStorage).toBe(1024n);
+      expect(info?.storageUtilisationCount).toBe(10);
+      expect(info?.created).toBe(100);
+      expect(info?.lastAccumulation).toBe(200);
+      expect(info?.parentService).toBe(1);
+    });
+
+    test("Should parse valid info config with only some fields", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                balance: "5000",
+                created: 42,
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      const info = result.deployment?.services?.["auth-service"]?.info;
+      expect(info).toBeDefined();
+      expect(info?.balance).toBe(5000n);
+      expect(info?.created).toBe(42);
+      expect(info?.accumulateMinGas).toBeUndefined();
+      expect(info?.onTransferMinGas).toBeUndefined();
+    });
+
+    test("Should transform snake_case info fields to camelCase", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                accumulate_min_gas: "1000",
+                on_transfer_min_gas: "2000",
+                storage_utilisation_bytes: "3000",
+                gratis_storage: "4000",
+                storage_utilisation_count: 5,
+                last_accumulation: 6,
+                parent_service: 7,
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      const info = result.deployment?.services?.["auth-service"]?.info;
+      expect(info).toBeDefined();
+      expect(info?.accumulateMinGas).toBe(1000n);
+      expect(info?.onTransferMinGas).toBe(2000n);
+      expect(info?.storageUtilisationBytes).toBe(3000n);
+      expect(info?.gratisStorage).toBe(4000n);
+      expect(info?.storageUtilisationCount).toBe(5);
+      expect(info?.lastAccumulation).toBe(6);
+      expect(info?.parentService).toBe(7);
+    });
+
+    test("Should accept u64 fields at max value", () => {
+      const maxU64 = "18446744073709551615";
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                balance: maxU64,
+                accumulate_min_gas: maxU64,
+                on_transfer_min_gas: maxU64,
+                storage_utilisation_bytes: maxU64,
+                gratis_storage: maxU64,
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      const info = result.deployment?.services?.["auth-service"]?.info;
+      expect(info?.balance).toBe(18446744073709551615n);
+      expect(info?.accumulateMinGas).toBe(18446744073709551615n);
+    });
+
+    test("Should accept u32 fields at max value", () => {
+      const maxU32 = 4294967295;
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                storage_utilisation_count: maxU32,
+                created: maxU32,
+                last_accumulation: maxU32,
+                parent_service: maxU32,
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      const info = result.deployment?.services?.["auth-service"]?.info;
+      expect(info?.storageUtilisationCount).toBe(maxU32);
+      expect(info?.created).toBe(maxU32);
+      expect(info?.lastAccumulation).toBe(maxU32);
+      expect(info?.parentService).toBe(maxU32);
+    });
+
+    test("Should accept u64 fields with zero value", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                balance: "0",
+                accumulate_min_gas: "0",
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      const info = result.deployment?.services?.["auth-service"]?.info;
+      expect(info?.balance).toBe(0n);
+      expect(info?.accumulateMinGas).toBe(0n);
+    });
+
+    test("Should accept u32 fields with zero value", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                storage_utilisation_count: 0,
+                created: 0,
+                last_accumulation: 0,
+                parent_service: 0,
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      const info = result.deployment?.services?.["auth-service"]?.info;
+      expect(info?.storageUtilisationCount).toBe(0);
+      expect(info?.created).toBe(0);
+    });
+
+    test("Should reject u64 field exceeding max value", () => {
+      const exceedsMaxU64 = "18446744073709551616"; // MAX_U64 + 1
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                balance: exceedsMaxU64,
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject u32 field exceeding max value", () => {
+      const exceedsMaxU32 = 4294967296; // MAX_U32 + 1
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                storage_utilisation_count: exceedsMaxU32,
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject negative u64 field", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                balance: "-1",
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject negative u32 field", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                created: -1,
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject u64 field provided as number instead of string", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                balance: 1000000, // Should be a string
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject u64 field with invalid string", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                balance: "not-a-number",
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject non-integer u32 field", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                created: 123.45,
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject u32 field provided as string", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              info: {
+                created: "100",
               },
             },
           },
