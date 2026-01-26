@@ -88,11 +88,9 @@ async function signWorkReport(
   keyPair: Awaited<ed25519.Ed25519Pair>,
   blake2b: Blake2b,
 ): Promise<ed25519.Ed25519Signature> {
-  const encoder = Encoder.create();
-  jamBlock.workReport.WorkReport.Codec.encode(encoder, workReport);
-  const encodedBytes = encoder.viewResult();
+  const reportBlob = Encoder.encodeObject(jamBlock.workReport.WorkReport.Codec, workReport);
 
-  const reportHash = blake2b.hashBytes(encodedBytes);
+  const reportHash = blake2b.hashBytes(reportBlob);
 
   return await ed25519.sign(keyPair, reportHash);
 }
