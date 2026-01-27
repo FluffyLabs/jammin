@@ -782,7 +782,6 @@ describe("Validate Build Config", () => {
       expect(() => validateBuildConfig(config)).toThrow();
     });
 
-
     test("Should accept lookup_history with negative time slot values", () => {
       const config = {
         services: [
