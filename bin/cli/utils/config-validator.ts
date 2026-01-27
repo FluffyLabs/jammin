@@ -3,6 +3,13 @@ import { SDK_CONFIGS } from "./sdk-configs";
 
 // Zod schemas for runtime validation of YAML configs
 
+const MAX_U32 = 4_294_967_295;
+const MAX_U64 = 18_446_744_073_709_551_615n;
+
+const u64Schema = () =>
+  z.union([z.bigint().min(0n).max(MAX_U64), z.number().int().min(0)]).transform((val) => BigInt(val));
+const u32Schema = () => z.number().int().min(0).max(MAX_U32);
+
 // jammin.build.yml schema
 
 export const SdkConfigSchema = z.object({
@@ -24,13 +31,39 @@ const ServiceConfigSchema = z.object({
 });
 
 const ServiceDeploymentConfigSchema = z.object({
-  id: z
-    .number()
-    .int("Service ID must be an integer")
-    .min(0, "Service ID must be >= 0")
-    .max(4294967295, "Service ID must be <= 4294967295 (u32 max)")
-    .optional(),
+  id: u32Schema().optional(),
   storage: z.record(z.string(), z.string()).optional(),
+  info: z
+    .object({
+      balance: u64Schema().optional(),
+      accumulate_min_gas: u64Schema().optional(),
+      on_transfer_min_gas: u64Schema().optional(),
+      storage_utilisation_bytes: u64Schema().optional(),
+      gratis_storage: u64Schema().optional(),
+      storage_utilisation_count: u32Schema().optional(),
+      created: u32Schema().optional(),
+      last_accumulation: u32Schema().optional(),
+      parent_service: u32Schema().optional(),
+    })
+    .transform((info) => {
+      // snake to camel case
+      if (!info) {
+        return undefined;
+      }
+      const transformed = {
+        balance: info.balance,
+        accumulateMinGas: info.accumulate_min_gas,
+        onTransferMinGas: info.on_transfer_min_gas,
+        storageUtilisationBytes: info.storage_utilisation_bytes,
+        gratisStorage: info.gratis_storage,
+        storageUtilisationCount: info.storage_utilisation_count,
+        created: info.created,
+        lastAccumulation: info.last_accumulation,
+        parentService: info.parent_service,
+      };
+      return transformed;
+    })
+    .optional(),
 });
 
 const DeploymentConfigSchema = z.object({

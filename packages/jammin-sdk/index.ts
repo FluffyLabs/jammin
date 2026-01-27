@@ -10,6 +10,7 @@ export * as state_merkleization from "@typeberry/lib/state-merkleization";
 export * from "./genesis-state-generator.js";
 export * from "./simulator.js";
 export * from "./types.js";
+export * from "./util/generate-service-output.js";
 export * from "./work-report.js";
 
 export function getSDKInfo() {

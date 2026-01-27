@@ -1,11 +1,10 @@
-import { resolve } from "node:path";
-import { Header, type ServiceId as ServiceIdType } from "@typeberry/lib/block";
+import { Header } from "@typeberry/lib/block";
 import { BytesBlob } from "@typeberry/lib/bytes";
 import { Encoder } from "@typeberry/lib/codec";
 import { tinyChainSpec } from "@typeberry/lib/config";
 import { JipChainSpec } from "@typeberry/lib/config-node";
 import { Blake2b, ZERO_HASH } from "@typeberry/lib/hash";
-import { sumU32, sumU64, type U64 as U64Type } from "@typeberry/lib/numbers";
+import { sumU32, sumU64 } from "@typeberry/lib/numbers";
 import {
   InMemoryState,
   LookupHistoryItem,
@@ -23,18 +22,12 @@ import {
 import { StateEntries } from "@typeberry/lib/state-merkleization";
 import { asOpaqueType } from "@typeberry/lib/utils";
 import { Gas, ServiceId, Slot, U32, U64 } from "./types.js";
+import type { ServiceBuildOutput } from "./util/generate-service-output.js";
 
 const blake2b = await Blake2b.createHasher();
 const spec = tinyChainSpec;
 
 export type Genesis = JipChainSpec;
-
-export interface ServiceBuildOutput {
-  id: ServiceIdType;
-  code: BytesBlob;
-  storage?: Record<string, string>;
-  balance?: U64Type;
-}
 
 // https://graypaper.fluffylabs.dev/#/ab2cdbd/11e00111f001?v=0.7.2
 const BASE_STORAGE_BYTES = 34n;
@@ -61,26 +54,6 @@ const BASE_SERVICE: ServiceAccountInfo = {
   lastAccumulation: Slot(0),
   parentService: ServiceId(0),
 };
-
-export async function generateServiceOutput(
-  jamFilePath: string,
-  serviceId = 0,
-  serviceInfo: {
-    balance?: bigint;
-    storage?: Record<string, string>;
-  } = {},
-): Promise<ServiceBuildOutput> {
-  const absolutePath = resolve(jamFilePath);
-  const fileBytes = await Bun.file(absolutePath).bytes();
-  const code = BytesBlob.blobFrom(fileBytes);
-
-  return {
-    id: ServiceId(serviceId),
-    code,
-    balance: serviceInfo.balance ? U64(serviceInfo.balance) : undefined,
-    storage: serviceInfo.storage,
-  };
-}
 
 /** Creates genesis file on given path: JIP-4 Chainspec */
 export async function saveStateFile(genesis: Genesis, outputFile: string): Promise<void> {
@@ -150,13 +123,13 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
       update.storage?.set(serviceId, storageUpdates);
     }
 
-    const totalStorageBytes = sumU64(
+    const calculatedStorageBytes = sumU64(
       BASE_SERVICE.storageUtilisationBytes,
       U64(service.code.length),
       U64(storageBytes),
     ).value;
 
-    const totalStorageCount = sumU32(BASE_SERVICE.storageUtilisationCount, U32(storageCount)).value;
+    const calculatedStorageCount = sumU32(BASE_SERVICE.storageUtilisationCount, U32(storageCount)).value;
 
     // create service
     update.updated?.set(
@@ -164,10 +137,10 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
       UpdateService.create({
         serviceInfo: ServiceAccountInfo.create({
           ...BASE_SERVICE,
-          balance: service.balance ?? BASE_SERVICE.balance,
           codeHash: codeHash.asOpaque(),
-          storageUtilisationBytes: totalStorageBytes,
-          storageUtilisationCount: totalStorageCount,
+          storageUtilisationBytes: calculatedStorageBytes,
+          storageUtilisationCount: calculatedStorageCount,
+          ...service.info,
         }),
         lookupHistory,
       }),
