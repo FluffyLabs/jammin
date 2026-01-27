@@ -520,6 +520,297 @@ describe("Validate Build Config", () => {
     });
   });
 
+  describe("Preimages Config Validation", () => {
+    test("Should parse valid preimages config", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              preimages: {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": "0xdeadbeef",
+                "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890": "0xadadadadad",
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      expect(result.deployment?.services?.["auth-service"]?.preimages).toEqual({
+        "0x0000000000000000000000000000000000000000000000000000000000000001": "0xdeadbeef",
+        "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890": "0xadadadadad",
+      });
+    });
+
+    test("Should reject preimages with hash missing 0x prefix", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              preimages: {
+                "0000000000000000000000000000000000000000000000000000000000000001": "0x1234",
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject preimages with blob missing 0x prefix", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              preimages: {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": "deadbeef",
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject preimages with blob consisting of an uneven number of characters", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              preimages: {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": "0xabc",
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject preimages where hash is not 32 bytes long", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              preimages: {
+                "0x00000000000000000000000000000001": "0xdeadbeef", // 16 bytes instead of 32
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+  });
+
+  describe("Lookup History Config Validation", () => {
+    test("Should parse valid lookup_history config", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              lookup_history: {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": [100, 200, 300],
+                "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890": [42],
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      expect(result.deployment?.services?.["auth-service"]?.lookup_history).toEqual({
+        "0x0000000000000000000000000000000000000000000000000000000000000001": [100, 200, 300],
+        "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890": [42],
+      });
+    });
+
+    test("Should accept lookup_history with empty array", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              lookup_history: {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": [],
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      expect(result.deployment?.services?.["auth-service"]?.lookup_history).toEqual({
+        "0x0000000000000000000000000000000000000000000000000000000000000001": [],
+      });
+    });
+
+    test("Should accept lookup_history with 1, 2, and 3 time slots", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              lookup_history: {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": [1],
+                "0x0000000000000000000000000000000000000000000000000000000000000002": [1, 2],
+                "0x0000000000000000000000000000000000000000000000000000000000000003": [1, 2, 3],
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      const lookupHistory = result.deployment?.services?.["auth-service"]?.lookup_history;
+      expect(lookupHistory?.["0x0000000000000000000000000000000000000000000000000000000000000001"]).toEqual([1]);
+      expect(lookupHistory?.["0x0000000000000000000000000000000000000000000000000000000000000002"]).toEqual([1, 2]);
+      expect(lookupHistory?.["0x0000000000000000000000000000000000000000000000000000000000000003"]).toEqual([1, 2, 3]);
+    });
+
+    test("Should reject lookup_history with more than 3 time slots", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              lookup_history: {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": [1, 2, 3, 4],
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+    test("Should reject lookup_history with non-integer time slot values", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              lookup_history: {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": [100.5, 200],
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => validateBuildConfig(config)).toThrow();
+    });
+
+
+    test("Should accept lookup_history with negative time slot values", () => {
+      const config = {
+        services: [
+          {
+            path: "./services/auth.ts",
+            name: "auth-service",
+            sdk: "jam-sdk-0.1.26",
+          },
+        ],
+        deployment: {
+          spawn: "local",
+          services: {
+            "auth-service": {
+              lookup_history: {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": [-10, 0, 100],
+              },
+            },
+          },
+        },
+      };
+
+      const result = validateBuildConfig(config);
+      expect(result.deployment?.services?.["auth-service"]?.lookup_history).toEqual({
+        "0x0000000000000000000000000000000000000000000000000000000000000001": [-10, 0, 100],
+      });
+    });
+  });
+
   describe("Service Info Config Validation", () => {
     test("Should parse valid info config with all fields", () => {
       const config = {

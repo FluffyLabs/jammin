@@ -9,6 +9,11 @@ const MAX_U64 = 18_446_744_073_709_551_615n;
 const u64Schema = () =>
   z.union([z.bigint().min(0n).max(MAX_U64), z.number().int().min(0)]).transform((val) => BigInt(val));
 const u32Schema = () => z.number().int().min(0).max(MAX_U32);
+const preimageHashSchema = () =>
+  z
+    .string()
+    .regex(/^0x[0-9a-fA-F]+$/)
+    .length(66);
 
 // jammin.build.yml schema
 
@@ -33,6 +38,8 @@ const ServiceConfigSchema = z.object({
 const ServiceDeploymentConfigSchema = z.object({
   id: u32Schema().optional(),
   storage: z.record(z.string(), z.string()).optional(),
+  preimages: z.record(preimageHashSchema(), z.string().regex(/^0x([0-9a-fA-F]{2})+$/)).optional(),
+  lookup_history: z.record(preimageHashSchema(), z.array(z.int()).max(3)).optional(),
   info: z
     .object({
       balance: u64Schema().optional(),

@@ -39,6 +39,10 @@ export interface ServiceDeploymentConfig {
   id?: number;
   /** Storage key-value pairs */
   storage?: Record<string, string>;
+  /** Preimages map: 32-byte preimage hash (0x hex) -> blob (0x hex) */
+  preimages?: Record<string, string>;
+  /** Lookup history map: 32-byte preimage hash (0x hex) -> integer time slots */
+  lookup_history?: Record<string, number[]>;
   /** Optional service account info overrides */
   info?: ServiceAccountInfoConfig;
 }
