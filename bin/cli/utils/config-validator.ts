@@ -7,20 +7,7 @@ const MAX_U32 = 4_294_967_295;
 const MAX_U64 = 18_446_744_073_709_551_615n;
 
 const u64Schema = () =>
-  z
-    .string("This number must be provided as a string to ensure proper handling of large numbers.")
-    .transform((val, ctx) => {
-      try {
-        return BigInt(val);
-      } catch {
-        ctx.addIssue({
-          code: "custom",
-          message: "This string doesn't represent a valid number.",
-        });
-        return z.NEVER;
-      }
-    })
-    .pipe(z.bigint().min(0n).max(MAX_U64));
+  z.union([z.bigint().min(0n).max(MAX_U64), z.number().int().min(0)]).transform((val) => BigInt(val));
 const u32Schema = () => z.number().int().min(0).max(MAX_U32);
 
 // jammin.build.yml schema

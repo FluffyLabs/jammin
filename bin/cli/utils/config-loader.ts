@@ -1,4 +1,4 @@
-import { YAML } from "bun";
+import { parse } from "yaml";
 import { ZodError } from "zod";
 import type { JamminBuildConfig, JamminNetworksConfig } from "../types/config";
 import { ConfigError } from "../types/errors";
@@ -18,7 +18,16 @@ async function loadYamlFile(filePath: string): Promise<unknown> {
   try {
     const file = Bun.file(filePath);
     const content = await file.text();
-    return YAML.parse(content);
+    return parse(
+      content,
+      (_, value) => {
+        if (typeof value === "bigint" && value >= Number.MIN_SAFE_INTEGER && value <= Number.MAX_SAFE_INTEGER) {
+          return Number(value);
+        }
+        return value;
+      },
+      { intAsBigInt: true },
+    );
   } catch (error) {
     if (error instanceof Error) {
       throw new ConfigError("Failed to parse YAML file", filePath, error);

@@ -45,7 +45,7 @@ deployment:
     storage:
       id: 832894
       info:
-        balance: 121345 # should be a string
+        balance: 121345.55
       storage:
         1234: test
         abcd: true

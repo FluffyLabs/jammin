@@ -536,11 +536,11 @@ describe("Validate Build Config", () => {
             "auth-service": {
               id: 12345,
               info: {
-                balance: "1000000000000",
-                accumulate_min_gas: "100000",
-                on_transfer_min_gas: "50000",
-                storage_utilisation_bytes: "2048",
-                gratis_storage: "1024",
+                balance: BigInt(Number.MAX_SAFE_INTEGER) + 1n,
+                accumulate_min_gas: 100000,
+                on_transfer_min_gas: 50000,
+                storage_utilisation_bytes: 2048,
+                gratis_storage: 1024,
                 storage_utilisation_count: 10,
                 created: 100,
                 last_accumulation: 200,
@@ -554,7 +554,7 @@ describe("Validate Build Config", () => {
       const result = validateBuildConfig(config);
       const info = result.deployment?.services?.["auth-service"]?.info;
       expect(info).toBeDefined();
-      expect(info?.balance).toBe(1000000000000n);
+      expect(info?.balance).toBe(BigInt(Number.MAX_SAFE_INTEGER) + 1n);
       expect(info?.accumulateMinGas).toBe(100000n);
       expect(info?.onTransferMinGas).toBe(50000n);
       expect(info?.storageUtilisationBytes).toBe(2048n);
@@ -579,7 +579,7 @@ describe("Validate Build Config", () => {
           services: {
             "auth-service": {
               info: {
-                balance: "5000",
+                balance: 5000,
                 created: 42,
               },
             },
@@ -610,10 +610,10 @@ describe("Validate Build Config", () => {
           services: {
             "auth-service": {
               info: {
-                accumulate_min_gas: "1000",
-                on_transfer_min_gas: "2000",
-                storage_utilisation_bytes: "3000",
-                gratis_storage: "4000",
+                accumulate_min_gas: 1000,
+                on_transfer_min_gas: 2000,
+                storage_utilisation_bytes: 3000,
+                gratis_storage: 4000,
                 storage_utilisation_count: 5,
                 last_accumulation: 6,
                 parent_service: 7,
@@ -636,7 +636,7 @@ describe("Validate Build Config", () => {
     });
 
     test("Should accept u64 fields at max value", () => {
-      const maxU64 = "18446744073709551615";
+      const maxU64 = 18446744073709551615n;
       const config = {
         services: [
           {
@@ -714,8 +714,8 @@ describe("Validate Build Config", () => {
           services: {
             "auth-service": {
               info: {
-                balance: "0",
-                accumulate_min_gas: "0",
+                balance: 0,
+                accumulate_min_gas: 0,
               },
             },
           },
@@ -856,31 +856,7 @@ describe("Validate Build Config", () => {
       expect(() => validateBuildConfig(config)).toThrow();
     });
 
-    test("Should reject u64 field provided as number instead of string", () => {
-      const config = {
-        services: [
-          {
-            path: "./services/auth.ts",
-            name: "auth-service",
-            sdk: "jam-sdk-0.1.26",
-          },
-        ],
-        deployment: {
-          spawn: "local",
-          services: {
-            "auth-service": {
-              info: {
-                balance: 1000000, // Should be a string
-              },
-            },
-          },
-        },
-      };
-
-      expect(() => validateBuildConfig(config)).toThrow();
-    });
-
-    test("Should reject u64 field with invalid string", () => {
+    test("Should reject u64 field with invalid data type", () => {
       const config = {
         services: [
           {
@@ -919,30 +895,6 @@ describe("Validate Build Config", () => {
             "auth-service": {
               info: {
                 created: 123.45,
-              },
-            },
-          },
-        },
-      };
-
-      expect(() => validateBuildConfig(config)).toThrow();
-    });
-
-    test("Should reject u32 field provided as string", () => {
-      const config = {
-        services: [
-          {
-            path: "./services/auth.ts",
-            name: "auth-service",
-            sdk: "jam-sdk-0.1.26",
-          },
-        ],
-        deployment: {
-          spawn: "local",
-          services: {
-            "auth-service": {
-              info: {
-                created: "100",
               },
             },
           },
