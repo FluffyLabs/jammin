@@ -1,16 +1,6 @@
 import * as p from "@clack/prompts";
-import {
-  block,
-  type codec,
-  generateGenesis,
-  generateServiceOutput,
-  numbers,
-  type ServiceBuildOutput,
-  saveStateFile,
-  type state,
-} from "@fluffylabs/jammin-sdk";
+import { generateGenesis, generateServiceOutput, type ServiceBuildOutput, saveStateFile } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
-import type { ServiceAccountInfoConfig } from "../../types/config";
 import { loadBuildConfig } from "../../utils/config-loader";
 import { getJamFiles } from "../../utils/file-utils";
 import { getServiceConfigs } from "../../utils/get-service-configs";
@@ -21,33 +11,6 @@ export class DeployError extends Error {
     super(message);
     this.name = "DeployError";
   }
-}
-
-const accountInfoSchemaMap = new Map<
-  string,
-  | typeof numbers.tryAsU64
-  | typeof block.tryAsServiceGas
-  | typeof numbers.tryAsU32
-  | typeof block.tryAsTimeSlot
-  | typeof block.tryAsServiceId
->([
-  ["balance", numbers.tryAsU64],
-  ["accumulateMinGas", block.tryAsServiceGas],
-  ["onTransferMinGas", block.tryAsServiceGas],
-  ["storageUtilisationBytes", numbers.tryAsU64],
-  ["gratisStorage", numbers.tryAsU64],
-  ["storageUtilisationCount", numbers.tryAsU32],
-  ["created", block.tryAsTimeSlot],
-  ["lastAccumulation", block.tryAsTimeSlot],
-  ["parentService", block.tryAsServiceId],
-]);
-
-function accountInfoFromConfig(config: ServiceAccountInfoConfig): Partial<codec.CodecRecord<state.ServiceAccountInfo>> {
-  return Object.fromEntries(
-    Object.entries(config)
-      .filter(([_, value]) => value !== undefined) // note [seko]: important, if undefineds remain they will overwrite default values
-      .map(([key, value]) => [key, accountInfoSchemaMap.get(key)?.(value)]),
-  );
 }
 
 export const deployCommand = new Command("deploy")
@@ -123,10 +86,8 @@ Examples:
 
         const deploymentConfig = serviceDeploymentConfigs[service.name];
         const serviceId = deploymentConfig?.id ?? getNextAvailableId();
-        const storage = deploymentConfig?.storage;
-        const info = deploymentConfig?.info;
 
-        return generateServiceOutput(jamFile, serviceId, storage, accountInfoFromConfig(info ?? {}));
+        return generateServiceOutput(jamFile, serviceId, deploymentConfig?.storage, deploymentConfig?.info);
       }),
     );
 

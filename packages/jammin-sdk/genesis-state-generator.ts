@@ -1,5 +1,4 @@
-import { resolve } from "node:path";
-import { Header, type ServiceId as ServiceIdType } from "@typeberry/lib/block";
+import { Header } from "@typeberry/lib/block";
 import { BytesBlob } from "@typeberry/lib/bytes";
 import { Encoder } from "@typeberry/lib/codec";
 import { tinyChainSpec } from "@typeberry/lib/config";
@@ -23,18 +22,12 @@ import {
 import { StateEntries } from "@typeberry/lib/state-merkleization";
 import { asOpaqueType } from "@typeberry/lib/utils";
 import { Gas, ServiceId, Slot, U32, U64 } from "./types.js";
+import type { ServiceBuildOutput } from "./util/generate-service-output.js";
 
 const blake2b = await Blake2b.createHasher();
 const spec = tinyChainSpec;
 
 export type Genesis = JipChainSpec;
-
-export interface ServiceBuildOutput {
-  id: ServiceIdType;
-  code: BytesBlob;
-  storage?: Record<string, string>;
-  info?: Partial<ServiceAccountInfo>;
-}
 
 // https://graypaper.fluffylabs.dev/#/ab2cdbd/11e00111f001?v=0.7.2
 const BASE_STORAGE_BYTES = 34n;
@@ -61,24 +54,6 @@ const BASE_SERVICE: ServiceAccountInfo = {
   lastAccumulation: Slot(0),
   parentService: ServiceId(0),
 };
-
-export async function generateServiceOutput(
-  jamFilePath: string,
-  serviceId = 0,
-  storage?: Record<string, string>,
-  info?: Partial<ServiceAccountInfo>,
-): Promise<ServiceBuildOutput> {
-  const absolutePath = resolve(jamFilePath);
-  const fileBytes = await Bun.file(absolutePath).bytes();
-  const code = BytesBlob.blobFrom(fileBytes);
-
-  return {
-    id: ServiceId(serviceId),
-    code,
-    storage,
-    info,
-  };
-}
 
 /** Creates genesis file on given path: JIP-4 Chainspec */
 export async function saveStateFile(genesis: Genesis, outputFile: string): Promise<void> {
