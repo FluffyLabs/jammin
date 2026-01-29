@@ -4,6 +4,7 @@ import * as p from "@clack/prompts";
 import type { ServiceConfig } from "@fluffylabs/jammin-sdk";
 import { copyJamToDist, getJamFiles, getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
+
 /**
  * Build a single service using Docker
  */
@@ -16,7 +17,7 @@ export class DockerError extends Error {
   }
 }
 
-export async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {
+export async function callDockerBuild(service: ServiceConfig, projectRoot: string): Promise<string> {
   const sdk = typeof service.sdk === "string" ? SDK_CONFIGS[service.sdk] : service.sdk;
   const servicePath = resolve(projectRoot, service.path);
 
@@ -36,6 +37,33 @@ export async function buildService(service: ServiceConfig, projectRoot: string):
   }
 
   return combinedOutput;
+}
+
+export async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {
+  const servicePath = resolve(projectRoot, service.path);
+  const filesBefore = await getJamFiles(servicePath);
+
+  const output = await callDockerBuild(service, projectRoot);
+
+  // Find new or updated .jam files
+  const filesAfter = await getJamFiles(servicePath);
+  const newFiles: string[] = [];
+
+  for (const [file, mtimeAfter] of filesAfter) {
+    const mtimeBefore = filesBefore.get(file);
+    if (mtimeBefore === undefined || mtimeAfter > mtimeBefore) {
+      newFiles.push(file);
+    }
+  }
+
+  const file = newFiles.length > 0 ? newFiles[0] : undefined;
+  if (file) {
+    const distPath = await copyJamToDist(file, service.name, projectRoot);
+    p.log.info(`🎁 Output file: ${relative(projectRoot, distPath)}`);
+  } else {
+    throw new Error(`Failed to find generated file for: '${service.name}'`);
+  }
+  return output;
 }
 
 /**
@@ -76,9 +104,6 @@ Examples:
       const logFileName = `jammin-build-${service.name}-${timestamp}.log`;
       const logFilePath = join(logsDir, logFileName);
 
-      const servicePath = resolve(projectRoot, service.path);
-      const filesBefore = await getJamFiles(servicePath);
-
       let output: string | undefined;
 
       // Build service and save log
@@ -96,25 +121,6 @@ Examples:
           errorMessage = errorObj.message;
         }
         s.stop(`❌ Failed to build service '${service.name}': ${errorMessage}`);
-      }
-
-      // Find new or updated .jam files
-      const filesAfter = await getJamFiles(servicePath);
-      const newFiles: string[] = [];
-
-      for (const [file, mtimeAfter] of filesAfter) {
-        const mtimeBefore = filesBefore.get(file);
-        if (mtimeBefore === undefined || mtimeAfter > mtimeBefore) {
-          newFiles.push(file);
-        }
-      }
-
-      const file = newFiles.length > 0 ? newFiles[0] : undefined;
-      if (file) {
-        const distPath = await copyJamToDist(file, service.name, projectRoot);
-        p.log.info(`🎁 Output file: ${relative(projectRoot, distPath)}`);
-      } else {
-        throw new Error(`Failed to find generated file for: '${service.name}'`);
       }
 
       if (output) {
