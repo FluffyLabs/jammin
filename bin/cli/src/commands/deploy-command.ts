@@ -45,7 +45,7 @@ Examples:
 
     p.log.info(`Found ${buildOutputs.length} service(s)`);
 
-    p.note(`🎁 Genesis file: ${genesisOutput}`);
+    p.log.message("🎁 Genereted file: genesis.json");
 
     p.outro("✅ Deployment was successful!");
   });

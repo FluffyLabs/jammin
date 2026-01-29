@@ -25,7 +25,7 @@ export async function loadServices(projectRoot: string = process.cwd()): Promise
   // Prepare ServiceIds
   for (const service of config.services) {
     const deployInfo = serviceDeployConfigs[service.name];
-    if (deployInfo.id !== undefined) {
+    if (deployInfo?.id !== undefined) {
       usedIds.add(deployInfo.id);
     }
   }
@@ -42,8 +42,8 @@ export async function loadServices(projectRoot: string = process.cwd()): Promise
   for (const service of config.services) {
     const jamFilePath = join(projectRoot, "dist", `${service.name}.jam`);
     const deployConfig = serviceDeployConfigs[service.name];
-    const serviceId = deployConfig.id ?? getNextAvailableId();
-    outputs.push(await generateServiceOutput(jamFilePath, serviceId, deployConfig.storage, deployConfig.info));
+    const serviceId = deployConfig?.id ?? getNextAvailableId();
+    outputs.push(await generateServiceOutput(jamFilePath, serviceId, deployConfig?.storage, deployConfig?.info));
   }
 
   return outputs;
