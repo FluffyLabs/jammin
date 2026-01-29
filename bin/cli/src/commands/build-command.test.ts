@@ -133,9 +133,7 @@ describe("build-command", () => {
       };
 
       expect(buildService(service, "/test/project")).rejects.toThrow();
-      expect(buildService(service, "/test/project")).rejects.toThrow(
-        "Build failed for service 'failing-service'",
-      );
+      expect(buildService(service, "/test/project")).rejects.toThrow("Build failed for service 'failing-service'");
     });
 
     test("should return build output on success", async () => {
