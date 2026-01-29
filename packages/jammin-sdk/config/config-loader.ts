@@ -1,4 +1,4 @@
-import { YAML } from "bun";
+import { parse } from "yaml";
 import { prettifyError, ZodError } from "zod";
 import { findConfigFile, pathExists } from "../utils/file-utils.js";
 import { validateBuildConfig, validateNetworksConfig } from "./config-validator.js";
@@ -18,7 +18,16 @@ async function loadYamlFile(filePath: string): Promise<unknown> {
   try {
     const file = Bun.file(filePath);
     const content = await file.text();
-    return YAML.parse(content);
+    return parse(
+      content,
+      (_, value) => {
+        if (typeof value === "bigint" && value >= Number.MIN_SAFE_INTEGER && value <= Number.MAX_SAFE_INTEGER) {
+          return Number(value);
+        }
+        return value;
+      },
+      { intAsBigInt: true },
+    );
   } catch (error) {
     if (error instanceof Error) {
       throw new ConfigError(`Failed to parse YAML file: \n${error.message}`, filePath);

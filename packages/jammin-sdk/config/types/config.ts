@@ -39,6 +39,20 @@ export interface ServiceDeploymentConfig {
   id?: number;
   /** Storage key-value pairs */
   storage?: Record<string, string>;
+  /** Optional service account info overrides */
+  info?: ServiceAccountInfoConfig;
+}
+
+export interface ServiceAccountInfoConfig {
+  balance?: bigint;
+  accumulateMinGas?: bigint;
+  onTransferMinGas?: bigint;
+  storageUtilisationBytes?: bigint;
+  gratisStorage?: bigint;
+  storageUtilisationCount?: number;
+  created?: number;
+  lastAccumulation?: number;
+  parentService?: number;
 }
 
 // jammin.network.yml types
