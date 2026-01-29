@@ -145,6 +145,46 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
         lookupHistory,
       }),
     );
+
+    // add preimages and lookup history
+    if (service.lookupHistory) {
+      const preimageUpdates = update.preimages?.get(serviceId) ?? [];
+
+      for (const [hash, slots] of service.lookupHistory) {
+        const preimageBlob = service.preimages?.get(hash);
+
+        if (!preimageBlob) {
+          throw new Error(`Preimage blob not found for hash ${hash}`);
+        }
+
+        // request preimage
+        const lookupHistory = new LookupHistoryItem(hash, U32(preimageBlob.length), tryAsLookupHistorySlots([]));
+        preimageUpdates.push(UpdatePreimage.updateOrAdd({ lookupHistory }));
+
+        // provide
+        if (slots.length >= 1) {
+          if (preimageBlob) {
+            preimageUpdates.push(
+              UpdatePreimage.provide({
+                preimage: PreimageItem.create({ hash, blob: preimageBlob }),
+                providedFor: serviceId,
+                slot: slots[0],
+              }),
+            );
+          }
+        }
+
+        // update lookup history
+        if (slots.length > 1) {
+          const lookupHistory = new LookupHistoryItem(hash, U32(preimageBlob.length), slots);
+          preimageUpdates.push(UpdatePreimage.updateOrAdd({ lookupHistory }));
+        }
+      }
+
+      if (preimageUpdates.length > 0) {
+        update.preimages?.set(serviceId, preimageUpdates);
+      }
+    }
   }
 
   memState.applyUpdate(update);

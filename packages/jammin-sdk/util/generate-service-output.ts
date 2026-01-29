@@ -7,6 +7,7 @@ import {
   tryAsTimeSlot,
 } from "@typeberry/lib/block";
 import { Bytes, BytesBlob } from "@typeberry/lib/bytes";
+import { HashDictionary } from "@typeberry/lib/collections";
 import { HASH_SIZE } from "@typeberry/lib/hash";
 import { tryAsU32, tryAsU64 } from "@typeberry/lib/numbers";
 import { type LookupHistorySlots, type ServiceAccountInfo, tryAsLookupHistorySlots } from "@typeberry/lib/state";
@@ -17,7 +18,7 @@ export interface ServiceBuildOutput {
   code: BytesBlob;
   storage?: Record<string, string>;
   info?: Partial<ServiceAccountInfo>;
-  preimages?: Map<preimage.PreimageHash, BytesBlob>;
+  preimages?: HashDictionary<preimage.PreimageHash, BytesBlob>;
   lookupHistory?: Map<preimage.PreimageHash, LookupHistorySlots>;
 }
 
@@ -57,7 +58,7 @@ export async function generateServiceOutput(
     }).filter(([_, value]) => value !== undefined),
   );
 
-  const preimagesMap = new Map<preimage.PreimageHash, BytesBlob>(
+  const preimagesDict = HashDictionary.fromEntries(
     Object.entries(preimages ?? {}).map(([hash, blob]) => [
       Bytes.parseBytes(hash, HASH_SIZE).asOpaque(),
       BytesBlob.blobFromString(blob),
@@ -76,7 +77,7 @@ export async function generateServiceOutput(
     code,
     storage,
     info: serviceAccountInfo,
-    preimages: preimagesMap,
+    preimages: preimagesDict,
     lookupHistory: lookupHistoryMap,
   };
 }
