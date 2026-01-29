@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { resolve } from "node:path";
-import type { SdkConfig, ServiceConfig } from "../../types/config";
-import { SDK_CONFIGS } from "../../utils/sdk-configs";
+import { SDK_CONFIGS, type SdkConfig, type ServiceConfig } from "@fluffylabs/jammin-sdk";
 import { buildService } from "./build-command";
 
 describe("build-command", () => {
@@ -133,10 +132,8 @@ describe("build-command", () => {
         sdk: "jambrains-1cfc41c",
       };
 
-      await expect(buildService(service, "/test/project")).rejects.toThrow();
-      await expect(buildService(service, "/test/project")).rejects.toThrow(
-        "Build failed for service 'failing-service'",
-      );
+      expect(buildService(service, "/test/project")).rejects.toThrow();
+      expect(buildService(service, "/test/project")).rejects.toThrow("Build failed for service 'failing-service'");
     });
 
     test("should return build output on success", async () => {

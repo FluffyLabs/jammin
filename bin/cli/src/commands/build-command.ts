@@ -1,11 +1,9 @@
 import { mkdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
+import type { ServiceConfig } from "@fluffylabs/jammin-sdk";
+import { getJamFiles, getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
-import type { ServiceConfig } from "../../types/config";
-import { getJamFiles } from "../../utils/file-utils";
-import { getServiceConfigs } from "../../utils/get-service-configs";
-import { SDK_CONFIGS } from "../../utils/sdk-configs";
 
 /**
  * Build a single service using Docker
@@ -62,7 +60,9 @@ Examples:
     p.intro(`🔨 Building ${targetLabel}`);
 
     const s = p.spinner();
-    const services = await getServiceConfigs(options.config, serviceName, s);
+    s.start("Loading service configuration...");
+    const services = await getServiceConfigs(options.config, serviceName);
+    s.stop("✅ Configuration loaded");
 
     const projectRoot = process.cwd();
     const logsDir = join(projectRoot, "logs");

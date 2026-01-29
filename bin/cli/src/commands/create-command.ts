@@ -1,7 +1,6 @@
 import * as p from "@clack/prompts";
+import { fetchRepo, updatePackageJson } from "@fluffylabs/jammin-sdk";
 import { Command, InvalidArgumentError } from "commander";
-import { fetchRepo } from "../../utils/fetch-repo";
-import { updatePackageJson } from "../../utils/file-utils";
 
 type Template = "jam-sdk" | "jade" | "jambrains" | "ajanta" | "undecided";
 

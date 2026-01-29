@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { resolve } from "node:path";
-import { ConfigError } from "../types/errors";
-import { loadBuildConfig, loadNetworksConfig } from "./config-loader";
+import { loadBuildConfig, loadNetworksConfig } from "./config-loader.js";
+import { ConfigError } from "./types/errors.js";
 
 const VALID_BUILD = "./test-files/valid-build.yml";
 const INVALID_BUILD = "./test-files/invalid-build.yml";

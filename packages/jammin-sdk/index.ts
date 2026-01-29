@@ -7,10 +7,11 @@ export * as hash from "@typeberry/lib/hash";
 export * as numbers from "@typeberry/lib/numbers";
 export * as state from "@typeberry/lib/state";
 export * as state_merkleization from "@typeberry/lib/state-merkleization";
+export * from "./config/index.js";
 export * from "./genesis-state-generator.js";
 export * from "./simulator.js";
 export * from "./types.js";
-export * from "./util/generate-service-output.js";
+export * from "./utils/index.js";
 export * from "./work-report.js";
 
 export function getSDKInfo() {
