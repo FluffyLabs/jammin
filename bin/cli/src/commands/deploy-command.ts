@@ -35,7 +35,9 @@ Examples:
     p.intro(`🚀 Deploying ${targetLabel}...`);
 
     const s = p.spinner();
+    s.start("Loading service configuration...");
     const services = await getServiceConfigs(undefined, serviceName);
+    s.stop("✅ Configuration loaded");
 
     s.start("🔨 Building...");
     for (const service of services) {

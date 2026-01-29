@@ -2,7 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import type { ServiceConfig } from "@fluffylabs/jammin-sdk";
-import { copyJamToDist, getJamFiles, getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
+import { getJamFiles, getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
 
 /**
@@ -60,7 +60,9 @@ Examples:
     p.intro(`🔨 Building ${targetLabel}`);
 
     const s = p.spinner();
+    s.start("Loading service configuration...");
     const services = await getServiceConfigs(options.config, serviceName);
+    s.stop("✅ Configuration loaded");
 
     const projectRoot = process.cwd();
     const logsDir = join(projectRoot, "logs");
@@ -111,12 +113,6 @@ Examples:
       if (newFiles.length > 0) {
         const filesList = newFiles.map((f) => `  - ${relative(projectRoot, f)}`).join("\n");
         p.log.info(`🎁 Output files for '${service.name}':\n${filesList}`);
-
-        // Copy .jam files to dist/
-        for (const jamFile of newFiles) {
-          const distPath = await copyJamToDist(jamFile, service.name, projectRoot);
-          p.log.info(`📦 Copied to: ${relative(projectRoot, distPath)}`);
-        }
       }
 
       if (output) {

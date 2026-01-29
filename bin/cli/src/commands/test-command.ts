@@ -60,7 +60,9 @@ Examples:
     p.intro(`🧪 Testing ${targetLabel}`);
 
     const s = p.spinner();
+    s.start("Loading service configuration...");
     const services = await getServiceConfigs(options.config, serviceName);
+    s.stop("✅ Configuration loaded");
 
     const projectRoot = process.cwd();
     const logsDir = join(projectRoot, "logs");

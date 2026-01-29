@@ -1,4 +1,4 @@
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { Header, type ServiceId as ServiceIdType } from "@typeberry/lib/block";
 import { BytesBlob } from "@typeberry/lib/bytes";
 import { Encoder } from "@typeberry/lib/codec";
@@ -80,22 +80,6 @@ export async function generateServiceOutput(
     balance: serviceInfo.balance ? U64(serviceInfo.balance) : undefined,
     storage: serviceInfo.storage,
   };
-}
-
-/**
- * Load a service from the dist/ directory by name
- */
-export async function loadFromDist(
-  serviceName: string,
-  serviceId = 0,
-  serviceInfo: {
-    balance?: bigint;
-    storage?: Record<string, string>;
-  } = {},
-  projectRoot: string = process.cwd(),
-): Promise<ServiceBuildOutput> {
-  const jamFilePath = join(projectRoot, "dist", `${serviceName}.jam`);
-  return generateServiceOutput(jamFilePath, serviceId, serviceInfo);
 }
 
 /** Creates genesis file on given path: JIP-4 Chainspec */
