@@ -2,9 +2,8 @@ import { mkdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import type { ServiceConfig } from "@fluffylabs/jammin-sdk";
-import { getJamFiles, getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
+import { copyJamToDist, getJamFiles, getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
-
 /**
  * Build a single service using Docker
  */
@@ -110,9 +109,12 @@ Examples:
         }
       }
 
-      if (newFiles.length > 0) {
-        const filesList = newFiles.map((f) => `  - ${relative(projectRoot, f)}`).join("\n");
-        p.log.info(`🎁 Output files for '${service.name}':\n${filesList}`);
+      const file = newFiles.length > 0 ? newFiles[0] : undefined;
+      if (file) {
+        const distPath = await copyJamToDist(file, service.name, projectRoot);
+        p.log.info(`🎁 Output file: ${relative(projectRoot, distPath)}`);
+      } else {
+        throw new Error(`Failed to find generated file for: '${service.name}'`);
       }
 
       if (output) {

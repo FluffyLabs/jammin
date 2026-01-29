@@ -1,14 +1,52 @@
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { type ServiceId as ServiceIdType, tryAsServiceGas, tryAsServiceId, tryAsTimeSlot } from "@typeberry/lib/block";
 import { BytesBlob } from "@typeberry/lib/bytes";
 import { tryAsU32, tryAsU64 } from "@typeberry/lib/numbers";
+import type { ServiceAccountInfo } from "@typeberry/lib/state";
+import { loadBuildConfig } from "../config/config-loader.js";
 import { ServiceId } from "../types.js";
 
 export interface ServiceBuildOutput {
   id: ServiceIdType;
   code: BytesBlob;
   storage?: Record<string, string>;
-  info?: Partial<import("@typeberry/lib/state").ServiceAccountInfo>;
+  info?: Partial<ServiceAccountInfo>;
+}
+
+/**
+ * Load a service from the dist/ directory by name
+ */
+export async function loadServices(projectRoot: string = process.cwd()): Promise<ServiceBuildOutput[]> {
+  const outputs: ServiceBuildOutput[] = [];
+  const config = await loadBuildConfig();
+  const serviceDeployConfigs = config.deployment?.services ?? {};
+  const usedIds = new Set<number>();
+
+  // Prepare ServiceIds
+  for (const service of config.services) {
+    const deployInfo = serviceDeployConfigs[service.name];
+    if (deployInfo.id !== undefined) {
+      usedIds.add(deployInfo.id);
+    }
+  }
+
+  let nextId = 0;
+  const getNextAvailableId = () => {
+    while (usedIds.has(nextId)) {
+      nextId++;
+    }
+    return nextId++;
+  };
+
+  // Generate service build outputs
+  for (const service of config.services) {
+    const jamFilePath = join(projectRoot, "dist", `${service.name}.jam`);
+    const deployConfig = serviceDeployConfigs[service.name];
+    const serviceId = deployConfig.id ?? getNextAvailableId();
+    outputs.push(await generateServiceOutput(jamFilePath, serviceId, deployConfig.storage, deployConfig.info));
+  }
+
+  return outputs;
 }
 
 export async function generateServiceOutput(

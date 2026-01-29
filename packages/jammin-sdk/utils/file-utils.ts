@@ -1,4 +1,4 @@
-import { readdir, stat } from "node:fs/promises";
+import { copyFile, mkdir, readdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -102,4 +102,17 @@ export async function updatePackageJson(
   packageJson.name = fields.name;
 
   await Bun.write(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+}
+
+/**
+ * Copy a .jam file to the dist/ directory with a service-specific name
+ */
+export async function copyJamToDist(jamFilePath: string, serviceName: string, projectRoot: string): Promise<string> {
+  const distDir = join(projectRoot, "dist");
+  await mkdir(distDir, { recursive: true });
+
+  const destPath = join(distDir, `${serviceName}.jam`);
+  await copyFile(jamFilePath, destPath);
+
+  return destPath;
 }
