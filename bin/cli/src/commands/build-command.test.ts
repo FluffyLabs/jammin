@@ -132,8 +132,8 @@ describe("build-command", () => {
         sdk: "jambrains-1cfc41c",
       };
 
-      await expect(buildService(service, "/test/project")).rejects.toThrow();
-      await expect(buildService(service, "/test/project")).rejects.toThrow(
+      expect(buildService(service, "/test/project")).rejects.toThrow();
+      expect(buildService(service, "/test/project")).rejects.toThrow(
         "Build failed for service 'failing-service'",
       );
     });
