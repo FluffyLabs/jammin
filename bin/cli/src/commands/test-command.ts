@@ -1,10 +1,9 @@
 import { mkdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
+import type { ServiceConfig } from "@fluffylabs/jammin-sdk";
+import { getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
-import type { ServiceConfig } from "../../types/config";
-import { getServiceConfigs } from "../../utils/get-service-configs";
-import { SDK_CONFIGS } from "../../utils/sdk-configs";
 
 export class DockerError extends Error {
   constructor(
@@ -61,7 +60,7 @@ Examples:
     p.intro(`🧪 Testing ${targetLabel}`);
 
     const s = p.spinner();
-    const services = await getServiceConfigs(options.config, serviceName, s);
+    const services = await getServiceConfigs(options.config, serviceName);
 
     const projectRoot = process.cwd();
     const logsDir = join(projectRoot, "logs");

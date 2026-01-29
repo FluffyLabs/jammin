@@ -1,9 +1,9 @@
 import { YAML } from "bun";
-import { ZodError } from "zod";
-import type { JamminBuildConfig, JamminNetworksConfig } from "../types/config";
-import { ConfigError } from "../types/errors";
-import { findConfigFile, pathExists } from "../utils/file-utils";
-import { validateBuildConfig, validateNetworksConfig } from "./config-validator";
+import { prettifyError, ZodError } from "zod";
+import { findConfigFile, pathExists } from "../utils/file-utils.js";
+import { validateBuildConfig, validateNetworksConfig } from "./config-validator.js";
+import type { JamminBuildConfig, JamminNetworksConfig } from "./types/config.js";
+import { ConfigError } from "./types/errors.js";
 
 /** Configuration loader and validation */
 
@@ -21,7 +21,7 @@ async function loadYamlFile(filePath: string): Promise<unknown> {
     return YAML.parse(content);
   } catch (error) {
     if (error instanceof Error) {
-      throw new ConfigError("Failed to parse YAML file", filePath, error);
+      throw new ConfigError(`Failed to parse YAML file: \n${error.message}`, filePath);
     }
     throw error;
   }
@@ -49,8 +49,9 @@ async function loadConfig<T>(
   try {
     return validator(data);
   } catch (error) {
-    const errorObj = error instanceof Error || error instanceof ZodError ? error : new Error(String(error));
-    throw new ConfigError(`Invalid ${configType} configuration`, filePath, errorObj);
+    const errorMessage =
+      error instanceof ZodError ? prettifyError(error) : error instanceof Error ? error.message : String(error);
+    throw new ConfigError(`Invalid ${configType} configuration: \n${errorMessage}`, filePath);
   }
 }
 

@@ -17,7 +17,7 @@
     },
     "bin/cli": {
       "name": "@fluffylabs/jammin-cli",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "bin": {
         "jammin": "./dist/index.js",
       },
@@ -25,7 +25,6 @@
         "@clack/prompts": "^0.11.0",
         "@fluffylabs/jammin-sdk": "workspace:*",
         "commander": "^14.0.2",
-        "zod": "^4.1.13",
       },
       "devDependencies": {
         "@types/blake2b": "^2.1.3",
@@ -37,9 +36,10 @@
     },
     "packages/jammin-sdk": {
       "name": "@fluffylabs/jammin-sdk",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "dependencies": {
         "@typeberry/lib": "0.5.2-9afefa7",
+        "zod": "^4.3.6",
       },
       "devDependencies": {
         "@tsconfig/node20": "^20.1.8",
@@ -109,6 +109,10 @@
 
     "undici-types": ["undici-types@7.16.0", "", {}, "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="],
 
-    "zod": ["zod@4.3.5", "", {}, "sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g=="],
+    "zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
+
+    "@fluffylabs/jammin-sdk/@types/bun": ["@types/bun@1.3.7", "", { "dependencies": { "bun-types": "1.3.7" } }, "sha512-lmNuMda+Z9b7tmhA0tohwy8ZWFSnmQm1UDWXtH5r9F7wZCfkeO3Jx7wKQ1EOiKq43yHts7ky6r8SDJQWRNupkA=="],
+
+    "@fluffylabs/jammin-sdk/@types/bun/bun-types": ["bun-types@1.3.7", "", { "dependencies": { "@types/node": "*" } }, "sha512-qyschsA03Qz+gou+apt6HNl6HnI+sJJLL4wLDke4iugsE6584CMupOtTY1n+2YC9nGVrEKUlTs99jjRLKgWnjQ=="],
   }
 }
