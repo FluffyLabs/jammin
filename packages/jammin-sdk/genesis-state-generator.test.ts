@@ -6,7 +6,7 @@ import { type StorageKey, tryAsLookupHistorySlots } from "@typeberry/lib/state";
 import { asOpaqueType } from "@typeberry/lib/utils";
 import { generateGenesis, generateState, toJip4Schema } from "./genesis-state-generator";
 import { Gas, ServiceId, Slot, U32, U64 } from "./types";
-import type { ServiceBuildOutput } from "./util/generate-service-output";
+import type { ServiceBuildOutput } from "./utils/generate-service-output";
 
 const blake2b = await Blake2b.createHasher();
 
