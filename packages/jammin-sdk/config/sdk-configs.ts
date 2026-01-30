@@ -1,4 +1,4 @@
-import type { SdkConfig } from "../types/config";
+import type { SdkConfig } from "./types/config.js";
 
 export const SDK_CONFIGS = {
   "jam-sdk-0.1.26": {

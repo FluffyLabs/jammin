@@ -1,9 +1,14 @@
 import * as p from "@clack/prompts";
-import { generateGenesis, generateServiceOutput, type ServiceBuildOutput, saveStateFile } from "@fluffylabs/jammin-sdk";
+import {
+  generateGenesis,
+  generateServiceOutput,
+  getJamFiles,
+  getServiceConfigs,
+  loadBuildConfig,
+  type ServiceBuildOutput,
+  saveStateFile,
+} from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
-import { loadBuildConfig } from "../../utils/config-loader";
-import { getJamFiles } from "../../utils/file-utils";
-import { getServiceConfigs } from "../../utils/get-service-configs";
 import { buildService } from "./build-command";
 
 export class DeployError extends Error {
@@ -30,7 +35,9 @@ Examples:
     p.intro(`🚀 Deploying ${targetLabel}...`);
 
     const s = p.spinner();
-    const services = await getServiceConfigs(undefined, serviceName, s);
+    s.start("Loading service configuration...");
+    const services = await getServiceConfigs(undefined, serviceName);
+    s.stop("✅ Configuration loaded");
 
     s.start("🔨 Building...");
     for (const service of services) {

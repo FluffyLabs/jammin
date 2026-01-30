@@ -41,6 +41,12 @@ try {
 } catch (err) {
   if (err instanceof Error) {
     console.error(`❌ Error: ${err.name}: ${err.message}`);
+    if ("filePath" in err && err.filePath) {
+      console.error(`   File: ${err.filePath}`);
+    }
+    if ("output" in err && err.output) {
+      console.error(`   Output: ${err.output}`);
+    }
   } else {
     console.error(`❌ Error: ${err}`);
   }

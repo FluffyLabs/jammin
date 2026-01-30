@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { validateBuildConfig, validateNetworksConfig } from "./config-validator";
+import { validateBuildConfig, validateNetworksConfig } from "./config-validator.js";
 
 describe("Validate Build Config", () => {
   test("Should parse valid build config with all fields", () => {

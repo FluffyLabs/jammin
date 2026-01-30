@@ -1,6 +1,6 @@
 // Core configuration types matching YAML schema
 
-import type { SDK_CONFIGS } from "../utils/sdk-configs";
+import type { SDK_CONFIGS } from "../sdk-configs.js";
 
 // jammin.build.yml types
 

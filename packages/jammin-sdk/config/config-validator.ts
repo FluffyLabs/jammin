@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SDK_CONFIGS } from "./sdk-configs";
+import { SDK_CONFIGS } from "./sdk-configs.js";
 
 // Zod schemas for runtime validation of YAML configs
 
