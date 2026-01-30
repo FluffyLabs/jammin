@@ -94,7 +94,14 @@ Examples:
         const deploymentConfig = serviceDeploymentConfigs[service.name];
         const serviceId = deploymentConfig?.id ?? getNextAvailableId();
 
-        return generateServiceOutput(jamFile, serviceId, deploymentConfig?.storage, deploymentConfig?.info);
+        return generateServiceOutput(
+          jamFile,
+          serviceId,
+          deploymentConfig?.storage,
+          deploymentConfig?.info,
+          deploymentConfig?.preimageBlobs,
+          deploymentConfig?.preimageRequests,
+        );
       }),
     );
 

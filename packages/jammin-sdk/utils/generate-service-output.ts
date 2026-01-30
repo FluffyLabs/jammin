@@ -1,14 +1,25 @@
 import { resolve } from "node:path";
-import { type ServiceId as ServiceIdType, tryAsServiceGas, tryAsServiceId, tryAsTimeSlot } from "@typeberry/lib/block";
-import { BytesBlob } from "@typeberry/lib/bytes";
+import {
+  type preimage,
+  type ServiceId as ServiceIdType,
+  tryAsServiceGas,
+  tryAsServiceId,
+  tryAsTimeSlot,
+} from "@typeberry/lib/block";
+import { Bytes, BytesBlob } from "@typeberry/lib/bytes";
+import { HashDictionary } from "@typeberry/lib/collections";
+import { HASH_SIZE } from "@typeberry/lib/hash";
 import { tryAsU32, tryAsU64 } from "@typeberry/lib/numbers";
-import { ServiceId } from "../types.js";
+import { type LookupHistorySlots, type ServiceAccountInfo, tryAsLookupHistorySlots } from "@typeberry/lib/state";
+import { ServiceId, Slot } from "../types.js";
 
 export interface ServiceBuildOutput {
   id: ServiceIdType;
   code: BytesBlob;
   storage?: Record<string, string>;
-  info?: Partial<import("@typeberry/lib/state").ServiceAccountInfo>;
+  info?: Partial<ServiceAccountInfo>;
+  preimageBlobs?: HashDictionary<preimage.PreimageHash, BytesBlob>;
+  preimageRequests?: Map<preimage.PreimageHash, LookupHistorySlots>;
 }
 
 export async function generateServiceOutput(
@@ -26,6 +37,8 @@ export async function generateServiceOutput(
     lastAccumulation?: number;
     parentService?: number;
   },
+  preimageBlobs?: Record<string, string>,
+  preimageRequests?: Record<string, number[]>,
 ): Promise<ServiceBuildOutput> {
   const absolutePath = resolve(jamFilePath);
   const fileBytes = await Bun.file(absolutePath).bytes();
@@ -45,10 +58,26 @@ export async function generateServiceOutput(
     }).filter(([_, value]) => value !== undefined),
   );
 
+  const preimageBlobsDict = HashDictionary.fromEntries(
+    Object.entries(preimageBlobs ?? {}).map(([hash, blob]) => [
+      Bytes.parseBytes(hash, HASH_SIZE).asOpaque(),
+      BytesBlob.blobFromString(blob),
+    ]),
+  );
+
+  const preimageRequestsMap = new Map<preimage.PreimageHash, LookupHistorySlots>(
+    Object.entries(preimageRequests ?? {}).map(([hash, slots]) => [
+      Bytes.parseBytes(hash, HASH_SIZE).asOpaque(),
+      tryAsLookupHistorySlots(slots.map((slot) => Slot(slot))),
+    ]),
+  );
+
   return {
     id: ServiceId(serviceId),
     code,
     storage,
     info: serviceAccountInfo,
+    preimageBlobs: preimageBlobsDict,
+    preimageRequests: preimageRequestsMap,
   };
 }
