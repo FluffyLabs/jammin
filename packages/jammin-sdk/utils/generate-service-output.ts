@@ -14,7 +14,7 @@ export interface ServiceBuildOutput {
 }
 
 /**
- * Load a service from the dist/ directory by name
+ * Load services from the dist/ directory
  */
 export async function loadServices(projectRoot: string = process.cwd()): Promise<ServiceBuildOutput[]> {
   const outputs: ServiceBuildOutput[] = [];
