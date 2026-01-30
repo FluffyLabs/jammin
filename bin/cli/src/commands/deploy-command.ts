@@ -39,13 +39,13 @@ Examples:
 
     s.start("Generating Genesis State...");
     const buildOutputs = await loadServices(projectRoot);
-    const genesisOutput = `${projectRoot}/genesis.json`;
-    await saveStateFile(generateGenesis(buildOutputs), genesisOutput);
+    const genesisOutput = "dist/genesis.json";
+    await saveStateFile(generateGenesis(buildOutputs), `${projectRoot}/${genesisOutput}`);
     s.stop("✅ Genesis state generated!");
 
     p.log.info(`Found ${buildOutputs.length} service(s)`);
 
-    p.log.message("🎁 Genereted file: genesis.json");
+    p.log.message(`🎁 Genereted file: ${genesisOutput}`);
 
     p.outro("✅ Deployment was successful!");
   });
