@@ -92,8 +92,8 @@ Examples:
           serviceId,
           deploymentConfig?.storage,
           deploymentConfig?.info,
-          deploymentConfig?.preimages,
-          deploymentConfig?.lookup_history,
+          deploymentConfig?.preimageBlobs,
+          deploymentConfig?.preimageRequests,
         );
       }),
     );

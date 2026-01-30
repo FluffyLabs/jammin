@@ -32,6 +32,9 @@ export type Genesis = JipChainSpec;
 // https://graypaper.fluffylabs.dev/#/ab2cdbd/11e00111f001?v=0.7.2
 const BASE_STORAGE_BYTES = 34n;
 
+/** https://graypaper.fluffylabs.dev/#/ab2cdbd/11cc0111ce01?v=0.7.2 */
+const LOOKUP_HISTORY_ENTRY_BYTES = 81n;
+
 // Base ServiceInfo
 const BASE_SERVICE: ServiceAccountInfo = {
   // actual codeHash of a given blob
@@ -123,35 +126,20 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
       update.storage?.set(serviceId, storageUpdates);
     }
 
-    const calculatedStorageBytes = sumU64(
+    let calculatedStorageBytes = sumU64(
       BASE_SERVICE.storageUtilisationBytes,
       U64(service.code.length),
       U64(storageBytes),
     ).value;
 
-    const calculatedStorageCount = sumU32(BASE_SERVICE.storageUtilisationCount, U32(storageCount)).value;
+    let calculatedStorageCount = sumU32(BASE_SERVICE.storageUtilisationCount, U32(storageCount)).value;
 
-    // create service
-    update.updated?.set(
-      serviceId,
-      UpdateService.create({
-        serviceInfo: ServiceAccountInfo.create({
-          ...BASE_SERVICE,
-          codeHash: codeHash.asOpaque(),
-          storageUtilisationBytes: calculatedStorageBytes,
-          storageUtilisationCount: calculatedStorageCount,
-          ...service.info,
-        }),
-        lookupHistory,
-      }),
-    );
-
-    // add preimages and lookup history
-    if (service.lookupHistory) {
+    // add preimage blobs and preimage requests
+    if (service.preimageRequests) {
       const preimageUpdates = update.preimages?.get(serviceId) ?? [];
 
-      for (const [hash, slots] of service.lookupHistory) {
-        const preimageBlob = service.preimages?.get(hash);
+      for (const [hash, slots] of service.preimageRequests) {
+        const preimageBlob = service.preimageBlobs?.get(hash);
 
         if (!preimageBlob) {
           throw new Error(`Preimage blob not found for hash ${hash}`);
@@ -160,6 +148,13 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
         // request preimage
         const lookupHistory = new LookupHistoryItem(hash, U32(preimageBlob.length), tryAsLookupHistorySlots([]));
         preimageUpdates.push(UpdatePreimage.updateOrAdd({ lookupHistory }));
+
+        // update storage utilisation
+        calculatedStorageBytes = sumU64(
+          calculatedStorageBytes,
+          U64(LOOKUP_HISTORY_ENTRY_BYTES + BigInt(preimageBlob.length)),
+        ).value;
+        calculatedStorageCount = sumU32(calculatedStorageCount, U32(2)).value;
 
         // provide
         if (slots.length >= 1) {
@@ -185,6 +180,21 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
         update.preimages?.set(serviceId, preimageUpdates);
       }
     }
+
+    // create service
+    update.updated?.set(
+      serviceId,
+      UpdateService.create({
+        serviceInfo: ServiceAccountInfo.create({
+          ...BASE_SERVICE,
+          codeHash: codeHash.asOpaque(),
+          storageUtilisationBytes: calculatedStorageBytes,
+          storageUtilisationCount: calculatedStorageCount,
+          ...service.info,
+        }),
+        lookupHistory,
+      }),
+    );
   }
 
   memState.applyUpdate(update);

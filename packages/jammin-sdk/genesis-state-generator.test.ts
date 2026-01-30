@@ -147,16 +147,16 @@ describe("genesis-generator", () => {
     });
   });
 
-  describe("generateState with preimages and lookup history", () => {
-    test("should include additional preimages", async () => {
+  describe("generateState with preimage blobs and preimage requests", () => {
+    test("should include additional preimage blobs", async () => {
       const preimageBlob = BytesBlob.parseBlob("0xaabbccdd");
       const preimageHash = blake2b.hashBytes(preimageBlob).asOpaque();
 
       const serviceWithPreimages: ServiceBuildOutput = {
         ...basicService,
         id: ServiceId(300),
-        preimages: HashDictionary.fromEntries([[preimageHash, preimageBlob]]),
-        lookupHistory: new Map([[preimageHash, tryAsLookupHistorySlots([Slot(0)])]]),
+        preimageBlobs: HashDictionary.fromEntries([[preimageHash, preimageBlob]]),
+        preimageRequests: new Map([[preimageHash, tryAsLookupHistorySlots([Slot(0)])]]),
       };
 
       const state = generateState([serviceWithPreimages]);
@@ -166,15 +166,15 @@ describe("genesis-generator", () => {
       expect(serviceAccount).toBeDefined();
     });
 
-    test("should handle multiple slots in lookup history", async () => {
+    test("should handle multiple slots in preimage requests", async () => {
       const preimageBlob = BytesBlob.parseBlob("0x11223344");
       const preimageHash = blake2b.hashBytes(preimageBlob).asOpaque();
 
       const serviceWithMultiSlots: ServiceBuildOutput = {
         ...basicService,
         id: ServiceId(301),
-        preimages: HashDictionary.fromEntries([[preimageHash, preimageBlob]]),
-        lookupHistory: new Map([[preimageHash, tryAsLookupHistorySlots([Slot(0), Slot(1), Slot(2)])]]),
+        preimageBlobs: HashDictionary.fromEntries([[preimageHash, preimageBlob]]),
+        preimageRequests: new Map([[preimageHash, tryAsLookupHistorySlots([Slot(0), Slot(1), Slot(2)])]]),
       };
 
       const state = generateState([serviceWithMultiSlots]);
@@ -184,7 +184,7 @@ describe("genesis-generator", () => {
       expect(serviceAccount).toBeDefined();
     });
 
-    test("should throw error when preimage blob is missing for lookup history entry", async () => {
+    test("should throw error when preimage blob is missing for preimage request entry", async () => {
       const missingHash = Bytes.parseBytes(
         "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         HASH_SIZE,
@@ -193,11 +193,33 @@ describe("genesis-generator", () => {
       const serviceWithMissingPreimage: ServiceBuildOutput = {
         ...basicService,
         id: ServiceId(302),
-        preimages: HashDictionary.fromEntries([]), // Empty - no preimage for the hash
-        lookupHistory: new Map([[missingHash, tryAsLookupHistorySlots([Slot(0)])]]),
+        preimageBlobs: HashDictionary.fromEntries([]), // Empty - no preimage for the hash
+        preimageRequests: new Map([[missingHash, tryAsLookupHistorySlots([Slot(0)])]]),
       };
 
       expect(() => generateState([serviceWithMissingPreimage])).toThrow("Preimage blob not found for hash");
+    });
+
+    test("should calculate storage utilisation correctly with additional preimages", async () => {
+      const preimageBlob = BytesBlob.parseBlob("0xaabbccdd");
+      const preimageHash = blake2b.hashBytes(preimageBlob).asOpaque();
+
+      const serviceWithPreimages: ServiceBuildOutput = {
+        ...basicService,
+        id: ServiceId(303),
+        preimageBlobs: HashDictionary.fromEntries([[preimageHash, preimageBlob]]),
+        preimageRequests: new Map([[preimageHash, tryAsLookupHistorySlots([Slot(0)])]]),
+      };
+
+      const state = generateState([serviceWithPreimages]);
+
+      const service = state.services.get(ServiceId(303));
+      expect(service).toBeDefined();
+
+      const info = service?.getInfo();
+
+      expect(info?.storageUtilisationCount).toBe(U32(4));
+      expect(info?.storageUtilisationBytes).toEqual(U64(260));
     });
   });
 });

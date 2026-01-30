@@ -35,43 +35,52 @@ const ServiceConfigSchema = z.object({
   ),
 });
 
-const ServiceDeploymentConfigSchema = z.object({
-  id: u32Schema().optional(),
-  storage: z.record(z.string(), z.string()).optional(),
-  preimages: z.record(preimageHashSchema(), z.string().regex(/^0x([0-9a-fA-F]{2})+$/)).optional(),
-  lookup_history: z.record(preimageHashSchema(), z.array(z.int()).max(3)).optional(),
-  info: z
-    .object({
-      balance: u64Schema().optional(),
-      accumulate_min_gas: u64Schema().optional(),
-      on_transfer_min_gas: u64Schema().optional(),
-      storage_utilisation_bytes: u64Schema().optional(),
-      gratis_storage: u64Schema().optional(),
-      storage_utilisation_count: u32Schema().optional(),
-      created: u32Schema().optional(),
-      last_accumulation: u32Schema().optional(),
-      parent_service: u32Schema().optional(),
-    })
-    .transform((info) => {
-      // snake to camel case
-      if (!info) {
-        return undefined;
-      }
-      const transformed = {
-        balance: info.balance,
-        accumulateMinGas: info.accumulate_min_gas,
-        onTransferMinGas: info.on_transfer_min_gas,
-        storageUtilisationBytes: info.storage_utilisation_bytes,
-        gratisStorage: info.gratis_storage,
-        storageUtilisationCount: info.storage_utilisation_count,
-        created: info.created,
-        lastAccumulation: info.last_accumulation,
-        parentService: info.parent_service,
-      };
-      return transformed;
-    })
-    .optional(),
-});
+const ServiceDeploymentConfigSchema = z
+  .object({
+    id: u32Schema().optional(),
+    storage: z.record(z.string(), z.string()).optional(),
+    preimage_blobs: z.record(preimageHashSchema(), z.string().regex(/^0x([0-9a-fA-F]{2})+$/)).optional(),
+    preimage_requests: z.record(preimageHashSchema(), z.array(u32Schema()).max(3)).optional(),
+    info: z
+      .object({
+        balance: u64Schema().optional(),
+        accumulate_min_gas: u64Schema().optional(),
+        on_transfer_min_gas: u64Schema().optional(),
+        storage_utilisation_bytes: u64Schema().optional(),
+        gratis_storage: u64Schema().optional(),
+        storage_utilisation_count: u32Schema().optional(),
+        created: u32Schema().optional(),
+        last_accumulation: u32Schema().optional(),
+        parent_service: u32Schema().optional(),
+      })
+      .transform((info) => {
+        // snake to camel case
+        if (!info) {
+          return undefined;
+        }
+        const transformed = {
+          balance: info.balance,
+          accumulateMinGas: info.accumulate_min_gas,
+          onTransferMinGas: info.on_transfer_min_gas,
+          storageUtilisationBytes: info.storage_utilisation_bytes,
+          gratisStorage: info.gratis_storage,
+          storageUtilisationCount: info.storage_utilisation_count,
+          created: info.created,
+          lastAccumulation: info.last_accumulation,
+          parentService: info.parent_service,
+        };
+        return transformed;
+      })
+      .optional(),
+  })
+  .transform((config) => {
+    const { preimage_blobs, preimage_requests, ...rest } = config;
+    return {
+      ...rest,
+      preimageBlobs: preimage_blobs,
+      preimageRequests: preimage_requests,
+    };
+  });
 
 const DeploymentConfigSchema = z.object({
   spawn: z.string().min(1),

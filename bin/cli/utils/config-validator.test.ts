@@ -520,8 +520,8 @@ describe("Validate Build Config", () => {
     });
   });
 
-  describe("Preimages Config Validation", () => {
-    test("Should parse valid preimages config", () => {
+  describe("Preimage Blobs Config Validation", () => {
+    test("Should parse valid preimage_blobs config", () => {
       const config = {
         services: [
           {
@@ -534,7 +534,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              preimages: {
+              preimage_blobs: {
                 "0x0000000000000000000000000000000000000000000000000000000000000001": "0xdeadbeef",
                 "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890": "0xadadadadad",
               },
@@ -544,13 +544,13 @@ describe("Validate Build Config", () => {
       };
 
       const result = validateBuildConfig(config);
-      expect(result.deployment?.services?.["auth-service"]?.preimages).toEqual({
+      expect(result.deployment?.services?.["auth-service"]?.preimageBlobs).toEqual({
         "0x0000000000000000000000000000000000000000000000000000000000000001": "0xdeadbeef",
         "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890": "0xadadadadad",
       });
     });
 
-    test("Should reject preimages with hash missing 0x prefix", () => {
+    test("Should reject preimage_blobs with hash missing 0x prefix", () => {
       const config = {
         services: [
           {
@@ -563,7 +563,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              preimages: {
+              preimage_blobs: {
                 "0000000000000000000000000000000000000000000000000000000000000001": "0x1234",
               },
             },
@@ -574,7 +574,7 @@ describe("Validate Build Config", () => {
       expect(() => validateBuildConfig(config)).toThrow();
     });
 
-    test("Should reject preimages with blob missing 0x prefix", () => {
+    test("Should reject preimage_blobs with blob missing 0x prefix", () => {
       const config = {
         services: [
           {
@@ -587,7 +587,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              preimages: {
+              preimage_blobs: {
                 "0x0000000000000000000000000000000000000000000000000000000000000001": "deadbeef",
               },
             },
@@ -598,7 +598,7 @@ describe("Validate Build Config", () => {
       expect(() => validateBuildConfig(config)).toThrow();
     });
 
-    test("Should reject preimages with blob consisting of an uneven number of characters", () => {
+    test("Should reject preimage_blobs with blob consisting of an uneven number of characters", () => {
       const config = {
         services: [
           {
@@ -611,7 +611,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              preimages: {
+              preimage_blobs: {
                 "0x0000000000000000000000000000000000000000000000000000000000000001": "0xabc",
               },
             },
@@ -622,7 +622,7 @@ describe("Validate Build Config", () => {
       expect(() => validateBuildConfig(config)).toThrow();
     });
 
-    test("Should reject preimages where hash is not 32 bytes long", () => {
+    test("Should reject preimage_blobs where hash is not 32 bytes long", () => {
       const config = {
         services: [
           {
@@ -635,7 +635,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              preimages: {
+              preimage_blobs: {
                 "0x00000000000000000000000000000001": "0xdeadbeef", // 16 bytes instead of 32
               },
             },
@@ -647,8 +647,8 @@ describe("Validate Build Config", () => {
     });
   });
 
-  describe("Lookup History Config Validation", () => {
-    test("Should parse valid lookup_history config", () => {
+  describe("Preimage Requests Config Validation", () => {
+    test("Should parse valid preimage_requests config", () => {
       const config = {
         services: [
           {
@@ -661,7 +661,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              lookup_history: {
+              preimage_requests: {
                 "0x0000000000000000000000000000000000000000000000000000000000000001": [100, 200, 300],
                 "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890": [42],
               },
@@ -671,13 +671,13 @@ describe("Validate Build Config", () => {
       };
 
       const result = validateBuildConfig(config);
-      expect(result.deployment?.services?.["auth-service"]?.lookup_history).toEqual({
+      expect(result.deployment?.services?.["auth-service"]?.preimageRequests).toEqual({
         "0x0000000000000000000000000000000000000000000000000000000000000001": [100, 200, 300],
         "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890": [42],
       });
     });
 
-    test("Should accept lookup_history with empty array", () => {
+    test("Should accept preimage_requests with empty array", () => {
       const config = {
         services: [
           {
@@ -690,7 +690,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              lookup_history: {
+              preimage_requests: {
                 "0x0000000000000000000000000000000000000000000000000000000000000001": [],
               },
             },
@@ -699,12 +699,12 @@ describe("Validate Build Config", () => {
       };
 
       const result = validateBuildConfig(config);
-      expect(result.deployment?.services?.["auth-service"]?.lookup_history).toEqual({
+      expect(result.deployment?.services?.["auth-service"]?.preimageRequests).toEqual({
         "0x0000000000000000000000000000000000000000000000000000000000000001": [],
       });
     });
 
-    test("Should accept lookup_history with 1, 2, and 3 time slots", () => {
+    test("Should accept preimage_requests with 1, 2, and 3 time slots", () => {
       const config = {
         services: [
           {
@@ -717,7 +717,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              lookup_history: {
+              preimage_requests: {
                 "0x0000000000000000000000000000000000000000000000000000000000000001": [1],
                 "0x0000000000000000000000000000000000000000000000000000000000000002": [1, 2],
                 "0x0000000000000000000000000000000000000000000000000000000000000003": [1, 2, 3],
@@ -728,13 +728,15 @@ describe("Validate Build Config", () => {
       };
 
       const result = validateBuildConfig(config);
-      const lookupHistory = result.deployment?.services?.["auth-service"]?.lookup_history;
-      expect(lookupHistory?.["0x0000000000000000000000000000000000000000000000000000000000000001"]).toEqual([1]);
-      expect(lookupHistory?.["0x0000000000000000000000000000000000000000000000000000000000000002"]).toEqual([1, 2]);
-      expect(lookupHistory?.["0x0000000000000000000000000000000000000000000000000000000000000003"]).toEqual([1, 2, 3]);
+      const preimageRequests = result.deployment?.services?.["auth-service"]?.preimageRequests;
+      expect(preimageRequests?.["0x0000000000000000000000000000000000000000000000000000000000000001"]).toEqual([1]);
+      expect(preimageRequests?.["0x0000000000000000000000000000000000000000000000000000000000000002"]).toEqual([1, 2]);
+      expect(preimageRequests?.["0x0000000000000000000000000000000000000000000000000000000000000003"]).toEqual([
+        1, 2, 3,
+      ]);
     });
 
-    test("Should reject lookup_history with more than 3 time slots", () => {
+    test("Should reject preimage_requests with more than 3 time slots", () => {
       const config = {
         services: [
           {
@@ -747,7 +749,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              lookup_history: {
+              preimage_requests: {
                 "0x0000000000000000000000000000000000000000000000000000000000000001": [1, 2, 3, 4],
               },
             },
@@ -758,7 +760,7 @@ describe("Validate Build Config", () => {
       expect(() => validateBuildConfig(config)).toThrow();
     });
 
-    test("Should reject lookup_history with non-integer time slot values", () => {
+    test("Should reject preimage_requests with non-integer time slot values", () => {
       const config = {
         services: [
           {
@@ -771,7 +773,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              lookup_history: {
+              preimage_requests: {
                 "0x0000000000000000000000000000000000000000000000000000000000000001": [100.5, 200],
               },
             },
@@ -782,7 +784,7 @@ describe("Validate Build Config", () => {
       expect(() => validateBuildConfig(config)).toThrow();
     });
 
-    test("Should accept lookup_history with negative time slot values", () => {
+    test("Should reject preimage_requests with negative time slot values", () => {
       const config = {
         services: [
           {
@@ -795,7 +797,7 @@ describe("Validate Build Config", () => {
           spawn: "local",
           services: {
             "auth-service": {
-              lookup_history: {
+              preimage_requests: {
                 "0x0000000000000000000000000000000000000000000000000000000000000001": [-10, 0, 100],
               },
             },
@@ -803,10 +805,7 @@ describe("Validate Build Config", () => {
         },
       };
 
-      const result = validateBuildConfig(config);
-      expect(result.deployment?.services?.["auth-service"]?.lookup_history).toEqual({
-        "0x0000000000000000000000000000000000000000000000000000000000000001": [-10, 0, 100],
-      });
+      expect(() => validateBuildConfig(config)).toThrow();
     });
   });
 

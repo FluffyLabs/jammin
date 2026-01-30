@@ -18,8 +18,8 @@ export interface ServiceBuildOutput {
   code: BytesBlob;
   storage?: Record<string, string>;
   info?: Partial<ServiceAccountInfo>;
-  preimages?: HashDictionary<preimage.PreimageHash, BytesBlob>;
-  lookupHistory?: Map<preimage.PreimageHash, LookupHistorySlots>;
+  preimageBlobs?: HashDictionary<preimage.PreimageHash, BytesBlob>;
+  preimageRequests?: Map<preimage.PreimageHash, LookupHistorySlots>;
 }
 
 export async function generateServiceOutput(
@@ -37,8 +37,8 @@ export async function generateServiceOutput(
     lastAccumulation?: number;
     parentService?: number;
   },
-  preimages?: Record<string, string>,
-  lookupHistory?: Record<string, number[]>,
+  preimageBlobs?: Record<string, string>,
+  preimageRequests?: Record<string, number[]>,
 ): Promise<ServiceBuildOutput> {
   const absolutePath = resolve(jamFilePath);
   const fileBytes = await Bun.file(absolutePath).bytes();
@@ -58,15 +58,15 @@ export async function generateServiceOutput(
     }).filter(([_, value]) => value !== undefined),
   );
 
-  const preimagesDict = HashDictionary.fromEntries(
-    Object.entries(preimages ?? {}).map(([hash, blob]) => [
+  const preimageBlobsDict = HashDictionary.fromEntries(
+    Object.entries(preimageBlobs ?? {}).map(([hash, blob]) => [
       Bytes.parseBytes(hash, HASH_SIZE).asOpaque(),
       BytesBlob.blobFromString(blob),
     ]),
   );
 
-  const lookupHistoryMap = new Map<preimage.PreimageHash, LookupHistorySlots>(
-    Object.entries(lookupHistory ?? {}).map(([hash, slots]) => [
+  const preimageRequestsMap = new Map<preimage.PreimageHash, LookupHistorySlots>(
+    Object.entries(preimageRequests ?? {}).map(([hash, slots]) => [
       Bytes.parseBytes(hash, HASH_SIZE).asOpaque(),
       tryAsLookupHistorySlots(slots.map((slot) => Slot(slot))),
     ]),
@@ -77,7 +77,7 @@ export async function generateServiceOutput(
     code,
     storage,
     info: serviceAccountInfo,
-    preimages: preimagesDict,
-    lookupHistory: lookupHistoryMap,
+    preimageBlobs: preimageBlobsDict,
+    preimageRequests: preimageRequestsMap,
   };
 }
