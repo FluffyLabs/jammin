@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import {
   type preimage,
   type ServiceId as ServiceIdType,
@@ -11,6 +11,7 @@ import { HashDictionary } from "@typeberry/lib/collections";
 import { HASH_SIZE } from "@typeberry/lib/hash";
 import { tryAsU32, tryAsU64 } from "@typeberry/lib/numbers";
 import { type LookupHistorySlots, type ServiceAccountInfo, tryAsLookupHistorySlots } from "@typeberry/lib/state";
+import { loadBuildConfig } from "../config/config-loader.js";
 import { ServiceId, Slot } from "../types.js";
 
 export interface ServiceBuildOutput {
@@ -20,6 +21,51 @@ export interface ServiceBuildOutput {
   info?: Partial<ServiceAccountInfo>;
   preimageBlobs?: HashDictionary<preimage.PreimageHash, BytesBlob>;
   preimageRequests?: Map<preimage.PreimageHash, LookupHistorySlots>;
+}
+
+/**
+ * Load services from the dist/ directory
+ */
+export async function loadServices(projectRoot: string = process.cwd()): Promise<ServiceBuildOutput[]> {
+  const outputs: ServiceBuildOutput[] = [];
+  const config = await loadBuildConfig();
+  const serviceDeployConfigs = config.deployment?.services ?? {};
+  const usedIds = new Set<number>();
+
+  // Prepare ServiceIds
+  for (const service of config.services) {
+    const deployInfo = serviceDeployConfigs[service.name];
+    if (deployInfo?.id !== undefined) {
+      usedIds.add(deployInfo.id);
+    }
+  }
+
+  let nextId = 0;
+  const getNextAvailableId = () => {
+    while (usedIds.has(nextId)) {
+      nextId++;
+    }
+    return nextId++;
+  };
+
+  // Generate service build outputs
+  for (const service of config.services) {
+    const jamFilePath = join(projectRoot, "dist", `${service.name}.jam`);
+    const deployConfig = serviceDeployConfigs[service.name];
+    const serviceId = deployConfig?.id ?? getNextAvailableId();
+    outputs.push(
+      await generateServiceOutput(
+        jamFilePath,
+        serviceId,
+        deployConfig?.storage,
+        deployConfig?.info,
+        deployConfig?.preimageBlobs,
+        deployConfig?.preimageRequests,
+      ),
+    );
+  }
+
+  return outputs;
 }
 
 export async function generateServiceOutput(

@@ -1,13 +1,5 @@
 import * as p from "@clack/prompts";
-import {
-  generateGenesis,
-  generateServiceOutput,
-  getJamFiles,
-  getServiceConfigs,
-  loadBuildConfig,
-  type ServiceBuildOutput,
-  saveStateFile,
-} from "@fluffylabs/jammin-sdk";
+import { generateGenesis, getServiceConfigs, loadServices, saveStateFile } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
 import { buildService } from "./build-command";
 
@@ -46,73 +38,14 @@ Examples:
     s.stop("✅ Building was successful!");
 
     s.start("Generating Genesis State...");
-
-    const serviceJamFiles = new Map<string, string>();
-    for (const service of services) {
-      // NOTE: Taking only first jam blob (closest to service path directory)
-      // since each service should produce one blob
-      // if they produce more its probably for testing purposes
-      const jamFiles = await getJamFiles(service.path);
-      const jamFile = jamFiles.keys().next().value;
-      if (!jamFile) {
-        throw new DeployError(`Cannot find a jam file for ${service.name} service`);
-      }
-      serviceJamFiles.set(service.name, jamFile);
-    }
-
-    if (serviceJamFiles.size === 0) {
-      throw new DeployError("No JAM files found");
-    }
-
-    // Get deployment config for services
-    const buildConfig = await loadBuildConfig();
-    const serviceDeploymentConfigs = buildConfig.deployment?.services ?? {};
-
-    // generate ids avoiding collisions
-    const usedIds = new Set<number>();
-    for (const service of services) {
-      const deploymentConfig = serviceDeploymentConfigs[service.name];
-      if (deploymentConfig?.id !== undefined) {
-        usedIds.add(deploymentConfig.id);
-      }
-    }
-    let nextAvailableId = 0;
-    const getNextAvailableId = () => {
-      while (usedIds.has(nextAvailableId)) {
-        nextAvailableId++;
-      }
-      return nextAvailableId++;
-    };
-
-    const buildOutputs: ServiceBuildOutput[] = await Promise.all(
-      services.map(async (service) => {
-        const jamFile = serviceJamFiles.get(service.name);
-        if (!jamFile) {
-          throw new DeployError(`Jam file not found for service ${service.name}`);
-        }
-
-        const deploymentConfig = serviceDeploymentConfigs[service.name];
-        const serviceId = deploymentConfig?.id ?? getNextAvailableId();
-
-        return generateServiceOutput(
-          jamFile,
-          serviceId,
-          deploymentConfig?.storage,
-          deploymentConfig?.info,
-          deploymentConfig?.preimageBlobs,
-          deploymentConfig?.preimageRequests,
-        );
-      }),
-    );
-
-    const genesisOutput = `${projectRoot}/genesis.json`;
-    await saveStateFile(generateGenesis(buildOutputs), genesisOutput);
-
+    const buildOutputs = await loadServices(projectRoot);
+    const genesisOutput = "dist/genesis.json";
+    await saveStateFile(generateGenesis(buildOutputs), `${projectRoot}/${genesisOutput}`);
     s.stop("✅ Genesis state generated!");
 
     p.log.info(`Found ${buildOutputs.length} service(s)`);
 
-    p.note(`🎁 Genesis file: ${genesisOutput}`);
+    p.log.message(`🎁 Generated file: ${genesisOutput}`);
 
     p.outro("✅ Deployment was successful!");
   });

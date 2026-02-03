@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { resolve } from "node:path";
 import { SDK_CONFIGS, type SdkConfig, type ServiceConfig } from "@fluffylabs/jammin-sdk";
-import { buildService } from "./build-command";
+import { callDockerBuild } from "./build-command";
 
 describe("build-command", () => {
   describe("buildService - Docker command generation", () => {
@@ -41,7 +41,7 @@ describe("build-command", () => {
         sdk: "jambrains-1cfc41c",
       };
 
-      await buildService(service, "/test/project");
+      await callDockerBuild(service, "/test/project");
 
       expect(mockSpawn).toHaveBeenCalledTimes(1);
       const spawnCall = mockSpawn.mock.calls[0];
@@ -64,7 +64,7 @@ describe("build-command", () => {
         sdk: "jade-0.0.15-pre.1",
       };
 
-      await buildService(service, "/test/project");
+      await callDockerBuild(service, "/test/project");
 
       expect(mockSpawn).toHaveBeenCalledTimes(1);
       const spawnCall = mockSpawn.mock.calls[0];
@@ -91,7 +91,7 @@ describe("build-command", () => {
         sdk: customSdk,
       };
 
-      await buildService(service, "/test/project");
+      await callDockerBuild(service, "/test/project");
 
       expect(mockSpawn).toHaveBeenCalledTimes(1);
       const spawnCall = mockSpawn.mock.calls[0];
@@ -132,8 +132,8 @@ describe("build-command", () => {
         sdk: "jambrains-1cfc41c",
       };
 
-      expect(buildService(service, "/test/project")).rejects.toThrow();
-      expect(buildService(service, "/test/project")).rejects.toThrow("Build failed for service 'failing-service'");
+      expect(callDockerBuild(service, "/test/project")).rejects.toThrow();
+      expect(callDockerBuild(service, "/test/project")).rejects.toThrow("Build failed for service 'failing-service'");
     });
 
     test("should return build output on success", async () => {
@@ -164,7 +164,7 @@ describe("build-command", () => {
         sdk: "jambrains-1cfc41c",
       };
 
-      const output = await buildService(service, "/test/project");
+      const output = await callDockerBuild(service, "/test/project");
       expect(output).toBe(expectedOutput);
     });
   });
@@ -208,7 +208,7 @@ describe("build-command", () => {
       };
 
       const projectRoot = "/absolute/project/root";
-      await buildService(service, projectRoot);
+      await callDockerBuild(service, projectRoot);
 
       expect(mockSpawn).toHaveBeenCalledTimes(1);
       expect(mockSpawn.mock.calls.length).toBeGreaterThan(0);

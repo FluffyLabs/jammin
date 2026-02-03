@@ -1,4 +1,4 @@
-import { readdir, stat } from "node:fs/promises";
+import { copyFile, mkdir, readdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -51,23 +51,18 @@ export async function findConfigFile(fileName: string, startDir: string = proces
 }
 
 /**
- * Recursively get all jam files in a directory with their modification times
+ * Recursively get all jam files in a directory
  */
-export async function getJamFiles(dirPath: string): Promise<Map<string, number>> {
-  const files = new Map<string, number>();
+export async function getJamFiles(dirPath: string): Promise<string[]> {
+  const files: string[] = [];
 
   try {
     const entries = await readdir(dirPath, { withFileTypes: true, recursive: true });
 
     for (const entry of entries) {
       if (entry.name.endsWith(".jam")) {
-        try {
-          const fullPath = resolve(entry.parentPath, entry.name);
-          const stats = await stat(fullPath);
-          files.set(fullPath, stats.mtimeMs);
-        } catch {
-          // Ignore stat errors
-        }
+        const fullPath = resolve(entry.parentPath, entry.name);
+        files.push(fullPath);
       }
     }
   } catch {
@@ -102,4 +97,17 @@ export async function updatePackageJson(
   packageJson.name = fields.name;
 
   await Bun.write(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+}
+
+/**
+ * Copy a .jam file to the dist/ directory with a service-specific name
+ */
+export async function copyJamToDist(jamFilePath: string, serviceName: string, projectRoot: string): Promise<string> {
+  const distDir = join(projectRoot, "dist");
+  await mkdir(distDir, { recursive: true });
+
+  const destPath = join(distDir, `${serviceName}.jam`);
+  await copyFile(jamFilePath, destPath);
+
+  return destPath;
 }

@@ -2,7 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import type { ServiceConfig } from "@fluffylabs/jammin-sdk";
-import { getJamFiles, getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
+import { copyJamToDist, getJamFiles, getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
 
 /**
@@ -17,7 +17,7 @@ export class DockerError extends Error {
   }
 }
 
-export async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {
+export async function callDockerBuild(service: ServiceConfig, projectRoot: string): Promise<string> {
   const sdk = typeof service.sdk === "string" ? SDK_CONFIGS[service.sdk] : service.sdk;
   const servicePath = resolve(projectRoot, service.path);
 
@@ -37,6 +37,33 @@ export async function buildService(service: ServiceConfig, projectRoot: string):
   }
 
   return combinedOutput;
+}
+
+export async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {
+  const timestamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
+  const logsDir = join(projectRoot, "logs");
+  await mkdir(logsDir, { recursive: true });
+  const logFileName = `jammin-build-${service.name}-${timestamp}.log`;
+  const logFilePath = join(logsDir, logFileName);
+
+  const servicePath = resolve(projectRoot, service.path);
+  const output = await callDockerBuild(service, projectRoot);
+
+  const files = await getJamFiles(servicePath);
+
+  const file = files.length > 0 ? files[0] : undefined;
+  let distPath: string | undefined;
+  if (file) {
+    distPath = await copyJamToDist(file, service.name, projectRoot);
+  } else {
+    throw new Error(`Failed to find generated file for: '${service.name}'`);
+  }
+
+  if (output) {
+    await Bun.write(logFilePath, output);
+  }
+
+  return relative(projectRoot, distPath);
 }
 
 /**
@@ -65,60 +92,17 @@ Examples:
     s.stop("✅ Configuration loaded");
 
     const projectRoot = process.cwd();
-    const logsDir = join(projectRoot, "logs");
-    await mkdir(logsDir, { recursive: true });
 
-    let buildFailed = false;
+    const buildFailed = false;
 
     for (const service of services) {
       p.log.info("--------------------------------");
+
       s.start(`Building service '${service.name}'...`);
-      const timestamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
-      const logFileName = `jammin-build-${service.name}-${timestamp}.log`;
-      const logFilePath = join(logsDir, logFileName);
+      const createdFile = await buildService(service, projectRoot);
+      s.stop(`✅ Service '${service.name}' built successfully`);
 
-      const servicePath = resolve(projectRoot, service.path);
-      const filesBefore = await getJamFiles(servicePath);
-
-      let output: string | undefined;
-
-      // Build service and save log
-      try {
-        output = await buildService(service, projectRoot);
-        s.stop(`✅ Service '${service.name}' built successfully`);
-      } catch (error) {
-        buildFailed = true;
-        let errorMessage: string;
-        if (error instanceof DockerError) {
-          output = error.output;
-          errorMessage = error.message;
-        } else {
-          const errorObj = error instanceof Error ? error : new Error(String(error));
-          errorMessage = errorObj.message;
-        }
-        s.stop(`❌ Failed to build service '${service.name}': ${errorMessage}`);
-      }
-
-      // Find new or updated .jam files
-      const filesAfter = await getJamFiles(servicePath);
-      const newFiles: string[] = [];
-
-      for (const [file, mtimeAfter] of filesAfter) {
-        const mtimeBefore = filesBefore.get(file);
-        if (mtimeBefore === undefined || mtimeAfter > mtimeBefore) {
-          newFiles.push(file);
-        }
-      }
-
-      if (newFiles.length > 0) {
-        const filesList = newFiles.map((f) => `  - ${relative(projectRoot, f)}`).join("\n");
-        p.log.info(`🎁 Output files for '${service.name}':\n${filesList}`);
-      }
-
-      if (output) {
-        await Bun.write(logFilePath, output);
-        p.log.info(`📝 Log saved: ${relative(projectRoot, logFilePath)}`);
-      }
+      p.log.message(`🎁 Output file: ${createdFile}`);
     }
 
     p.log.info("--------------------------------");
