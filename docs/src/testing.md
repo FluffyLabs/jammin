@@ -51,7 +51,7 @@ The `TestJam` class is the main entry point for testing JAM services. It manages
 #### With Loaded Services
 
 ```typescript
-// Loads all services from your project's jam.toml files
+// Loads all services from your project's jammin.build.yml files
 const jam = await TestJam.create();
 ```
 
