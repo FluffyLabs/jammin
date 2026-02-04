@@ -1,29 +1,27 @@
 import {
   type CoreIndex,
-  refineContext,
+  MAX_NUMBER_OF_WORK_ITEMS,
+  MIN_NUMBER_OF_WORK_ITEMS,
+  RefineContext,
   type ServiceGas,
   type ServiceId,
-  workPackage,
-  workReport,
-  workResult,
+  WorkExecResult,
+  WorkExecResultKind,
+  type WorkPackageInfo,
+  WorkPackageSpec,
+  WorkRefineLoad,
+  WorkReport,
+  WorkResult,
 } from "@typeberry/lib/block";
+
+// Re-export WorkReport type for use in other modules
+export type { WorkReport };
+
 import { BytesBlob } from "@typeberry/lib/bytes";
 import type { CodecRecord } from "@typeberry/lib/codec";
 import { FixedSizeArray } from "@typeberry/lib/collections";
 import { type Blake2b, type Blake2bHash, ZERO_HASH } from "@typeberry/lib/hash";
 import { CoreId, Gas, Slot, U8, U16, U32 } from "./types.js";
-
-type RefineContext = ReturnType<typeof refineContext.RefineContext.create>;
-type WorkPackageInfo = ReturnType<typeof refineContext.WorkPackageInfo.create>;
-type WorkPackageSpec = ReturnType<typeof workReport.WorkPackageSpec.create>;
-type WorkReport = ReturnType<typeof workReport.WorkReport.create>;
-type WorkRefineLoad = ReturnType<typeof workResult.WorkRefineLoad.create>;
-type WorkResult = ReturnType<typeof workResult.WorkResult.create>;
-
-// Re-export types for convenience
-export type { RefineContext, WorkPackageInfo, WorkPackageSpec, WorkReport, WorkRefineLoad, WorkResult };
-
-const { WorkExecResult, WorkExecResultKind } = workResult;
 
 /** Work result status types */
 export type WorkResultStatus =
@@ -31,6 +29,8 @@ export type WorkResultStatus =
   | { type: "panic" }
   | { type: "outOfGas" }
   | { type: "badCode" }
+  | { type: "digestTooBig" }
+  | { type: "incorrectNumberOfExports" }
   | { type: "codeOversize" };
 
 /** Configuration for a single work result with optional fields */
@@ -91,38 +91,41 @@ export function createWorkResult(blake2b: Blake2b, config: WorkResultConfig): Wo
   const payloadHash = blake2b.hashBytes(payloadBlob);
 
   const resultStatus = config.result ?? { type: "ok" };
-  let execResult: InstanceType<typeof WorkExecResult>;
+  let execResult: WorkExecResult;
 
   switch (resultStatus.type) {
     case "ok":
-      execResult = new WorkExecResult(
-        WorkExecResultKind.ok,
-        resultStatus.output ?? BytesBlob.blobFrom(new Uint8Array()),
-      );
+      execResult = WorkExecResult.ok(resultStatus.output ?? BytesBlob.blobFrom(new Uint8Array()));
       break;
     case "panic":
-      execResult = new WorkExecResult(WorkExecResultKind.panic);
+      execResult = WorkExecResult.error(WorkExecResultKind.panic);
       break;
     case "outOfGas":
-      execResult = new WorkExecResult(WorkExecResultKind.outOfGas);
+      execResult = WorkExecResult.error(WorkExecResultKind.outOfGas);
       break;
     case "badCode":
-      execResult = new WorkExecResult(WorkExecResultKind.badCode);
+      execResult = WorkExecResult.error(WorkExecResultKind.badCode);
+      break;
+    case "digestTooBig":
+      execResult = WorkExecResult.error(WorkExecResultKind.digestTooBig);
+      break;
+    case "incorrectNumberOfExports":
+      execResult = WorkExecResult.error(WorkExecResultKind.incorrectNumberOfExports);
       break;
     case "codeOversize":
-      execResult = new WorkExecResult(WorkExecResultKind.codeOversize);
+      execResult = WorkExecResult.error(WorkExecResultKind.codeOversize);
       break;
   }
 
   const load = config.load ?? {};
 
-  return workResult.WorkResult.create({
+  return WorkResult.create({
     serviceId: config.serviceId,
     codeHash: (config.codeHash ?? ZERO_HASH).asOpaque(),
     payloadHash,
     gas: config.gas ?? Gas(0n),
     result: execResult,
-    load: workResult.WorkRefineLoad.create({
+    load: WorkRefineLoad.create({
       gasUsed: load.gasUsed ?? Gas(0n),
       importedSegments: load.importedSegments ?? U32(0),
       exportedSegments: load.exportedSegments ?? U32(0),
@@ -155,12 +158,12 @@ export function createWorkResult(blake2b: Blake2b, config: WorkResultConfig): Wo
  * ```
  */
 export function createWorkReport(blake2b: Blake2b, config: WorkReportConfig): WorkReport {
-  if (config.results.length < workPackage.MIN_NUMBER_OF_WORK_ITEMS) {
-    throw new Error(`WorkReport cannot contain less than ${workPackage.MIN_NUMBER_OF_WORK_ITEMS} results`);
+  if (config.results.length < MIN_NUMBER_OF_WORK_ITEMS) {
+    throw new Error(`WorkReport cannot contain less than ${MIN_NUMBER_OF_WORK_ITEMS} results`);
   }
 
-  if (config.results.length > workPackage.MAX_NUMBER_OF_WORK_ITEMS) {
-    throw new Error(`WorkReport cannot contain more than ${workPackage.MAX_NUMBER_OF_WORK_ITEMS} results`);
+  if (config.results.length > MAX_NUMBER_OF_WORK_ITEMS) {
+    throw new Error(`WorkReport cannot contain more than ${MAX_NUMBER_OF_WORK_ITEMS} results`);
   }
 
   const results = config.results.map((resultConfig) => createWorkResult(blake2b, resultConfig));
@@ -168,15 +171,15 @@ export function createWorkReport(blake2b: Blake2b, config: WorkReportConfig): Wo
   const wpSpec = config.workPackageSpec ?? {};
   const ctx = config.context ?? {};
 
-  return workReport.WorkReport.create({
-    workPackageSpec: workReport.WorkPackageSpec.create({
+  return WorkReport.create({
+    workPackageSpec: WorkPackageSpec.create({
       hash: wpSpec.hash ?? ZERO_HASH.asOpaque(),
       length: wpSpec.length ?? U32(0),
       erasureRoot: wpSpec.erasureRoot ?? ZERO_HASH.asOpaque(),
       exportsRoot: wpSpec.exportsRoot ?? ZERO_HASH.asOpaque(),
       exportsCount: wpSpec.exportsCount ?? U16(0),
     }),
-    context: refineContext.RefineContext.create({
+    context: RefineContext.create({
       anchor: ctx.anchor ?? ZERO_HASH.asOpaque(),
       stateRoot: ctx.stateRoot ?? ZERO_HASH.asOpaque(),
       beefyRoot: ctx.beefyRoot ?? ZERO_HASH.asOpaque(),

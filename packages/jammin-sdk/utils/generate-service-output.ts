@@ -1,6 +1,6 @@
 import { join, resolve } from "node:path";
 import {
-  type preimage,
+  type PreimageHash,
   type ServiceId as ServiceIdType,
   tryAsServiceGas,
   tryAsServiceId,
@@ -19,8 +19,8 @@ export interface ServiceBuildOutput {
   code: BytesBlob;
   storage?: Record<string, string>;
   info?: Partial<ServiceAccountInfo>;
-  preimageBlobs?: HashDictionary<preimage.PreimageHash, BytesBlob>;
-  preimageRequests?: Map<preimage.PreimageHash, LookupHistorySlots>;
+  preimageBlobs?: HashDictionary<PreimageHash, BytesBlob>;
+  preimageRequests?: Map<PreimageHash, LookupHistorySlots>;
 }
 
 /**
@@ -111,7 +111,7 @@ export async function generateServiceOutput(
     ]),
   );
 
-  const preimageRequestsMap = new Map<preimage.PreimageHash, LookupHistorySlots>(
+  const preimageRequestsMap = new Map<PreimageHash, LookupHistorySlots>(
     Object.entries(preimageRequests ?? {}).map(([hash, slots]) => [
       Bytes.parseBytes(hash, HASH_SIZE).asOpaque(),
       tryAsLookupHistorySlots(slots.map((slot) => Slot(slot))),
