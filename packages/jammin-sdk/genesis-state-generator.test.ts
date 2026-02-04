@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { BytesBlob } from "@typeberry/lib/bytes";
-import { generateGenesis, type ServiceBuildOutput, toJip4Schema } from "./genesis-state-generator";
+import { generateGenesis, toJip4Schema } from "./genesis-state-generator";
 import { ServiceId } from "./types";
+import type { ServiceBuildOutput } from "./utils";
 
 describe("genesis-generator", () => {
   const services: ServiceBuildOutput[] = [

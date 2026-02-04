@@ -4,6 +4,7 @@
 - [Requirements](requirements.md)
 - [Getting Started](getting-started.md)
 - [Service SDK examples](service-examples.md)
+- [Testing JAM Services](testing.md)
 - [Contributing](contributing.md)
 - [Bootstrap](bootstrap/jammin-suite.md)
   - [Proposed API](bootstrap/jammin-examples.md)
