@@ -76,32 +76,6 @@ export function expectAccumulationSuccess(result: AccumulateResult): void {
 }
 
 /**
- * Assert that accumulation processed the expected number of work items.
- *
- * @param result - Accumulation result to validate
- * @param expectedCount - Expected number of work items processed
- * @throws AccumulationAssertionError if count doesn't match
- *
- * @example
- * ```typescript
- * import { expectWorkItemCount } from "@fluffylabs/jammin-sdk/testing-helpers";
- *
- * const result = await jam
- *   .withWorkReport(report1)
- *   .withWorkReport(report2)
- *   .accumulation();
- *
- * expectWorkItemCount(result, 2);
- * ```
- */
-export function expectWorkItemCount(result: AccumulateResult, expectedCount: number): void {
-  const actualCount = result.accumulationStatistics.size;
-  if (actualCount !== expectedCount) {
-    throw new AccumulationAssertionError(`Expected ${expectedCount} work items but got ${actualCount}`, result);
-  }
-}
-
-/**
  * Predicate function for validating state changes.
  * Returns true if the state change is valid, false or throws an error otherwise.
  */

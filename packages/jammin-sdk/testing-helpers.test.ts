@@ -6,7 +6,6 @@ import {
   expectAccumulationSuccess,
   expectServiceInfoChange,
   expectStateChange,
-  expectWorkItemCount,
   generateGuarantees,
   StateChangeAssertionError,
   TestJam,
@@ -47,33 +46,6 @@ describe("testing-helpers", () => {
 
       // Should not throw
       expectAccumulationSuccess(result);
-    });
-  });
-
-  describe("expectWorkItemCount", () => {
-    test("should pass when count matches", async () => {
-      const report = await createWorkReportAsync({
-        results: [
-          { serviceId: ServiceId(0), gas: Gas(1000n) },
-          { serviceId: ServiceId(1), gas: Gas(2000n) },
-        ],
-      });
-
-      const result = await jam.withWorkReport(report).accumulation();
-
-      expectWorkItemCount(result, 2);
-    });
-
-    test("should throw when count does not match", async () => {
-      const report = await createWorkReportAsync({
-        results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
-      });
-
-      const result = await jam.withWorkReport(report).accumulation();
-
-      expect(() => {
-        expectWorkItemCount(result, 5);
-      }).toThrow(AccumulationAssertionError);
     });
   });
 
