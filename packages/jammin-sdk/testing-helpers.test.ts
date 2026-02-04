@@ -2,7 +2,6 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import { ZERO_HASH } from "@typeberry/lib/hash";
 import { ServiceAccountInfo } from "@typeberry/lib/state";
 import {
-  AccumulationAssertionError,
   expectAccumulationSuccess,
   expectServiceInfoChange,
   expectStateChange,
