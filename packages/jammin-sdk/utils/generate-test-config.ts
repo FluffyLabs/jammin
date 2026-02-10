@@ -64,7 +64,7 @@ export async function generateTestConfigInProjectDir(
  */
 function generateTestConfigCode(serviceMap: Record<string, { id: number; name: string }>): string {
   const serviceEntries = Object.entries(serviceMap)
-    .map(([name, config]) => `  ${name}: { id: ${config.id}, name: "${config.name}" },`)
+    .map(([name, config]) => `  ${name}: { id: ServiceId(${config.id}), name: "${config.name}" },`)
     .join("\n");
 
   return `/**
@@ -86,26 +86,6 @@ ${serviceEntries}
  * Chain specification for tests
  */
 export const TEST_CHAIN_SPEC = config.tinyChainSpec;
-
-/**
- * Get a typed service ID from the services map
- * @param serviceName - Name of the service (autocompleted)
- * @returns The service configuration with typed ID
- */
-export function getService<T extends keyof typeof SERVICES>(serviceName: T) {
-  const service = SERVICES[serviceName];
-  return {
-    id: ServiceId(service.id),
-    name: service.name,
-  };
-}
-
-/**
- * Get all available service names for reference
- */
-export function getServiceNames(): Array<keyof typeof SERVICES> {
-  return Object.keys(SERVICES) as Array<keyof typeof SERVICES>;
-}
 
 /**
  * Pre-configured TestJam instance with all services loaded in genesis state
