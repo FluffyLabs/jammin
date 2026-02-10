@@ -16,9 +16,8 @@ import {
   type AccumulateState,
 } from "@typeberry/lib/transition";
 import { asOpaqueType } from "@typeberry/lib/utils";
-import { generateState } from "./genesis-state-generator.js";
 import { Slot } from "./types.js";
-import { loadServices } from "./utils/generate-service-output.js";
+import { loadServices, generateState } from "./utils/index.js";
 import type { WorkReport } from "./work-report.js";
 
 // Re-export types for convenience

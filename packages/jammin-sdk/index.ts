@@ -6,7 +6,6 @@ export * as hash from "@typeberry/lib/hash";
 export * as numbers from "@typeberry/lib/numbers";
 export * as state_merkleization from "@typeberry/lib/state-merkleization";
 export * from "./config/index.js";
-export * from "./genesis-state-generator.js";
 export * from "./testing-helpers.js";
 export * from "./types.js";
 export * from "./utils/index.js";
