@@ -17,7 +17,7 @@ import {
 } from "@typeberry/lib/transition";
 import { asOpaqueType } from "@typeberry/lib/utils";
 import { Slot } from "./types.js";
-import { loadServices, generateState } from "./utils/index.js";
+import { generateState, loadServices } from "./utils/index.js";
 import type { WorkReport } from "./work-report.js";
 
 // Re-export types for convenience
