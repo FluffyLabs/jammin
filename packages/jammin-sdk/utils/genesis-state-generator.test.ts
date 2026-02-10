@@ -4,9 +4,9 @@ import { HashDictionary } from "@typeberry/lib/collections";
 import { Blake2b, HASH_SIZE } from "@typeberry/lib/hash";
 import { type StorageKey, tryAsLookupHistorySlots } from "@typeberry/lib/state";
 import { asOpaqueType } from "@typeberry/lib/utils";
+import { Gas, ServiceId, Slot, U32, U64 } from "../types";
+import type { ServiceBuildOutput } from "./generate-service-output";
 import { generateGenesis, generateState, toJip4Schema } from "./genesis-state-generator";
-import { Gas, ServiceId, Slot, U32, U64 } from "./types";
-import type { ServiceBuildOutput } from "./utils/generate-service-output";
 
 const blake2b = await Blake2b.createHasher();
 

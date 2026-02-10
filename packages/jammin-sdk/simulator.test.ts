@@ -1,16 +1,14 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import * as config from "@typeberry/lib/config";
-import type * as state from "@typeberry/lib/state";
-import { generateState } from "./genesis-state-generator.js";
-import { generateGuarantees, simulateAccumulation } from "./simulator.js";
+import { generateGuarantees, TestJam } from "./simulator.js";
 import { CoreId, Gas, ServiceId, Slot } from "./types.js";
 import { createWorkReportAsync } from "./work-report.js";
 
 describe("simulateAccumulation", () => {
-  let initialState: state.InMemoryState;
+  let jam: TestJam;
 
-  beforeAll(async () => {
-    initialState = generateState([]);
+  beforeAll(() => {
+    jam = TestJam.empty();
   });
 
   test("simulates accumulation with minimal configuration", async () => {
@@ -18,12 +16,11 @@ describe("simulateAccumulation", () => {
       results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
     });
 
-    const result = await simulateAccumulation(initialState, [report]);
+    const result = await jam.withWorkReport(report).accumulate();
 
     expect(result).toBeDefined();
     expect(result.stateUpdate).toBeDefined();
     expect(result.accumulationStatistics).toBeDefined();
-    expect(result.pendingTransfers).toBeDefined();
     expect(result.accumulationOutputLog).toBeDefined();
     expect(result.accumulationStatistics.size).toBe(1);
   });
@@ -36,7 +33,7 @@ describe("simulateAccumulation", () => {
       results: [{ serviceId: ServiceId(1), gas: Gas(750n) }],
     });
 
-    const result = await simulateAccumulation(initialState, [report1, report2]);
+    const result = await jam.withWorkReport(report1).withWorkReport(report2).accumulate();
 
     expect(result.accumulationStatistics).toBeDefined();
     expect(result.accumulationStatistics.size).toBe(2);
@@ -51,16 +48,14 @@ describe("simulateAccumulation", () => {
       ],
     });
 
-    const result = await simulateAccumulation(initialState, [report], {
-      chainSpec: config.tinyChainSpec,
-    });
+    const result = await jam.withWorkReport(report).accumulate();
 
     expect(result).toBeDefined();
     expect(result.accumulationStatistics.size).toBe(3);
   });
 
   test("handles empty reports array", async () => {
-    const result = await simulateAccumulation(initialState, []);
+    const result = await jam.accumulate();
 
     expect(result).toBeDefined();
     expect(result.stateUpdate).toBeDefined();
@@ -73,9 +68,12 @@ describe("simulateAccumulation", () => {
     });
 
     const customSlot = Slot(100);
-    const result = await simulateAccumulation(initialState, [report], {
-      slot: customSlot,
-    });
+    const result = await jam
+      .withWorkReport(report)
+      .withOptions({
+        slot: customSlot,
+      })
+      .accumulate();
 
     expect(result.stateUpdate.timeslot).toBeDefined();
     // The timeslot in the update should be >= the slot we passed
@@ -87,9 +85,12 @@ describe("simulateAccumulation", () => {
       results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
     });
 
-    const result = await simulateAccumulation(initialState, [report], {
-      pvmBackend: config.PvmBackend.BuiltIn,
-    });
+    const result = await jam
+      .withWorkReport(report)
+      .withOptions({
+        pvmBackend: config.PvmBackend.BuiltIn,
+      })
+      .accumulate();
 
     expect(result).toBeDefined();
   });
