@@ -31,30 +31,27 @@ bun add -d @fluffylabs/jammin-sdk
 Here's a minimal test using Bun's built-in test runner with custom assertions:
 
 ```typescript
-import { test, expect } from "bun:test";
+import { test } from "bun:test";
 import {
-  TestJam,
+  CoreId,
   createWorkReportAsync,
   expectAccumulationSuccess,
-  ServiceId,
   Gas,
+  stringToBlob,
 } from "@fluffylabs/jammin-sdk";
+import { SERVICES, testJam } from "../config/jammin.test.config";
 
 test("should process work report", async () => {
-  // Create test instance with loaded services
-  const jam = await TestJam.create();
-
   // Create a work report
   const report = await createWorkReportAsync({
-    results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
+    results: [{ serviceId: SERVICES.test.id, gas: Gas(1000n) }],
   });
 
   // Execute accumulation
-  const result = await jam.withWorkReport(report).accumulate();
+  const result = await testJam.withWorkReport(report).accumulate();
 
   // Use custom assertion helper
   expectAccumulationSuccess(result);
-  expect(result.accumulationStatistics.size).toBe(1);
 });
 ```
 
@@ -96,7 +93,7 @@ import { testJam, SERVICES } from "./config/jammin.test.config.js";
 test("should process work report for auth service", async () => {
   // testJam is already created with all services loaded
   const report = await createWorkReportAsync({
-    results: [{ serviceId: ServiceId(SERVICES.auth.id), gas: Gas(1000n) }],
+    results: [{ serviceId: SERVICES.auth.id, gas: Gas(1000n) }],
   });
 
   const result = await testJam.withWorkReport(report).accumulate();
@@ -116,7 +113,7 @@ test("should process work report for auth service", async () => {
 
   // Use the type-safe service mapping
   const report = await createWorkReportAsync({
-    results: [{ serviceId: ServiceId(SERVICES.auth.id), gas: Gas(1000n) }],
+    results: [{ serviceId: SERVICES.auth.id, gas: Gas(1000n) }],
   });
 
   const result = await jam.withWorkReport(report).accumulate();
@@ -128,8 +125,6 @@ The generated configuration includes:
 - `testJam` - Pre-configured TestJam instance with all services loaded (use for simplicity)
 - `SERVICES` - Type-safe mapping of service names to IDs
 - `TEST_CHAIN_SPEC` - Pre-configured chain specification
-- `getService(name)` - Helper function to get service configuration with typed ID
-- `getServiceNames()` - Get list of all available service names
 
 ### Adding Work Reports
 
@@ -138,8 +133,8 @@ Work reports can be added using the fluent `withWorkReport()` API:
 ```typescript
 const report = await createWorkReportAsync({
   results: [
-    { serviceId: ServiceId(0), gas: Gas(1000n) },
-    { serviceId: ServiceId(1), gas: Gas(2000n) },
+    { serviceId: SERVICES.auth.id, gas: Gas(1000n) },
+    { serviceId: SERVICES.bank.id, gas: Gas(2000n) },
   ],
 });
 
@@ -152,11 +147,11 @@ Chain multiple `withWorkReport()` calls to process multiple reports in a single 
 
 ```typescript
 const report1 = await createWorkReportAsync({
-  results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
+  results: [{ serviceId: SERVICES.auth.id, gas: Gas(1000n) }],
 });
 
 const report2 = await createWorkReportAsync({
-  results: [{ serviceId: ServiceId(1), gas: Gas(2000n) }],
+  results: [{ serviceId: SERVICES.bank.id, gas: Gas(2000n) }],
 });
 
 const result = await jam
@@ -201,7 +196,7 @@ After accumulation, you can query the service state:
 #### Get Service Info
 
 ```typescript
-const info = jam.getServiceInfo(ServiceId(0));
+const info = jam.getServiceInfo(SERVICES.auth.id);
 console.log(`Balance: ${info?.balance}`);
 console.log(`Code hash: ${info?.codeHash}`);
 ```
@@ -209,16 +204,16 @@ console.log(`Code hash: ${info?.codeHash}`);
 #### Get Service Storage
 
 ```typescript
-import { BytesBlob } from "@fluffylabs/jammin-sdk/bytes";
+import { stringToBlob } from "@fluffylabs/jammin-sdk";
 
-const key = BytesBlob.blobFrom(new Uint8Array([1, 2, 3]));
-const value = jam.getServiceStorage(ServiceId(0), key);
+const key = stringToBlob("testKey");
+const value = jam.getServiceStorage(SERVICES.auth.id, key);
 ```
 
 #### Get Preimage Data
 
 ```typescript
-const preimage = jam.getServicePreimage(ServiceId(0), someHash);
+const preimage = jam.getServicePreimage(SERVICES.auth.id, someHash);
 ```
 
 ## Creating Work Reports
@@ -228,11 +223,11 @@ The SDK provides flexible utilities for creating work reports with varying level
 ### Simple Work Report
 
 ```typescript
-import { createWorkReportAsync, ServiceId, Gas } from "@fluffylabs/jammin-sdk";
+import { createWorkReportAsync, Gas } from "@fluffylabs/jammin-sdk";
 
 const report = await createWorkReportAsync({
   results: [
-    { serviceId: ServiceId(0), gas: Gas(1000n) },
+    { serviceId: SERVICES.auth.id, gas: Gas(1000n) },
   ],
 });
 ```
@@ -243,17 +238,17 @@ const report = await createWorkReportAsync({
 const report = await createWorkReportAsync({
   results: [
     { 
-      serviceId: ServiceId(0), 
+      serviceId: SERVICES.auth.id, 
       gas: Gas(1000n),
-      result: { type: "ok", output: BytesBlob.blobFrom(new Uint8Array([1, 2, 3])) }
+      result: { type: "ok", output: numbersToBlob([1, 2, 3]) }
     },
     { 
-      serviceId: ServiceId(1), 
+      serviceId: SERVICES.auth.id, 
       gas: Gas(2000n),
       result: { type: "ok" }
     },
     { 
-      serviceId: ServiceId(2), 
+      serviceId: SERVICES.auth.id, 
       gas: Gas(500n),
       result: { type: "panic" }  // Simulate a panic
     },
@@ -270,9 +265,9 @@ const report = await createWorkReportAsync({
   coreIndex: CoreId(5),
   results: [
     {
-      serviceId: ServiceId(0),
+      serviceId: SERVICES.auth.id,
       gas: Gas(1000n),
-      payload: BytesBlob.blobFrom(new Uint8Array([4, 5, 6])),
+      payload: numbersToBlob([4, 5, 6]),
     },
   ],
   context: {
@@ -287,7 +282,7 @@ Work results can have different status types:
 
 ```typescript
 // Successful execution
-{ type: "ok", output: BytesBlob.blobFrom(...) }
+{ type: "ok", output: hexToBlob(...) }
 
 // Execution errors
 { type: "panic" }
@@ -313,21 +308,6 @@ const result = await jam.withWorkReport(report).accumulate();
 expectAccumulationSuccess(result);  // Throws if result is invalid
 ```
 
-### expectWorkItemCount
-
-Assert that the expected number of work items were processed:
-
-```typescript
-import { expectWorkItemCount } from "@fluffylabs/jammin-sdk/testing-helpers";
-
-const result = await jam
-  .withWorkReport(report1)
-  .withWorkReport(report2)
-  .accumulate();
-
-expectWorkItemCount(result, 2);  // Throws if count doesn't match
-```
-
 ### expectStateChange
 
 Assert that state changed according to a predicate:
@@ -335,11 +315,11 @@ Assert that state changed according to a predicate:
 ```typescript
 import { expectStateChange } from "@fluffylabs/jammin-sdk/testing-helpers";
 
-const beforeBalance = jam.getServiceInfo(ServiceId(0))?.balance;
+const beforeBalance = jam.getServiceInfo(SERVICES.auth.id)?.balance;
 
 await jam.withWorkReport(report).accumulate();
 
-const afterBalance = jam.getServiceInfo(ServiceId(0))?.balance;
+const afterBalance = jam.getServiceInfo(SERVICES.auth.id)?.balance;
 
 expectStateChange(
   beforeBalance,
@@ -356,14 +336,14 @@ Specialized helper for validating service account changes:
 ```typescript
 import { expectServiceInfoChange } from "@fluffylabs/jammin-sdk/testing-helpers";
 
-const before = jam.getServiceInfo(ServiceId(0));
+const before = jam.getServiceInfo(SERVICES.auth.id);
 await jam.withWorkReport(report).accumulate();
-const after = jam.getServiceInfo(ServiceId(0));
+const after = jam.getServiceInfo(SERVICES.auth.id);
 
 expectServiceInfoChange(
   before,
   after,
-  (b, a) => a && b && a.gasUsed > b.gasUsed,
+  (b, a) => a && b && a.balance > b.balance,
   "Service should consume gas"
 );
 ```
@@ -374,20 +354,18 @@ expectServiceInfoChange(
 
 ```typescript
 import { test, expect } from "bun:test";
-import { TestJam, createWorkReportAsync, ServiceId, Gas } from "@fluffylabs/jammin-sdk";
+import {createWorkReportAsync, Gas } from "@fluffylabs/jammin-sdk";
 import { expectAccumulationSuccess } from "@fluffylabs/jammin-sdk/testing-helpers";
+import { testJam, SERVICES } from "./config/jammin.test.config.js";
 
 test("service should execute successfully", async () => {
-  const jam = await TestJam.create();
-
   const report = await createWorkReportAsync({
-    results: [{ serviceId: ServiceId(0), gas: Gas(100000n) }],
+    results: [{ serviceId: SERVICES.auth.id, gas: Gas(100000n) }],
   });
 
-  const result = await jam.withWorkReport(report).accumulate();
+  const result = await testJam.withWorkReport(report).accumulate();
 
   expectAccumulationSuccess(result);
-  expect(result.accumulationStatistics.size).toBe(1);
 });
 ```
 
@@ -395,21 +373,22 @@ test("service should execute successfully", async () => {
 
 ```typescript
 import { test, expect } from "bun:test";
-import { TestJam, createWorkReportAsync, ServiceId, Gas, BytesBlob } from "@fluffylabs/jammin-sdk";
+import { createWorkReportAsync, Gas, stringToBlob } from "@fluffylabs/jammin-sdk";
+import { testJam as jam, SERVICES } from "./config/jammin.test.config.js";
 
 test("service storage should update", async () => {
-  const jam = await TestJam.create();
+  const authId = SERVICES.auth.id;
 
-  const storageKey = BytesBlob.blobFromString("myKey");
-  const beforeValue = jam.getServiceStorage(ServiceId(0), storageKey);
+  const storageKey = stringToBlob("myKey");
+  const beforeValue = jam.getServiceStorage(authId, storageKey);
 
   const report = await createWorkReportAsync({
-    results: [{ serviceId: ServiceId(0), gas: Gas(50000n) }],
+    results: [{ serviceId: authId, gas: Gas(50000n) }],
   });
 
   await jam.withWorkReport(report).accumulate();
 
-  const afterValue = jam.getServiceStorage(ServiceId(0), storageKey);
+  const afterValue = jam.getServiceStorage(authId, storageKey);
   expect(afterValue).not.toEqual(beforeValue);
 });
 ```
@@ -418,22 +397,22 @@ test("service storage should update", async () => {
 
 ```typescript
 import { test, expect } from "bun:test";
-import { TestJam, createWorkReportAsync, ServiceId, Gas } from "@fluffylabs/jammin-sdk";
+import { createWorkReportAsync, Gas, stringToBlob } from "@fluffylabs/jammin-sdk";
+import { expectAccumulationSuccess } from "@fluffylabs/jammin-sdk/testing-helpers";
+import { testJam as jam, SERVICES } from "./config/jammin.test.config.js";
 
 test("should process multiple services", async () => {
-  const jam = await TestJam.create();
-
   const report = await createWorkReportAsync({
     results: [
-      { serviceId: ServiceId(0), gas: Gas(10000n) },
-      { serviceId: ServiceId(1), gas: Gas(20000n) },
-      { serviceId: ServiceId(2), gas: Gas(15000n) },
+      { serviceId: SERVICES.auth.id, gas: Gas(10000n) },
+      { serviceId: SERVICES.bank.id, gas: Gas(20000n) },
+      { serviceId: SERVICES.exchange.id, gas: Gas(15000n) },
     ],
   });
 
   const result = await jam.withWorkReport(report).accumulate();
 
-  expect(result.accumulationStatistics.size).toBe(3);
+  expectAccumulationSuccess(result);
 });
 ```
 
@@ -441,11 +420,11 @@ test("should process multiple services", async () => {
 
 ```typescript
 import { test, expect } from "bun:test";
-import { TestJam, createWorkReportAsync, ServiceId, Gas } from "@fluffylabs/jammin-sdk";
+import { createWorkReportAsync, Gas, stringToBlob } from "@fluffylabs/jammin-sdk";
+import { expectAccumulationSuccess } from "@fluffylabs/jammin-sdk/testing-helpers";
+import { testJam as jam, SERVICES } from "./config/jammin.test.config.js";
 
 test("should handle panic gracefully", async () => {
-  const jam = await TestJam.create();
-
   const report = await createWorkReportAsync({
     results: [
       { 
@@ -458,64 +437,7 @@ test("should handle panic gracefully", async () => {
 
   const result = await jam.withWorkReport(report).accumulate();
 
-  // Accumulation should complete even with panicked work items
-  expect(result).toBeDefined();
-  expect(result.accumulationStatistics.size).toBe(1);
-});
-```
-
-### Testing Sequential Accumulations
-
-```typescript
-import { test, expect } from "bun:test";
-import { TestJam, createWorkReportAsync, ServiceId, Gas } from "@fluffylabs/jammin-sdk";
-
-test("state should persist across accumulations", async () => {
-  const jam = await TestJam.create();
-
-  // First accumulation
-  const report1 = await createWorkReportAsync({
-    results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
-  });
-  await jam.withWorkReport(report1).accumulate();
-
-  const midInfo = jam.getServiceInfo(ServiceId(0));
-
-  // Second accumulation
-  const report2 = await createWorkReportAsync({
-    results: [{ serviceId: ServiceId(0), gas: Gas(2000n) }],
-  });
-  await jam.withWorkReport(report2).accumulate();
-
-  const finalInfo = jam.getServiceInfo(ServiceId(0));
-
-  // State should have accumulated from both operations
-  expect(finalInfo).toBeDefined();
-  expect(midInfo).toBeDefined();
-});
-```
-
-### Testing with Guarantees
-
-```typescript
-import { test, expect } from "bun:test";
-import { TestJam, createWorkReportAsync, generateGuarantees, ServiceId, Gas, Slot } from "@fluffylabs/jammin-sdk";
-
-test("should generate valid guarantees", async () => {
-  const jam = await TestJam.create();
-
-  const report = await createWorkReportAsync({
-    results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
-  });
-
-  // Generate guarantees with validator signatures
-  const guarantees = await generateGuarantees([report], {
-    slot: Slot(100),
-  });
-
-  expect(guarantees).toHaveLength(1);
-  expect(guarantees[0]?.credentials.length).toBe(3);  // Default 3 validators
-  expect(Number(guarantees[0]?.slot)).toBe(100);
+  expectAccumulationSuccess(result);
 });
 ```
 
@@ -526,8 +448,8 @@ test("should generate valid guarantees", async () => {
 If you see errors like "Service with id X not found", ensure that:
 
 1. Your `jammin.build.yml` file is properly configured
-2. You're using `TestJam.create()` (not `TestJam.empty()`)
-3. The service ID in your test matches the service ID in your configuration
+2. You've run `jammin build` command
+3. You're using `SERVICES` from generated `config/jammin.test.config.js`;
 
 ### Type Errors with Branded Types
 
@@ -568,7 +490,7 @@ This will output detailed logs including:
 You can enable only specific log categories for more focused debugging:
 
 ```typescript
-// Enable only ecalli (host call) traces
+// Enable only ecalli traces
 const result = await jam
   .withWorkReport(report)
   .withOptions({
@@ -594,19 +516,19 @@ Remember that `accumulate()` automatically applies state updates. If you need to
 
 ```typescript
 // Check initial state
-const initialInfo = jam.getServiceInfo(ServiceId(0));
+const initialInfo = jam.getServiceInfo(SERVICES.auth.id);
 
 // Run first accumulation (state is updated)
 await jam.withWorkReport(report1).accumulate();
 
 // Check intermediate state
-const midInfo = jam.getServiceInfo(ServiceId(0));
+const midInfo = jam.getServiceInfo(SERVICES.auth.id);
 
 // Run second accumulation (state is updated again)
 await jam.withWorkReport(report2).accumulate();
 
 // Check final state
-const finalInfo = jam.getServiceInfo(ServiceId(0));
+const finalInfo = jam.getServiceInfo(SERVICES.auth.id);
 ```
 
 ## Advanced Usage
@@ -622,7 +544,7 @@ import { createWorkReport } from "@fluffylabs/jammin-sdk";
 const blake2b = await Blake2b.createHasher();
 
 const report = createWorkReport(blake2b, {
-  results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
+  results: [{ serviceId: SERVICES.auth.id, gas: Gas(1000n) }],
 });
 ```
 
@@ -664,14 +586,15 @@ const result = await jam
 
 ## Best Practices
 
-1. **Use `TestJam.create()` by default** - It automatically loads your services
-2. **Chain method calls** - The fluent API makes tests more readable
-3. **Use helper assertions** - They provide better error messages than raw `expect()`
-4. **Test state changes explicitly** - Don't assume accumulation modified state
-5. **Use branded types** - They prevent common mistakes with raw numbers
-6. **Enable debug logging when troubleshooting** - It shows exactly what's happening
-7. **Test both success and failure cases** - Include tests for panics and out-of-gas scenarios
-8. **Keep tests isolated** - Create a new `TestJam` instance for each test
+1. **Use `testJam` by default** - It automatically loads your services
+2. **Use preconfigured `SERVICES` instead of manually writing service ids** - It prevents changing tests when reasigning
+   service ids
+3. **Chain method calls** - The fluent API makes tests more readable
+4. **Use helper assertions** - They provide better error messages than raw `expect()`
+5. **Test state changes explicitly** - Don't assume accumulation modified state
+6. **Use branded types** - They prevent common mistakes with raw numbers
+7. **Enable debug logging when troubleshooting** - It shows exactly what's happening
+8. **Test both success and failure cases** - Include tests for panics and out-of-gas scenarios
 
 ## Next Steps
 
