@@ -33,6 +33,53 @@ export interface GuaranteeOptions {
 }
 
 /**
+ * Fine-grained debug logging options
+ */
+export interface DebugLoggingOptions {
+  /**
+   * Log PVM (Polkadot Virtual Machine) execution details.
+   * Includes instruction traces, memory access patterns, etc.
+   */
+  pvmExecution?: boolean;
+
+  /**
+   * Log ecalli traces for service execution. (Prettier HostCalls)
+   * Useful for debugging service interactions.
+   */
+  ecalliTrace?: boolean;
+
+  /**
+   * Log host calls made during service execution.
+   * Useful for debugging service interactions.
+   */
+  hostCalls?: boolean;
+
+  /**
+   * Log accumulation process details and state transitions.
+   * Shows how work items are processed and state is updated.
+   */
+  accumulate?: boolean;
+
+  /**
+   * Log safrole (randomness and validator selection) operations.
+   * Helps debug randomness and consensus-related issues.
+   */
+  safrole?: boolean;
+
+  /**
+   * Log refinement process for work reports.
+   * Useful for understanding work report validation and processing.
+   */
+  refine?: boolean;
+
+  /**
+   * Log state transitions and state root changes.
+   * Helps understand how state evolves during processing.
+   */
+  stateTransitions?: boolean;
+}
+
+/**
  * Configuration options for the accumulation simulator.
  */
 export interface SimulatorOptions {
@@ -68,9 +115,20 @@ export interface SimulatorOptions {
 
   /**
    * Enable debug logging for accumulation and PVM host calls.
+   * When true, enables logging for all available debug categories.
+   * Can also pass specific logging options for fine-grained control.
    * Defaults to false.
+   *
+   * @example
+   * ```typescript
+   * // Enable all debug logs
+   * .withOptions({ debug: true })
+   *
+   * // Enable only specific logs
+   * .withOptions({ debug: { ecalliTrace: true, stateTransitions: true } })
+   * ```
    */
-  debug?: boolean;
+  debug?: boolean | DebugLoggingOptions;
 }
 
 /**
@@ -175,7 +233,8 @@ export async function simulateAccumulation(
 
   // Configure logging if debug is enabled
   if (options.debug) {
-    await enableLogs();
+    const loggingOptions = typeof options.debug === "boolean" ? undefined : options.debug;
+    await enableLogs(loggingOptions);
   }
 
   const blake2b = await Blake2b.createHasher();
@@ -200,11 +259,39 @@ export async function simulateAccumulation(
   return result.ok;
 }
 
-async function enableLogs() {
+async function enableLogs(options?: DebugLoggingOptions) {
   try {
     const loggerModule = await import("@typeberry/lib/logger");
     if (loggerModule.Logger && loggerModule.Level) {
-      loggerModule.Logger.configureAll("info,host-calls=trace,accumulate=trace", loggerModule.Level.LOG, process.cwd());
+      // Build logging configuration based on enabled options
+      const enabledLoggers: string[] = ["info"];
+
+      // Add loggers based on fine-grained options
+      if (options?.pvmExecution !== false) {
+        enabledLoggers.push("pvm=trace");
+      }
+      if (options?.ecalliTrace !== false) {
+        enabledLoggers.push("ecalli=trace");
+      }
+      if (options?.hostCalls !== false) {
+        enabledLoggers.push("host-calls=trace");
+      }
+      if (options?.refine !== false) {
+        enabledLoggers.push("refine=trace");
+      }
+      if (options?.accumulate !== false) {
+        enabledLoggers.push("accumulate=trace");
+      }
+      if (options?.safrole !== false) {
+        enabledLoggers.push("safrole=trace");
+      }
+      if (options?.stateTransitions !== false) {
+        enabledLoggers.push("stf=trace");
+      }
+
+      const logConfig = enabledLoggers.join(",");
+
+      loggerModule.Logger.configureAll(logConfig, loggerModule.Level.LOG, process.cwd());
     }
   } catch {
     console.warn("Warning: Could not configure typeberry logger");
@@ -282,7 +369,7 @@ export class TestJam {
 
   /**
    * Configure simulator options for the next accumulation.
-   * Options persist across multiple accumulation() calls until changed.
+   * Options persist across multiple accumulate() calls until changed.
    *
    * @param options - Simulator configuration options
    * @returns This instance for method chaining
@@ -292,7 +379,7 @@ export class TestJam {
    * const result = await jam
    *   .withOptions({ debug: true, slot: Slot(100) })
    *   .withWorkReport(report)
-   *   .accumulation();
+   *   .accumulate();
    * ```
    */
   withOptions(options: SimulatorOptions): this {
@@ -302,7 +389,7 @@ export class TestJam {
 
   /**
    * Add a work report to be processed in the next accumulation.
-   * Multiple work reports can be chained before calling accumulation().
+   * Multiple work reports can be chained before calling accumulate().
    *
    * @param report - Work report to process
    * @returns This instance for method chaining
@@ -319,7 +406,7 @@ export class TestJam {
    * const result = await jam
    *   .withWorkReport(report1)
    *   .withWorkReport(report2)
-   *   .accumulation();
+   *   .accumulate();
    * ```
    */
   withWorkReport(report: WorkReport): this {
@@ -336,11 +423,11 @@ export class TestJam {
    *
    * @example
    * ```typescript
-   * const result = await jam.withWorkReport(report).accumulation();
+   * const result = await jam.withWorkReport(report).accumulate();
    * console.log(`Processed ${result.accumulationStatistics.size} work items`);
    * ```
    */
-  async accumulation(): Promise<AccumulateResult> {
+  async accumulate(): Promise<AccumulateResult> {
     const result = await simulateAccumulation(this.state, this.workReports, this.options);
     this.workReports = [];
     if (this.state instanceof InMemoryState) {

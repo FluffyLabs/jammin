@@ -8,6 +8,16 @@ The jammin SDK provides a comprehensive testing framework for simulating JAM acc
 
 ## Setup
 
+### Prerequisites
+
+Before writing tests, ensure your services are built:
+
+```bash
+jammin build
+```
+
+This generates service binaries and creates `config/jammin.test.config.ts` with type-safe service mappings for use in tests.
+
 ### Installation
 
 The testing utilities are included in the `@fluffylabs/jammin-sdk` package:
@@ -18,11 +28,17 @@ bun add -d @fluffylabs/jammin-sdk
 
 ### Basic Test Structure
 
-Here's a minimal test using Bun's built-in test runner:
+Here's a minimal test using Bun's built-in test runner with custom assertions:
 
 ```typescript
 import { test, expect } from "bun:test";
-import { TestJam, createWorkReportAsync, ServiceId, Gas } from "@fluffylabs/jammin-sdk";
+import {
+  TestJam,
+  createWorkReportAsync,
+  expectAccumulationSuccess,
+  ServiceId,
+  Gas,
+} from "@fluffylabs/jammin-sdk";
 
 test("should process work report", async () => {
   // Create test instance with loaded services
@@ -34,10 +50,10 @@ test("should process work report", async () => {
   });
 
   // Execute accumulation
-  const result = await jam.withWorkReport(report).accumulation();
+  const result = await jam.withWorkReport(report).accumulate();
 
-  // Verify results
-  expect(result).toBeDefined();
+  // Use custom assertion helper
+  expectAccumulationSuccess(result);
   expect(result.accumulationStatistics.size).toBe(1);
 });
 ```
@@ -78,7 +94,7 @@ const report = await createWorkReportAsync({
   ],
 });
 
-const result = await jam.withWorkReport(report).accumulation();
+const result = await jam.withWorkReport(report).accumulate();
 ```
 
 #### Multiple Work Reports
@@ -97,7 +113,7 @@ const report2 = await createWorkReportAsync({
 const result = await jam
   .withWorkReport(report1)
   .withWorkReport(report2)
-  .accumulation();
+  .accumulate();
 
 console.log(`Processed ${result.accumulationStatistics.size} work items`);
 ```
@@ -117,13 +133,13 @@ const result = await jam
     pvmBackend: PvmBackend.BuiltIn,  // Use built-in PVM
     sequential: true,          // Sequential accumulation (default)
   })
-  .accumulation();
+  .accumulate();
 ```
 
 #### Available Options
 
 - `slot?: TimeSlot` - Time slot for accumulation (defaults to state's current timeslot)
-- `debug?: boolean` - Enable debug logging for accumulation and PVM host calls
+- `debug?: boolean | DebugLoggingOptions` - Enable debug logging (can be a boolean for all logs, or an object for fine-grained control)
 - `pvmBackend?: PvmBackend` - PVM backend to use (`PvmBackend.Ananas` or `PvmBackend.BuiltIn`)
 - `sequential?: boolean` - Use sequential accumulation mode (default: `true`)
 - `entropy?: EntropyHash` - Entropy for randomness (defaults to zero hash for deterministic tests)
@@ -138,7 +154,7 @@ After accumulation, you can query the service state:
 ```typescript
 const info = jam.getServiceInfo(ServiceId(0));
 console.log(`Balance: ${info?.balance}`);
-console.log(`Gas used: ${info?.gasUsed}`);
+console.log(`Code hash: ${info?.codeHash}`);
 ```
 
 #### Get Service Storage
@@ -244,7 +260,7 @@ Assert that accumulation completed with a valid structure:
 ```typescript
 import { expectAccumulationSuccess } from "@fluffylabs/jammin-sdk/testing-helpers";
 
-const result = await jam.withWorkReport(report).accumulation();
+const result = await jam.withWorkReport(report).accumulate();
 expectAccumulationSuccess(result);  // Throws if result is invalid
 ```
 
@@ -258,7 +274,7 @@ import { expectWorkItemCount } from "@fluffylabs/jammin-sdk/testing-helpers";
 const result = await jam
   .withWorkReport(report1)
   .withWorkReport(report2)
-  .accumulation();
+  .accumulate();
 
 expectWorkItemCount(result, 2);  // Throws if count doesn't match
 ```
@@ -272,7 +288,7 @@ import { expectStateChange } from "@fluffylabs/jammin-sdk/testing-helpers";
 
 const beforeBalance = jam.getServiceInfo(ServiceId(0))?.balance;
 
-await jam.withWorkReport(report).accumulation();
+await jam.withWorkReport(report).accumulate();
 
 const afterBalance = jam.getServiceInfo(ServiceId(0))?.balance;
 
@@ -292,7 +308,7 @@ Specialized helper for validating service account changes:
 import { expectServiceInfoChange } from "@fluffylabs/jammin-sdk/testing-helpers";
 
 const before = jam.getServiceInfo(ServiceId(0));
-await jam.withWorkReport(report).accumulation();
+await jam.withWorkReport(report).accumulate();
 const after = jam.getServiceInfo(ServiceId(0));
 
 expectServiceInfoChange(
@@ -319,7 +335,7 @@ test("service should execute successfully", async () => {
     results: [{ serviceId: ServiceId(0), gas: Gas(100000n) }],
   });
 
-  const result = await jam.withWorkReport(report).accumulation();
+  const result = await jam.withWorkReport(report).accumulate();
 
   expectAccumulationSuccess(result);
   expect(result.accumulationStatistics.size).toBe(1);
@@ -342,7 +358,7 @@ test("service storage should update", async () => {
     results: [{ serviceId: ServiceId(0), gas: Gas(50000n) }],
   });
 
-  await jam.withWorkReport(report).accumulation();
+  await jam.withWorkReport(report).accumulate();
 
   const afterValue = jam.getServiceStorage(ServiceId(0), storageKey);
   expect(afterValue).not.toEqual(beforeValue);
@@ -366,7 +382,7 @@ test("should process multiple services", async () => {
     ],
   });
 
-  const result = await jam.withWorkReport(report).accumulation();
+  const result = await jam.withWorkReport(report).accumulate();
 
   expect(result.accumulationStatistics.size).toBe(3);
 });
@@ -391,7 +407,7 @@ test("should handle panic gracefully", async () => {
     ],
   });
 
-  const result = await jam.withWorkReport(report).accumulation();
+  const result = await jam.withWorkReport(report).accumulate();
 
   // Accumulation should complete even with panicked work items
   expect(result).toBeDefined();
@@ -412,7 +428,7 @@ test("state should persist across accumulations", async () => {
   const report1 = await createWorkReportAsync({
     results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
   });
-  await jam.withWorkReport(report1).accumulation();
+  await jam.withWorkReport(report1).accumulate();
 
   const midInfo = jam.getServiceInfo(ServiceId(0));
 
@@ -420,7 +436,7 @@ test("state should persist across accumulations", async () => {
   const report2 = await createWorkReportAsync({
     results: [{ serviceId: ServiceId(0), gas: Gas(2000n) }],
   });
-  await jam.withWorkReport(report2).accumulation();
+  await jam.withWorkReport(report2).accumulate();
 
   const finalInfo = jam.getServiceInfo(ServiceId(0));
 
@@ -464,23 +480,6 @@ If you see errors like "Service with id X not found", ensure that:
 2. You're using `TestJam.create()` (not `TestJam.empty()`)
 3. The service ID in your test matches the service ID in your configuration
 
-### Import Errors
-
-Make sure you're importing from the correct module:
-
-```typescript
-// Correct
-import { TestJam, createWorkReportAsync } from "@fluffylabs/jammin-sdk";
-import { expectAccumulationSuccess } from "@fluffylabs/jammin-sdk/testing-helpers";
-
-// Also correct (testing-helpers re-exports everything)
-import { 
-  TestJam, 
-  createWorkReportAsync,
-  expectAccumulationSuccess 
-} from "@fluffylabs/jammin-sdk/testing-helpers";
-```
-
 ### Type Errors with Branded Types
 
 The SDK uses branded types for safety. Use the helper functions to create them:
@@ -508,29 +507,54 @@ Enable debug logging to see what's happening during accumulation:
 const result = await jam
   .withWorkReport(report)
   .withOptions({ debug: true })
-  .accumulation();
+  .accumulate();
 ```
 
 This will output detailed logs including:
 - Accumulation steps
 - PVM host calls
 
+#### Fine-Grained Logging Control
+
+You can enable only specific log categories for more focused debugging:
+
+```typescript
+// Enable only ecalli (host call) traces
+const result = await jam
+  .withWorkReport(report)
+  .withOptions({
+    debug: {
+      ecalliTrace: true,
+    },
+  })
+  .accumulate();
+```
+
+Available debug options:
+- `pvmExecution` - PVM (Polkadot Virtual Machine) execution details including instruction traces and memory access patterns
+- `ecalliTrace` - Ecalli (host call) traces for service execution and debugging service interactions
+- `hostCalls` - Host calls made during service execution
+- `accumulate` - Accumulation process details and state transitions showing how work items are processed
+- `safrole` - Safrole (randomness and validator selection) operations for consensus-related debugging
+- `refine` - Refinement process for work reports including validation and processing
+- `stateTransitions` - State transitions and state root changes during processing
+
 ### State Not Persisting
 
-Remember that `accumulation()` automatically applies state updates. If you need to inspect state at different points:
+Remember that `accumulate()` automatically applies state updates. If you need to inspect state at different points:
 
 ```typescript
 // Check initial state
 const initialInfo = jam.getServiceInfo(ServiceId(0));
 
 // Run first accumulation (state is updated)
-await jam.withWorkReport(report1).accumulation();
+await jam.withWorkReport(report1).accumulate();
 
 // Check intermediate state
 const midInfo = jam.getServiceInfo(ServiceId(0));
 
 // Run second accumulation (state is updated again)
-await jam.withWorkReport(report2).accumulation();
+await jam.withWorkReport(report2).accumulate();
 
 // Check final state
 const finalInfo = jam.getServiceInfo(ServiceId(0));
@@ -586,7 +610,7 @@ const customSpec = {
 const result = await jam
   .withWorkReport(report)
   .withOptions({ chainSpec: customSpec })
-  .accumulation();
+  .accumulate();
 ```
 
 ## Best Practices

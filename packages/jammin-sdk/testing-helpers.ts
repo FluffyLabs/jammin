@@ -55,7 +55,7 @@ export class StateChangeAssertionError extends Error {
  * const report = await createWorkReportAsync({
  *   results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
  * });
- * const result = await jam.withWorkReport(report).accumulation();
+ * const result = await jam.withWorkReport(report).accumulate();
  *
  * // Assert accumulation completed
  * expectAccumulationSuccess(result);
@@ -101,7 +101,7 @@ export type StateChangePredicate<T> = (before: T, after: T) => boolean | undefin
  * const report = await createWorkReportAsync({
  *   results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
  * });
- * await jam.withWorkReport(report).accumulation();
+ * await jam.withWorkReport(report).accumulate();
  *
  * const afterInfo = jam.getServiceInfo(ServiceId(0));
  *
@@ -145,7 +145,7 @@ export function expectStateChange<T>(
  * const jam = await TestJam.create();
  * const before = jam.getServiceInfo(ServiceId(0));
  *
- * await jam.withWorkReport(report).withOptions({ slot: Slot(100) }).accumulation();
+ * await jam.withWorkReport(report).withOptions({ slot: Slot(100) }).accumulate();
  *
  * const after = jam.getServiceInfo(ServiceId(0));
  *
