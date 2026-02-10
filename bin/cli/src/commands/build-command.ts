@@ -114,7 +114,6 @@ Examples:
 
     p.log.info("--------------------------------");
 
-    // Generate test configuration file
     try {
       s.start("Generating test configuration...");
       const services = await loadServices(projectRoot);
