@@ -1,5 +1,6 @@
+import { BytesBlob } from "@typeberry/lib/bytes";
+
 export * as block from "@typeberry/lib/block";
-export * as bytes from "@typeberry/lib/bytes";
 export * as codec from "@typeberry/lib/codec";
 export * as config from "@typeberry/lib/config";
 export * as config_node from "@typeberry/lib/config-node";
@@ -18,4 +19,45 @@ export function getSDKInfo() {
     version: "0.0.2",
     description: "JAM SDK for e2e integration tests and object encoding",
   };
+}
+
+/**
+ * Create `BytesBlob` by converting given UTF-u encoded string into bytes.
+ *
+ * @example
+ * ```typescript
+ * const blob = StringToBytes("Hello, World!");
+ * ```
+ */
+export function StringToBytes(data: string): BytesBlob {
+  return BytesBlob.blobFromString(data);
+}
+
+/**
+ * Create `BytesBlob` from an array of bytes.
+ *
+ * @example
+ * ```typescript
+ * const blob = NumbersToBytes([1, 2, 3]);
+ * ```
+ */
+export function NumbersToBytes(data: number[]): BytesBlob {
+  return BytesBlob.blobFromNumbers(data);
+}
+
+/**
+ * Create `BytesBlob` from hex-encoded bytes string.
+ *
+ * @example
+ * ```typescript
+ * const blob = HexToBytes("deadface");
+ * // or
+ * const blob = HexToBytes("0x1337beef");
+ * ```
+ */
+export function HexToBytes(hex: string): BytesBlob {
+  if (!hex.startsWith("0x")) {
+    return BytesBlob.parseBlobNoPrefix(hex);
+  }
+  return BytesBlob.parseBlob(hex);
 }

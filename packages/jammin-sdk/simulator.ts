@@ -43,7 +43,7 @@ export interface DebugLoggingOptions {
   pvmExecution?: boolean;
 
   /**
-   * Log ecalli traces for service execution. (Prettier HostCalls)
+   * Log ecalli traces for service execution.
    * Useful for debugging service interactions.
    */
   ecalliTrace?: boolean;
@@ -61,7 +61,7 @@ export interface DebugLoggingOptions {
   accumulate?: boolean;
 
   /**
-   * Log safrole (randomness and validator selection) operations.
+   * Log safrole operations.
    * Helps debug randomness and consensus-related issues.
    */
   safrole?: boolean;
@@ -91,7 +91,7 @@ export interface SimulatorOptions {
 
   /**
    * PVM backend for executing accumulation logic.
-   * Defaults to PvmBackend.Ananas (Assembly script interpreter).
+   * Defaults to Ananas (Assembly script interpreter).
    */
   pvmBackend?: PvmBackend;
 
@@ -117,7 +117,7 @@ export interface SimulatorOptions {
    * Enable debug logging for accumulation and PVM host calls.
    * When true, enables logging for all available debug categories.
    * Can also pass specific logging options for fine-grained control.
-   * Defaults to false.
+   * Defaults to true.
    *
    * @example
    * ```typescript
@@ -125,7 +125,7 @@ export interface SimulatorOptions {
    * .withOptions({ debug: true })
    *
    * // Enable only specific logs
-   * .withOptions({ debug: { ecalliTrace: true, stateTransitions: true } })
+   * .withOptions({ debug: { hostCalls: true, stateTransitions: true } })
    * ```
    */
   debug?: boolean | DebugLoggingOptions;
@@ -230,12 +230,11 @@ export async function simulateAccumulation(
   const isSequential = options.sequential ?? true;
   const slot = options.slot ?? state.timeslot;
   const entropy = options.entropy ?? ZERO_HASH.asOpaque();
+  const debug = options.debug ?? true;
 
-  // Configure logging if debug is enabled
-  if (options.debug) {
-    const loggingOptions = typeof options.debug === "boolean" ? undefined : options.debug;
-    await enableLogs(loggingOptions);
-  }
+  const loggingOptions: DebugLoggingOptions =
+    typeof debug === "boolean" ? (debug === true ? { refine: true, accumulate: true, hostCalls: true } : {}) : debug;
+  await enableLogs(loggingOptions);
 
   const blake2b = await Blake2b.createHasher();
 
@@ -259,33 +258,31 @@ export async function simulateAccumulation(
   return result.ok;
 }
 
-async function enableLogs(options?: DebugLoggingOptions) {
+async function enableLogs(options: DebugLoggingOptions) {
   try {
     const loggerModule = await import("@typeberry/lib/logger");
     if (loggerModule.Logger && loggerModule.Level) {
-      // Build logging configuration based on enabled options
-      const enabledLoggers: string[] = ["info"];
+      const enabledLoggers: string[] = ["error"];
 
-      // Add loggers based on fine-grained options
-      if (options?.pvmExecution !== false) {
+      if (options.pvmExecution === true) {
         enabledLoggers.push("pvm=trace");
       }
-      if (options?.ecalliTrace !== false) {
+      if (options.ecalliTrace === true) {
         enabledLoggers.push("ecalli=trace");
       }
-      if (options?.hostCalls !== false) {
+      if (options.hostCalls === true) {
         enabledLoggers.push("host-calls=trace");
       }
-      if (options?.refine !== false) {
+      if (options.refine === true) {
         enabledLoggers.push("refine=trace");
       }
-      if (options?.accumulate !== false) {
+      if (options.accumulate === true) {
         enabledLoggers.push("accumulate=trace");
       }
-      if (options?.safrole !== false) {
+      if (options.safrole === true) {
         enabledLoggers.push("safrole=trace");
       }
-      if (options?.stateTransitions !== false) {
+      if (options.stateTransitions === true) {
         enabledLoggers.push("stf=trace");
       }
 
