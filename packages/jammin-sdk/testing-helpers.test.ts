@@ -41,7 +41,7 @@ describe("testing-helpers", () => {
         results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
       });
 
-      const result = await jam.withWorkReport(report).accumulation();
+      const result = await jam.withWorkReport(report).accumulate();
 
       // Should not throw
       expectAccumulationSuccess(result);

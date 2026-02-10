@@ -16,7 +16,7 @@ describe("simulateAccumulation", () => {
       results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
     });
 
-    const result = await jam.withWorkReport(report).accumulation();
+    const result = await jam.withWorkReport(report).accumulate();
 
     expect(result).toBeDefined();
     expect(result.stateUpdate).toBeDefined();
@@ -33,7 +33,7 @@ describe("simulateAccumulation", () => {
       results: [{ serviceId: ServiceId(1), gas: Gas(750n) }],
     });
 
-    const result = await jam.withWorkReport(report1).withWorkReport(report2).accumulation();
+    const result = await jam.withWorkReport(report1).withWorkReport(report2).accumulate();
 
     expect(result.accumulationStatistics).toBeDefined();
     expect(result.accumulationStatistics.size).toBe(2);
@@ -48,14 +48,14 @@ describe("simulateAccumulation", () => {
       ],
     });
 
-    const result = await jam.withWorkReport(report).accumulation();
+    const result = await jam.withWorkReport(report).accumulate();
 
     expect(result).toBeDefined();
     expect(result.accumulationStatistics.size).toBe(3);
   });
 
   test("handles empty reports array", async () => {
-    const result = await jam.accumulation();
+    const result = await jam.accumulate();
 
     expect(result).toBeDefined();
     expect(result.stateUpdate).toBeDefined();
@@ -73,7 +73,7 @@ describe("simulateAccumulation", () => {
       .withOptions({
         slot: customSlot,
       })
-      .accumulation();
+      .accumulate();
 
     expect(result.stateUpdate.timeslot).toBeDefined();
     // The timeslot in the update should be >= the slot we passed
@@ -90,7 +90,7 @@ describe("simulateAccumulation", () => {
       .withOptions({
         pvmBackend: config.PvmBackend.BuiltIn,
       })
-      .accumulation();
+      .accumulate();
 
     expect(result).toBeDefined();
   });
