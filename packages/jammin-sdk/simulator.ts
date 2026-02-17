@@ -308,7 +308,7 @@ async function enableLogs(options: DebugLoggingOptions) {
  * const report = await createWorkReportAsync({
  *   results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
  * });
- * const result = await jam.withWorkReport(report).accumulation();
+ * const result = await jam.withWorkReport(report).accumulate();
  *
  * // Chain multiple work reports
  * const result2 = await jam
