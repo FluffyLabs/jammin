@@ -315,7 +315,7 @@ async function enableLogs(options: DebugLoggingOptions) {
  *   .withWorkReport(report1)
  *   .withWorkReport(report2)
  *   .withOptions({ debug: true })
- *   .accumulation();
+ *   .accumulate();
  *
  * // Query service state after accumulation
  * const serviceInfo = jam.getServiceInfo(ServiceId(0));
