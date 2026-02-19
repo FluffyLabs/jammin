@@ -21,8 +21,8 @@ import {
 } from "@typeberry/lib/state";
 import { StateEntries } from "@typeberry/lib/state-merkleization";
 import { asOpaqueType } from "@typeberry/lib/utils";
-import { Gas, ServiceId, Slot, U32, U64 } from "./types.js";
-import type { ServiceBuildOutput } from "./utils/generate-service-output.js";
+import { Gas, ServiceId, Slot, U32, U64 } from "../types.js";
+import type { ServiceBuildOutput } from "./generate-service-output.js";
 
 const blake2b = await Blake2b.createHasher();
 const spec = tinyChainSpec;

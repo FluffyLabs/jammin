@@ -83,6 +83,7 @@ jammin build auth-service --config ./custom.build.yml
 - Build logs are automatically saved to a `logs/` directory in your project root.
 - The command uses Docker to build services based on their SDK configuration.
 - Output `.jam` files are detected and listed after each successful build.
+- Automatically generates `config/jammin.test.config.ts` with type-safe service ID mappings for testing.
 - If any service fails to build, the command will exit with an error code.
 
 ### `test`

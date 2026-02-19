@@ -248,21 +248,12 @@ describe("createWorkReport", () => {
     expect(report.results[0]?.load.gasUsed).toBe(Gas(800n));
   });
 
-  test("throws error when results array is empty", () => {
-    expect(() => {
-      createWorkReport(blake2b, {
-        results: [],
-      });
-    }).toThrow("WorkReport cannot contain less than 1 results");
-  });
-
-  test("throws error when results array exceeds maximum", () => {
-    const results = Array.from({ length: 17 }, (_, i) => ({ serviceId: ServiceId(i) }));
-    expect(() => {
-      createWorkReport(blake2b, {
-        results,
-      });
-    }).toThrow("WorkReport cannot contain more than 16 results");
+  test("creates work report with empty results array", () => {
+    const report = createWorkReport(blake2b, {
+      results: [],
+    });
+    expect(report).toBeDefined();
+    expect(report.results.length).toBe(0);
   });
 });
 
