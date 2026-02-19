@@ -65,12 +65,9 @@ describe("testing-helpers", () => {
     });
 
     test("should include custom error message", () => {
-      try {
+      expect(() => {
         expectStateChange(10, 5, (before, after) => after > before, "Custom error");
-      } catch (e) {
-        expect(e).toBeInstanceOf(StateChangeAssertionError);
-        expect((e as Error).message).toBe("Custom error");
-      }
+      }).toThrow("Custom error");
     });
   });
 

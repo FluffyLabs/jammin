@@ -1,6 +1,6 @@
 import * as jamBlock from "@typeberry/lib/block";
 import { Credential, type EntropyHash, ReportGuarantee, type TimeSlot } from "@typeberry/lib/block";
-import type { BytesBlob } from "@typeberry/lib/bytes";
+import { BytesBlob } from "@typeberry/lib/bytes";
 import { Encoder } from "@typeberry/lib/codec";
 import { asKnownSize } from "@typeberry/lib/collections";
 import { type ChainSpec, PvmBackend, tinyChainSpec } from "@typeberry/lib/config";
@@ -364,6 +364,55 @@ export class TestJam {
   }
 
   /**
+   * Convert a UTF-8 string to a BytesBlob.
+   *
+   * @param str - UTF-8 string to convert
+   * @returns BytesBlob representation of the string
+   *
+   * @example
+   * ```typescript
+   * const blob = TestJam.stringToBlob("hello");
+   * ```
+   */
+  static stringToBlob(str: string): BytesBlob {
+    return BytesBlob.blobFromString(str);
+  }
+
+  /**
+   * Convert an array of numbers to a BytesBlob.
+   *
+   * @param numbers - Array of numbers (0-255) to convert
+   * @returns BytesBlob representation of the numbers
+   *
+   * @example
+   * ```typescript
+   * const blob = TestJam.numbersToBlob([1, 2, 3]);
+   * ```
+   */
+  static numbersToBlob(numbers: number[]): BytesBlob {
+    return BytesBlob.blobFromNumbers(numbers);
+  }
+
+  /**
+   * Parse a hex string (with or without 0x prefix) to a BytesBlob.
+   *
+   * @param hex - Hex string to parse (can include 0x prefix)
+   * @returns BytesBlob representation of the hex data
+   *
+   * @example
+   * ```typescript
+   * const blob = TestJam.hexToBlob("0xaabbccdd");
+   * const blob2 = TestJam.hexToBlob("aabbccdd");
+   * ```
+   */
+  static hexToBlob(hex: string): BytesBlob {
+    if (hex.startsWith("0x")) {
+      return BytesBlob.parseBlob(hex);
+    }
+    return BytesBlob.parseBlobNoPrefix(hex);
+  }
+
+  /**
    * Configure simulator options for the next accumulation.
    * Options persist across multiple accumulate() calls until changed.
    *
@@ -432,10 +481,8 @@ export class TestJam {
       if (!this.blake2b) {
         this.blake2b = await Blake2b.createHasher();
       }
-      if (!this.options.chainSpec) {
-        this.options.chainSpec = tinyChainSpec;
-      }
-      this.state.backend.applyUpdate(serializeStateUpdate(this.options.chainSpec, this.blake2b, result));
+      const chainSpec = this.options.chainSpec ?? tinyChainSpec;
+      this.state.backend.applyUpdate(serializeStateUpdate(chainSpec, this.blake2b, result));
     }
     return result;
   }

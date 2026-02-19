@@ -37,7 +37,7 @@ import {
   createWorkReportAsync,
   expectAccumulationSuccess,
   Gas,
-  stringToBlob,
+  TestJam,
 } from "@fluffylabs/jammin-sdk";
 import { SERVICES, testJam } from "../config/jammin.test.config";
 
@@ -204,9 +204,7 @@ console.log(`Code hash: ${info?.codeHash}`);
 #### Get Service Storage
 
 ```typescript
-import { stringToBlob } from "@fluffylabs/jammin-sdk";
-
-const key = stringToBlob("testKey");
+const key = TestJam.stringToBlob("testKey");
 const value = jam.getServiceStorage(SERVICES.auth.id, key);
 ```
 
@@ -240,7 +238,7 @@ const report = await createWorkReportAsync({
     { 
       serviceId: SERVICES.auth.id, 
       gas: Gas(1000n),
-      result: { type: "ok", output: numbersToBlob([1, 2, 3]) }
+      result: { type: "ok", output: TestJam.numbersToBlob([1, 2, 3]) }
     },
     { 
       serviceId: SERVICES.auth.id, 
@@ -267,7 +265,7 @@ const report = await createWorkReportAsync({
     {
       serviceId: SERVICES.auth.id,
       gas: Gas(1000n),
-      payload: numbersToBlob([4, 5, 6]),
+      payload: TestJam.numbersToBlob([4, 5, 6]),
     },
   ],
   context: {
@@ -282,7 +280,7 @@ Work results can have different status types:
 
 ```typescript
 // Successful execution
-{ type: "ok", output: hexToBlob(...) }
+{ type: "ok", output: TestJam.hexToBlob("0xaabbccdd") }
 
 // Execution errors
 { type: "panic" }
@@ -373,13 +371,13 @@ test("service should execute successfully", async () => {
 
 ```typescript
 import { test, expect } from "bun:test";
-import { createWorkReportAsync, Gas, stringToBlob } from "@fluffylabs/jammin-sdk";
+import { createWorkReportAsync, Gas, TestJam } from "@fluffylabs/jammin-sdk";
 import { testJam as jam, SERVICES } from "./config/jammin.test.config.js";
 
 test("service storage should update", async () => {
   const authId = SERVICES.auth.id;
 
-  const storageKey = stringToBlob("myKey");
+  const storageKey = TestJam.stringToBlob("myKey");
   const beforeValue = jam.getServiceStorage(authId, storageKey);
 
   const report = await createWorkReportAsync({
@@ -397,7 +395,7 @@ test("service storage should update", async () => {
 
 ```typescript
 import { test, expect } from "bun:test";
-import { createWorkReportAsync, Gas, stringToBlob } from "@fluffylabs/jammin-sdk";
+import { createWorkReportAsync, Gas } from "@fluffylabs/jammin-sdk";
 import { expectAccumulationSuccess } from "@fluffylabs/jammin-sdk/testing-helpers";
 import { testJam as jam, SERVICES } from "./config/jammin.test.config.js";
 
@@ -420,7 +418,7 @@ test("should process multiple services", async () => {
 
 ```typescript
 import { test, expect } from "bun:test";
-import { createWorkReportAsync, Gas, stringToBlob } from "@fluffylabs/jammin-sdk";
+import { createWorkReportAsync, Gas } from "@fluffylabs/jammin-sdk";
 import { expectAccumulationSuccess } from "@fluffylabs/jammin-sdk/testing-helpers";
 import { testJam as jam, SERVICES } from "./config/jammin.test.config.js";
 
@@ -587,7 +585,7 @@ const result = await jam
 ## Best Practices
 
 1. **Use `testJam` by default** - It automatically loads your services
-2. **Use preconfigured `SERVICES` instead of manually writing service ids** - It prevents changing tests when reasigning
+2. **Use preconfigured `SERVICES` instead of manually writing service ids** - It prevents changing tests when reassigning
    service ids
 3. **Chain method calls** - The fluent API makes tests more readable
 4. **Use helper assertions** - They provide better error messages than raw `expect()`

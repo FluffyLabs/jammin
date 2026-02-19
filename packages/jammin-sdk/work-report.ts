@@ -1,7 +1,5 @@
 import {
   type CoreIndex,
-  MAX_NUMBER_OF_WORK_ITEMS,
-  MIN_NUMBER_OF_WORK_ITEMS,
   RefineContext,
   type ServiceGas,
   type ServiceId,
@@ -158,14 +156,6 @@ export function createWorkResult(blake2b: Blake2b, config: WorkResultConfig): Wo
  * ```
  */
 export function createWorkReport(blake2b: Blake2b, config: WorkReportConfig): WorkReport {
-  if (config.results.length < MIN_NUMBER_OF_WORK_ITEMS) {
-    throw new Error(`WorkReport cannot contain less than ${MIN_NUMBER_OF_WORK_ITEMS} results`);
-  }
-
-  if (config.results.length > MAX_NUMBER_OF_WORK_ITEMS) {
-    throw new Error(`WorkReport cannot contain more than ${MAX_NUMBER_OF_WORK_ITEMS} results`);
-  }
-
   const results = config.results.map((resultConfig) => createWorkResult(blake2b, resultConfig));
 
   const wpSpec = config.workPackageSpec ?? {};
