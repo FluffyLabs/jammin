@@ -35,10 +35,10 @@ describe("genesis-generator", () => {
       expect(genesis.bootnodes).toEqual([]);
       expect(genesis.genesis_header).toBeDefined();
       expect(genesis.genesis_state).toBeDefined();
-      expect(Array.isArray(genesis.genesis_state)).toBe(true);
-      expect(genesis.genesis_state.length).toBeGreaterThan(0);
+      expect(typeof genesis.genesis_state).toBe("object");
+      expect(Object.keys(genesis.genesis_state).length).toBeGreaterThan(0);
 
-      const stateValues = genesis.genesis_state.map((entry) => entry[1]);
+      const stateValues = Object.values(genesis.genesis_state);
       const serviceCodeHex = services[0]?.code.toString().substring(2);
       const serviceCodeHex1 = services[1]?.code.toString().substring(2);
 
