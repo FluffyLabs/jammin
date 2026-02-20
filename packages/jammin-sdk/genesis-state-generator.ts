@@ -68,10 +68,12 @@ export function toJip4Schema(genesis: Genesis) {
     id: genesis.id,
     bootnodes: genesis.bootnodes,
     genesis_header: genesis.genesisHeader.toString().substring(2),
-    genesis_state: Array.from(genesis.genesisState.entries()).map(([key, value]) => [
-      key.toString().substring(2),
-      value.toString().substring(2),
-    ]),
+    genesis_state: Object.fromEntries(
+      [...genesis.genesisState.entries()].map(([key, value]) => [
+        key.toString().substring(2),
+        value.toString().substring(2),
+      ]),
+    ),
     // TODO: [MaSo] Update typeberry jip4Chainspec - add protocol_parameters
   };
 }

@@ -1,3 +1,4 @@
+import { mkdir } from "node:fs/promises";
 import * as p from "@clack/prompts";
 import { Command } from "commander";
 
@@ -8,8 +9,8 @@ const DOCKER_IMAGE = "ghcr.io/fluffylabs/typeberry:latest";
  */
 export async function pullImage(): Promise<void> {
   const proc = Bun.spawn(["docker", "pull", "--platform=linux/amd64", DOCKER_IMAGE], {
-    stdout: "pipe",
-    stderr: "pipe",
+    stdout: "inherit",
+    stderr: "inherit",
     cwd: process.cwd(),
   });
 
@@ -24,7 +25,22 @@ export async function pullImage(): Promise<void> {
  * Spawn a Docker container to run a local Typeberry network.
  */
 export async function startContainer(): Promise<void> {
-  const dockerArgs: string[] = ["run", "--rm", "--entrypoint", "/bin/bash", DOCKER_IMAGE, "-c", "npm run tiny-network"];
+  const distPath = `${process.cwd()}/dist`;
+  const logsPath = `${process.cwd()}/logs`;
+  await mkdir(logsPath, { recursive: true });
+  const dockerArgs: string[] = [
+    "run",
+    "--rm",
+    "-v",
+    `${distPath}:/app/jammin`,
+    "-v",
+    `${logsPath}:/app/bin/jam/logs`,
+    "--entrypoint",
+    "/bin/bash",
+    DOCKER_IMAGE,
+    "-c",
+    "npm run tiny-network -- --config=dev --config=.chain_spec+=/app/jammin/genesis.json",
+  ];
 
   const proc = Bun.spawn(["docker", ...dockerArgs], {
     stdout: "inherit",
