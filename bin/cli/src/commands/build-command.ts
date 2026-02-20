@@ -2,7 +2,14 @@ import { mkdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import type { ServiceConfig } from "@fluffylabs/jammin-sdk";
-import { copyJamToDist, getJamFiles, getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
+import {
+  copyJamToDist,
+  generateTestConfigInProjectDir,
+  getJamFiles,
+  getServiceConfigs,
+  loadServices,
+  SDK_CONFIGS,
+} from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
 
 /**
@@ -106,6 +113,17 @@ Examples:
     }
 
     p.log.info("--------------------------------");
+
+    try {
+      s.start("Generating test configuration...");
+      const services = await loadServices(projectRoot);
+      await generateTestConfigInProjectDir(services, projectRoot);
+      s.stop("✅ Test configuration generated");
+      p.log.message("📝 Generated: config/jammin.test.config.ts");
+    } catch (_error) {
+      s.stop("⚠️ Could not generate test configuration");
+      p.log.warn("Test configuration generation failed (this is optional)");
+    }
 
     if (buildFailed) {
       p.outro("❌ Build failed. See the output above and check the logs for more details.");
