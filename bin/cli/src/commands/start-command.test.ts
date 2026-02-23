@@ -135,8 +135,10 @@ describe("start-command", () => {
 
       const { pullImage } = require("./start-command");
 
-      expect(pullImage()).rejects.toThrow("Failed to pull image");
-      expect(pullImage()).rejects.toThrow("exit code 1");
+      return Promise.all([
+        expect(pullImage()).rejects.toThrow("Failed to pull image"),
+        expect(pullImage()).rejects.toThrow("exit code 1"),
+      ]);
     });
   });
 
