@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { mkdir, unlink } from "node:fs/promises";
+import { mkdir, rm, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -144,6 +144,7 @@ describe("start-command", () => {
 
   describe("startContainer", () => {
     let originalSpawn: typeof Bun.spawn;
+    let originalCwd: () => string;
     let mockSpawn: ReturnType<typeof mock>;
     let testCwd: string;
 
@@ -168,13 +169,14 @@ describe("start-command", () => {
       testCwd = join(tmpdir(), `jammin-test-${Date.now()}`);
       await mkdir(testCwd, { recursive: true });
       await mkdir(join(testCwd, "logs"), { recursive: true });
+      originalCwd = process.cwd;
       process.cwd = mock(() => testCwd);
     });
 
     afterEach(async () => {
       Bun.spawn = originalSpawn;
-      process.cwd = () => "/";
-      await unlink(testCwd).catch(() => {});
+      process.cwd = originalCwd;
+      await rm(testCwd, { recursive: true }).catch(() => {});
     });
 
     test("spawns docker container with correct arguments in correct order", async () => {
