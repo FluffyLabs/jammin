@@ -2,23 +2,26 @@ import { access, mkdir, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
+import * as state_merkleization from "@typeberry/lib/state-merkleization";
 import { Command } from "commander";
+
+const { StateKeyIdx, stateKeys } = state_merkleization;
 
 const DOCKER_IMAGE = "ghcr.io/fluffylabs/typeberry:latest";
 
 // note [seko]: genesis state keys to drop before passing to typeberry. this is needed to avoid overwriting dev node validator data
 const GENESIS_STATE_DROP_KEYS: string[] = [
-  "04000000000000000000000000000000000000000000000000000000000000", // next validator data
-  "07000000000000000000000000000000000000000000000000000000000000", // designated validator data
-  "08000000000000000000000000000000000000000000000000000000000000", // current validator data
-  "09000000000000000000000000000000000000000000000000000000000000", // previous validator data
-];
+  StateKeyIdx.Gamma,
+  StateKeyIdx.Iota,
+  StateKeyIdx.Kappa,
+  StateKeyIdx.Lambda,
+].map((stateKeyIdx) => stateKeys.index(stateKeyIdx).toString().slice(2, -2));
 
 export async function createFilteredGenesis(genesisPath: string): Promise<string> {
   const raw = await Bun.file(genesisPath).text();
   const genesis = JSON.parse(raw);
 
-  if (genesis.genesis_state && GENESIS_STATE_DROP_KEYS.length > 0) {
+  if (genesis.genesis_state) {
     for (const key of GENESIS_STATE_DROP_KEYS) {
       delete genesis.genesis_state[key];
     }
@@ -135,7 +138,7 @@ Examples:
       process.exit(1);
     } finally {
       if (filteredGenesisPath) {
-        await unlink(filteredGenesisPath).catch(() => {});
+        await unlink(filteredGenesisPath);
       }
     }
   });
