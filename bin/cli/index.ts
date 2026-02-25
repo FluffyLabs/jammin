@@ -5,6 +5,7 @@ import { version } from "./package.json" with { type: "json" };
 import { buildCommand } from "./src/commands/build-command";
 import { createCommand } from "./src/commands/create-command";
 import { deployCommand } from "./src/commands/deploy-command";
+import { startCommand } from "./src/commands/start-command";
 import { testCommand } from "./src/commands/test-command";
 
 program
@@ -22,6 +23,7 @@ program.addCommand(createCommand);
 program.addCommand(buildCommand);
 program.addCommand(testCommand);
 program.addCommand(deployCommand);
+program.addCommand(startCommand);
 
 // TODO: [MaSo] Display accual examples
 program.addHelpText(
