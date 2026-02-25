@@ -24,6 +24,7 @@
       "dependencies": {
         "@clack/prompts": "^0.11.0",
         "@fluffylabs/jammin-sdk": "workspace:*",
+        "@typeberry/lib": "^0.5.8",
         "commander": "^14.0.2",
       },
       "devDependencies": {
@@ -90,7 +91,7 @@
 
     "@typeberry/bandersnatch-native-linux-x64-gnu": ["@typeberry/bandersnatch-native-linux-x64-gnu@0.2.0-74dd7d7", "", { "os": "linux", "cpu": "x64" }, "sha512-kPTDJ6YYPghxMubhxMsn9wBea/aH9/hIaiG66PW7skRwDM9D5wNzZrmSD7BlpSKv9ayK2hIQiSL1amCiTS9mXQ=="],
 
-    "@typeberry/lib": ["@typeberry/lib@0.5.7", "", { "dependencies": { "@fluffylabs/anan-as": "^1.1.5", "@noble/ed25519": "2.2.3", "@opentelemetry/api": "1.9.0", "@typeberry/native": "0.2.0-74dd7d7", "eventemitter3": "^5.0.1", "hash-wasm": "4.12.0" } }, "sha512-q5g8jWeAeGBwh4Ywdjtc9R8R5xIkChD5uIpjvG8tEFIUGyN0/rf+e4wbrB71dRxJEojKK4ZPYt3gvuk9eWQI4w=="],
+    "@typeberry/lib": ["@typeberry/lib@0.5.8", "", { "dependencies": { "@fluffylabs/anan-as": "^1.1.5", "@noble/ed25519": "2.2.3", "@opentelemetry/api": "1.9.0", "@typeberry/native": "0.2.0-74dd7d7", "eventemitter3": "^5.0.1", "hash-wasm": "4.12.0" } }, "sha512-yB4ooIn1pxyCXKYp6gz0LzHOCLIXU/fm0exZA1hCsY/MHD1tHl27iaijd/fcmXkiekhNhQ9ejVa/pf5SV4ffpg=="],
 
     "@typeberry/native": ["@typeberry/native@0.2.0-74dd7d7", "", { "optionalDependencies": { "@typeberry/bandersnatch-native-darwin-arm64": "0.2.0-74dd7d7", "@typeberry/bandersnatch-native-linux-x64-gnu": "0.2.0-74dd7d7" } }, "sha512-b7qq7cIO30KKUVe2WISd+WmipurlzVePz7zFWFkZ2g8nqvfAt8l3upANC1Yxg+LPFLQLWUbEJ7vZ0reOX68Vqg=="],
 
@@ -120,7 +121,13 @@
 
     "zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
 
+    "@fluffylabs/jammin-cli/@types/bun": ["@types/bun@1.3.9", "", { "dependencies": { "bun-types": "1.3.9" } }, "sha512-KQ571yULOdWJiMH+RIWIOZ7B2RXQGpL1YQrBtLIV3FqDcCu6FsbFUBwhdKUlCKUpS3PJDsHlJ1QKlpxoVR+xtw=="],
+
+    "@fluffylabs/jammin-sdk/@typeberry/lib": ["@typeberry/lib@0.5.7", "", { "dependencies": { "@fluffylabs/anan-as": "^1.1.5", "@noble/ed25519": "2.2.3", "@opentelemetry/api": "1.9.0", "@typeberry/native": "0.2.0-74dd7d7", "eventemitter3": "^5.0.1", "hash-wasm": "4.12.0" } }, "sha512-q5g8jWeAeGBwh4Ywdjtc9R8R5xIkChD5uIpjvG8tEFIUGyN0/rf+e4wbrB71dRxJEojKK4ZPYt3gvuk9eWQI4w=="],
+
     "@fluffylabs/jammin-sdk/@types/bun": ["@types/bun@1.3.9", "", { "dependencies": { "bun-types": "1.3.9" } }, "sha512-KQ571yULOdWJiMH+RIWIOZ7B2RXQGpL1YQrBtLIV3FqDcCu6FsbFUBwhdKUlCKUpS3PJDsHlJ1QKlpxoVR+xtw=="],
+
+    "@fluffylabs/jammin-cli/@types/bun/bun-types": ["bun-types@1.3.9", "", { "dependencies": { "@types/node": "*" } }, "sha512-+UBWWOakIP4Tswh0Bt0QD0alpTY8cb5hvgiYeWCMet9YukHbzuruIEeXC2D7nMJPB12kbh8C7XJykSexEqGKJg=="],
 
     "@fluffylabs/jammin-sdk/@types/bun/bun-types": ["bun-types@1.3.9", "", { "dependencies": { "@types/node": "*" } }, "sha512-+UBWWOakIP4Tswh0Bt0QD0alpTY8cb5hvgiYeWCMet9YukHbzuruIEeXC2D7nMJPB12kbh8C7XJykSexEqGKJg=="],
   }

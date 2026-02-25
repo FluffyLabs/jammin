@@ -19,6 +19,7 @@
   "dependencies": {
     "@clack/prompts": "^0.11.0",
     "@fluffylabs/jammin-sdk": "workspace:*",
+    "@typeberry/lib": "^0.5.8",
     "commander": "^14.0.2"
   },
   "devDependencies": {
