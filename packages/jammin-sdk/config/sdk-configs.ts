@@ -22,4 +22,9 @@ export const SDK_CONFIGS = {
     build: "ajanta build main.py -o service.jam",
     test: "true",
   },
+  "c3sdk-1.0.2": {
+    image: "ghcr.io/dreverr/jamsdk:1.0.2",
+    build: "main.c3 -o service.jam",
+    test: "bun test",
+  }
 } as const satisfies Record<string, SdkConfig>;
