@@ -26,5 +26,5 @@ export const SDK_CONFIGS = {
     image: "ghcr.io/dreverr/jamsdk:1.0.2",
     build: "main.c3 -o service.jam",
     test: "bun test",
-  }
+  },
 } as const satisfies Record<string, SdkConfig>;
