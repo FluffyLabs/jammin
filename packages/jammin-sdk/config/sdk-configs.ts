@@ -22,4 +22,9 @@ export const SDK_CONFIGS = {
     build: "ajanta build main.py -o service.jam",
     test: "true",
   },
+  "jamc3-1.1.2": {
+    image: "ghcr.io/dreverr/jamc3:1.1.2",
+    build: "main.c3 -o service.jam",
+    test: "bun test",
+  },
 } as const satisfies Record<string, SdkConfig>;
