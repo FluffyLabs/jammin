@@ -78,6 +78,27 @@ describe("build-command", () => {
       expect(dockerCommand).toContain(`${resolve("/test/project", "./jade")}:/app`);
     });
 
+    test("should generate correct Docker command for as-lan alias", async () => {
+      const service: ServiceConfig = {
+        name: "as-lan-service",
+        path: "./services/example",
+        sdk: "as-lan",
+      };
+
+      await callDockerBuild(service, "/test/project");
+
+      expect(mockSpawn).toHaveBeenCalledTimes(1);
+      const spawnCall = mockSpawn.mock.calls[0];
+      if (!spawnCall) {
+        throw new Error("spawnCall is undefined");
+      }
+      const dockerCommand = spawnCall[0][2] as string;
+
+      expect(dockerCommand).toContain(SDK_CONFIGS["aslan-0.0.4"].image);
+      expect(dockerCommand).toContain(SDK_CONFIGS["aslan-0.0.4"].build);
+      expect(dockerCommand).toContain(`${resolve("/test/project", "./services/example")}:/app`);
+    });
+
     test("should generate correct Docker command for custom SDK config", async () => {
       const customSdk: SdkConfig = {
         image: "custom-image:latest",
