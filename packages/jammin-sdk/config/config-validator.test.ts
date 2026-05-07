@@ -159,6 +159,21 @@ describe("Validate Build Config", () => {
     expect(() => validateBuildConfig(config)).toThrow("SDK image is required");
   });
 
+  test("Should accept canonical aslan-0.0.4 SDK", () => {
+    const config = {
+      services: [
+        {
+          path: "./services/example",
+          name: "example",
+          sdk: "aslan-0.0.4",
+        },
+      ],
+    };
+
+    const result = validateBuildConfig(config);
+    expect(result.services[0]?.sdk).toBe("aslan-0.0.4");
+  });
+
   describe("Deployment Config Validation", () => {
     test("Should parse valid deployment config with spawn and services", () => {
       const config = {
