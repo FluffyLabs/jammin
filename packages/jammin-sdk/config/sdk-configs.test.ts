@@ -50,21 +50,19 @@ describe("resolveSdkId", () => {
 });
 
 describe("ServiceConfig.sdk type accepts alias strings", () => {
-  test("Compiles when sdk is an alias key", () => {
+  type Assert<T extends true> = T;
+
+  // Compile-time assertions: these fail tsc if the union narrows.
+  type _AliasAccepted = Assert<"as-lan" extends ServiceConfig["sdk"] ? true : false>;
+  type _VersionedAliasAccepted = Assert<"as-lan-0.0.4" extends ServiceConfig["sdk"] ? true : false>;
+  type _CanonicalAccepted = Assert<"aslan-0.0.4" extends ServiceConfig["sdk"] ? true : false>;
+
+  test("Constructs a ServiceConfig literal with an alias key", () => {
     const cfg: ServiceConfig = {
-      path: "./services/example",
-      name: "example",
+      path: "./svc",
+      name: "svc",
       sdk: "as-lan",
     };
     expect(cfg.sdk).toBe("as-lan");
-  });
-
-  test("Compiles when sdk is a versioned alias key", () => {
-    const cfg: ServiceConfig = {
-      path: "./services/example",
-      name: "example",
-      sdk: "as-lan-0.0.4",
-    };
-    expect(cfg.sdk).toBe("as-lan-0.0.4");
   });
 });
