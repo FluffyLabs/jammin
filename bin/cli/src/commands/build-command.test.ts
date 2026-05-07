@@ -157,6 +157,17 @@ describe("build-command", () => {
       expect(callDockerBuild(service, "/test/project")).rejects.toThrow("Build failed for service 'failing-service'");
     });
 
+    test("should throw with descriptive message when SDK id is unknown", async () => {
+      const service: ServiceConfig = {
+        name: "broken-service",
+        path: "./broken",
+        // biome-ignore lint/suspicious/noExplicitAny: simulating a stale config that bypassed validation
+        sdk: "definitely-not-a-real-sdk" as any,
+      };
+
+      expect(callDockerBuild(service, "/test/project")).rejects.toThrow("Unknown SDK id: 'definitely-not-a-real-sdk'");
+    });
+
     test("should return build output on success", async () => {
       const expectedOutput = "build successful output";
       const mockSuccessSpawn = mock(() => {

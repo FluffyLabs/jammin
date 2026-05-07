@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
-import type { ServiceConfig, SdkConfig } from "@fluffylabs/jammin-sdk";
+import type { SdkConfig, ServiceConfig } from "@fluffylabs/jammin-sdk";
 import {
   copyJamToDist,
   generateTestConfigInProjectDir,
