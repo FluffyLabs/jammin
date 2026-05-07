@@ -44,10 +44,10 @@ export const SDK_ALIASES = {
  * SDK_CONFIGS key. Returns undefined for unknown identifiers.
  */
 export function resolveSdkId(id: string): keyof typeof SDK_CONFIGS | undefined {
-  if (id in SDK_CONFIGS) {
+  if (Object.hasOwn(SDK_CONFIGS, id)) {
     return id as keyof typeof SDK_CONFIGS;
   }
-  if (id in SDK_ALIASES) {
+  if (Object.hasOwn(SDK_ALIASES, id)) {
     return SDK_ALIASES[id as keyof typeof SDK_ALIASES];
   }
   return undefined;

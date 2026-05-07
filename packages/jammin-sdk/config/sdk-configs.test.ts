@@ -36,4 +36,14 @@ describe("resolveSdkId", () => {
     expect(resolveSdkId("as-lan-0.0.3")).toBeUndefined();
     expect(resolveSdkId("aslan")).toBeUndefined();
   });
+
+  test("Returns undefined for prototype properties (toString, constructor, etc.)", () => {
+    expect(resolveSdkId("toString")).toBeUndefined();
+    expect(resolveSdkId("constructor")).toBeUndefined();
+    expect(resolveSdkId("hasOwnProperty")).toBeUndefined();
+  });
+
+  test("Returns undefined for empty string", () => {
+    expect(resolveSdkId("")).toBeUndefined();
+  });
 });
