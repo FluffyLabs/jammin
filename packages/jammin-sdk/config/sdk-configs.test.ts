@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { resolveSdkId, SDK_ALIASES, SDK_CONFIGS } from "./sdk-configs.js";
+import { resolveSdk, resolveSdkId, SDK_ALIASES, SDK_CONFIGS } from "./sdk-configs.js";
 import type { ServiceConfig } from "./types/config.js";
 
 describe("SDK_ALIASES", () => {
@@ -46,6 +46,28 @@ describe("resolveSdkId", () => {
 
   test("Returns undefined for empty string", () => {
     expect(resolveSdkId("")).toBeUndefined();
+  });
+});
+
+describe("resolveSdk", () => {
+  test("Returns SDK_CONFIGS entry for a canonical key", () => {
+    const result = resolveSdk("aslan-0.0.4");
+    expect(result).toBe(SDK_CONFIGS["aslan-0.0.4"]);
+  });
+
+  test("Returns SDK_CONFIGS entry for an alias key", () => {
+    const result = resolveSdk("as-lan");
+    expect(result).toBe(SDK_CONFIGS["aslan-0.0.4"]);
+  });
+
+  test("Returns the inline SdkConfig object unchanged", () => {
+    const inline = { image: "custom:1", build: "make", test: "make test" };
+    const result = resolveSdk(inline);
+    expect(result).toBe(inline);
+  });
+
+  test("Throws with a descriptive message for unknown string ids", () => {
+    expect(() => resolveSdk("nonsense")).toThrow("Unknown SDK id: 'nonsense'");
   });
 });
 

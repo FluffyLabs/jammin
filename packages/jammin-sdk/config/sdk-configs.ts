@@ -52,3 +52,19 @@ export function resolveSdkId(id: string): keyof typeof SDK_CONFIGS | undefined {
   }
   return undefined;
 }
+
+/**
+ * Resolve a service's `sdk` field to a concrete SdkConfig. Accepts canonical
+ * keys, alias keys, or an inline SdkConfig object. Throws for unknown string
+ * identifiers.
+ */
+export function resolveSdk(sdk: string | SdkConfig): SdkConfig {
+  if (typeof sdk !== "string") {
+    return sdk;
+  }
+  const canonicalId = resolveSdkId(sdk);
+  if (!canonicalId) {
+    throw new Error(`Unknown SDK id: '${sdk}'`);
+  }
+  return SDK_CONFIGS[canonicalId];
+}
