@@ -33,3 +33,22 @@ export const SDK_CONFIGS = {
     test: "npm test",
   },
 } as const satisfies Record<string, SdkConfig>;
+
+export const SDK_ALIASES = {
+  "as-lan": "aslan-0.0.4",
+  "as-lan-0.0.4": "aslan-0.0.4",
+} as const satisfies Record<string, keyof typeof SDK_CONFIGS>;
+
+/**
+ * Resolve a string SDK identifier (canonical key or alias) to a canonical
+ * SDK_CONFIGS key. Returns undefined for unknown identifiers.
+ */
+export function resolveSdkId(id: string): keyof typeof SDK_CONFIGS | undefined {
+  if (id in SDK_CONFIGS) {
+    return id as keyof typeof SDK_CONFIGS;
+  }
+  if (id in SDK_ALIASES) {
+    return SDK_ALIASES[id as keyof typeof SDK_ALIASES];
+  }
+  return undefined;
+}
