@@ -12,22 +12,25 @@ commands automatically — no inline image/build/test fields required.
 
 ## Non-goals
 
-- Rebuilding the `jammin-as-lan` docker image. That work happens in the
-  `tomusdrw/as-lan` repo and produces the `0.0.4` tag this spec pins to.
-  Without it the SDK entry's `npm run build` / `npm test` commands would
-  fall back to running `npm install` on every build, which we explicitly
-  do not want.
 - Generalised alias resolution (regex/prefix transforms across the SDK
   family). The alias map is explicit.
 - Versioned aliases for as-lan releases that haven't been pinned yet
   (e.g. `as-lan-0.0.3` — only versions present in `SDK_CONFIGS` get an
   alias entry).
+- Migrating the image to `ghcr.io/fluffylabs/jammin-as-lan` (the
+  namespace used by other built-in SDKs). The README documents that
+  target, but only `ghcr.io/tomusdrw/jammin-as-lan` is published today.
+  This spec pins to `tomusdrw` to match what works; a future change can
+  flip the namespace once the image is mirrored.
 
-## Dependency
+## Image behaviour
 
-This change must NOT merge until `ghcr.io/tomusdrw/jammin-as-lan:0.0.4`
-exists with deps baked in (or otherwise resolved such that `npm run
-build` works against a mounted source dir without a per-build install).
+`ghcr.io/tomusdrw/jammin-as-lan:0.0.4` is published and ships with
+Node.js, `wasm-pvm`, and the as-lan/ecalli/AssemblyScript packages
+pre-installed globally. Its entrypoint symlinks the global install into
+`/app/node_modules` when none exists in the mounted volume, so
+`npm run build` and `npm test` work against the user's source without a
+per-build `npm install`.
 
 ## Design
 
