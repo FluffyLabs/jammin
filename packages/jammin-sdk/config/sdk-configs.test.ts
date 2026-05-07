@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { resolveSdkId, SDK_ALIASES, SDK_CONFIGS } from "./sdk-configs.js";
+import type { ServiceConfig } from "./types/config.js";
 
 describe("SDK_ALIASES", () => {
   test("Every alias target points to a canonical SDK_CONFIGS key", () => {
@@ -45,5 +46,25 @@ describe("resolveSdkId", () => {
 
   test("Returns undefined for empty string", () => {
     expect(resolveSdkId("")).toBeUndefined();
+  });
+});
+
+describe("ServiceConfig.sdk type accepts alias strings", () => {
+  test("Compiles when sdk is an alias key", () => {
+    const cfg: ServiceConfig = {
+      path: "./services/example",
+      name: "example",
+      sdk: "as-lan",
+    };
+    expect(cfg.sdk).toBe("as-lan");
+  });
+
+  test("Compiles when sdk is a versioned alias key", () => {
+    const cfg: ServiceConfig = {
+      path: "./services/example",
+      name: "example",
+      sdk: "as-lan-0.0.4",
+    };
+    expect(cfg.sdk).toBe("as-lan-0.0.4");
   });
 });
