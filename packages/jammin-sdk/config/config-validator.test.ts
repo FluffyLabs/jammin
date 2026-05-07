@@ -215,7 +215,7 @@ describe("Validate Build Config", () => {
       ],
     };
 
-    expect(() => validateBuildConfig(config)).toThrow();
+    expect(() => validateBuildConfig(config)).toThrow(/supported SDK ids|aliases/);
   });
 
   test("Should reject misspelt canonical 'aslan' (no version)", () => {
@@ -229,7 +229,7 @@ describe("Validate Build Config", () => {
       ],
     };
 
-    expect(() => validateBuildConfig(config)).toThrow();
+    expect(() => validateBuildConfig(config)).toThrow(/supported SDK ids|aliases/);
   });
 
   describe("Deployment Config Validation", () => {
