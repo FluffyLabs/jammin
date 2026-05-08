@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SDK_CONFIGS } from "./sdk-configs.js";
+import { SDK_ALIASES, SDK_CONFIGS } from "./sdk-configs.js";
 
 // Zod schemas for runtime validation of YAML configs
 
@@ -30,8 +30,14 @@ const ServiceConfigSchema = z.object({
     .min(1, "Service name is required")
     .regex(/^[a-zA-Z0-9_-]+$/, "Service name must contain only letters, numbers, hyphens, and underscores"),
   sdk: z.union(
-    [z.enum(Object.keys(SDK_CONFIGS) as (keyof typeof SDK_CONFIGS)[]), SdkConfigSchema],
-    `Expected a valid custom SDK configuration or one of the supported SDK ids (${Object.keys(SDK_CONFIGS).join(", ")})`,
+    [
+      z.enum([
+        ...(Object.keys(SDK_CONFIGS) as (keyof typeof SDK_CONFIGS)[]),
+        ...(Object.keys(SDK_ALIASES) as (keyof typeof SDK_ALIASES)[]),
+      ]),
+      SdkConfigSchema,
+    ],
+    `Expected a valid custom SDK configuration or one of the supported SDK ids (${Object.keys(SDK_CONFIGS).join(", ")}) or aliases (${Object.keys(SDK_ALIASES).join(", ")})`,
   ),
 });
 

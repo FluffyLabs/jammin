@@ -2,7 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import type { ServiceConfig } from "@fluffylabs/jammin-sdk";
-import { getServiceConfigs, SDK_CONFIGS } from "@fluffylabs/jammin-sdk";
+import { getServiceConfigs, resolveSdk } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
 
 export class DockerError extends Error {
@@ -18,7 +18,7 @@ export class DockerError extends Error {
  * Test a single service using Docker
  */
 export async function testService(service: ServiceConfig, projectRoot: string): Promise<string> {
-  const sdk = typeof service.sdk === "string" ? SDK_CONFIGS[service.sdk] : service.sdk;
+  const sdk = resolveSdk(service.sdk);
   const servicePath = resolve(projectRoot, service.path);
 
   const dockerArgs = ["run", "--rm", "-v", `${servicePath}:/app`, sdk.image, ...sdk.test.split(" ")];

@@ -8,7 +8,7 @@ import {
   getJamFiles,
   getServiceConfigs,
   loadServices,
-  SDK_CONFIGS,
+  resolveSdk,
 } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
 
@@ -25,7 +25,7 @@ export class DockerError extends Error {
 }
 
 export async function callDockerBuild(service: ServiceConfig, projectRoot: string): Promise<string> {
-  const sdk = typeof service.sdk === "string" ? SDK_CONFIGS[service.sdk] : service.sdk;
+  const sdk = resolveSdk(service.sdk);
   const servicePath = resolve(projectRoot, service.path);
 
   const dockerArgs = ["run", "--rm", "-v", `${servicePath}:/app`, sdk.image, ...sdk.build.split(" ")];

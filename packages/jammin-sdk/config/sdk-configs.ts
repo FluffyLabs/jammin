@@ -27,4 +27,44 @@ export const SDK_CONFIGS = {
     build: "main.c3 -o service.jam",
     test: "bun test",
   },
+  "aslan-0.0.4": {
+    image: "ghcr.io/tomusdrw/jammin-as-lan:0.0.4",
+    build: "npm run build",
+    test: "npm test",
+  },
 } as const satisfies Record<string, SdkConfig>;
+
+export const SDK_ALIASES = {
+  "as-lan": "aslan-0.0.4",
+  "as-lan-0.0.4": "aslan-0.0.4",
+} as const satisfies Record<string, keyof typeof SDK_CONFIGS>;
+
+/**
+ * Resolve a string SDK identifier (canonical key or alias) to a canonical
+ * SDK_CONFIGS key. Returns undefined for unknown identifiers.
+ */
+export function resolveSdkId(id: string): keyof typeof SDK_CONFIGS | undefined {
+  if (Object.hasOwn(SDK_CONFIGS, id)) {
+    return id as keyof typeof SDK_CONFIGS;
+  }
+  if (Object.hasOwn(SDK_ALIASES, id)) {
+    return SDK_ALIASES[id as keyof typeof SDK_ALIASES];
+  }
+  return undefined;
+}
+
+/**
+ * Resolve a service's `sdk` field to a concrete SdkConfig. Accepts canonical
+ * keys, alias keys, or an inline SdkConfig object. Throws for unknown string
+ * identifiers.
+ */
+export function resolveSdk(sdk: string | SdkConfig): SdkConfig {
+  if (typeof sdk !== "string") {
+    return sdk;
+  }
+  const canonicalId = resolveSdkId(sdk);
+  if (!canonicalId) {
+    throw new Error(`Unknown SDK id: '${sdk}'`);
+  }
+  return SDK_CONFIGS[canonicalId];
+}

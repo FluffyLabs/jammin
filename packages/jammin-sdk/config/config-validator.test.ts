@@ -159,6 +159,79 @@ describe("Validate Build Config", () => {
     expect(() => validateBuildConfig(config)).toThrow("SDK image is required");
   });
 
+  test("Should accept canonical aslan-0.0.4 SDK", () => {
+    const config = {
+      services: [
+        {
+          path: "./services/example",
+          name: "example",
+          sdk: "aslan-0.0.4",
+        },
+      ],
+    };
+
+    const result = validateBuildConfig(config);
+    expect(result.services[0]?.sdk).toBe("aslan-0.0.4");
+  });
+
+  test("Should accept bare 'as-lan' alias as SDK", () => {
+    const config = {
+      services: [
+        {
+          path: "./services/example",
+          name: "example",
+          sdk: "as-lan",
+        },
+      ],
+    };
+
+    const result = validateBuildConfig(config);
+    expect(result.services[0]?.sdk).toBe("as-lan");
+  });
+
+  test("Should accept versioned 'as-lan-0.0.4' alias as SDK", () => {
+    const config = {
+      services: [
+        {
+          path: "./services/example",
+          name: "example",
+          sdk: "as-lan-0.0.4",
+        },
+      ],
+    };
+
+    const result = validateBuildConfig(config);
+    expect(result.services[0]?.sdk).toBe("as-lan-0.0.4");
+  });
+
+  test("Should reject unknown 'as-lan-0.0.3' alias", () => {
+    const config = {
+      services: [
+        {
+          path: "./services/example",
+          name: "example",
+          sdk: "as-lan-0.0.3",
+        },
+      ],
+    };
+
+    expect(() => validateBuildConfig(config)).toThrow(/supported SDK ids|aliases/);
+  });
+
+  test("Should reject misspelt canonical 'aslan' (no version)", () => {
+    const config = {
+      services: [
+        {
+          path: "./services/example",
+          name: "example",
+          sdk: "aslan",
+        },
+      ],
+    };
+
+    expect(() => validateBuildConfig(config)).toThrow(/supported SDK ids|aliases/);
+  });
+
   describe("Deployment Config Validation", () => {
     test("Should parse valid deployment config with spawn and services", () => {
       const config = {

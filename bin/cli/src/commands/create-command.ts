@@ -2,7 +2,7 @@ import * as p from "@clack/prompts";
 import { fetchRepo, updatePackageJson } from "@fluffylabs/jammin-sdk";
 import { Command, InvalidArgumentError } from "commander";
 
-type Template = "jam-sdk" | "jade" | "jambrains" | "ajanta" | "jamc3" | "undecided";
+type Template = "jam-sdk" | "jade" | "jambrains" | "ajanta" | "jamc3" | "aslan" | "undecided";
 
 const TARGETS: Record<Template, string> = {
   "jam-sdk": "jammin-create/jammin-create-jam-sdk",
@@ -10,6 +10,7 @@ const TARGETS: Record<Template, string> = {
   jambrains: "jammin-create/jammin-create-jambrains",
   ajanta: "jammin-create/jammin-create-ajanta",
   jamc3: "jammin-create/jammin-create-jamc3",
+  aslan: "jammin-create/jammin-create-aslan",
   undecided: "jammin-create/jammin-create-undecided",
 };
 

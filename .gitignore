@@ -56,3 +56,6 @@ bun.lockb
 
 # e2e test temporary directory
 .test
+
+# Internal planning artifacts (specs/plans for in-progress work)
+docs/superpowers/

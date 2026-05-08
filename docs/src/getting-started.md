@@ -45,6 +45,9 @@ The interactive wizard will ask you:
    - `jam-sdk` - JAM SDK template for building JAM services
    - `jade` - JADE SDK template
    - `jambrains` - JamBrains SDK template
+   - `ajanta` - Ajanta (Python) SDK template
+   - `jamc3` - JAMC3 (C3) SDK template
+   - `aslan` - as-lan (AssemblyScript) SDK template
    - `undecided` - Starter template for exploring options with all of the above
 
 ### Command-line mode
