@@ -68,8 +68,15 @@ jobs:
             echo "Error: tag '$TAG' already exists on origin" >&2
             exit 1
           fi
-          if gh release view "$TAG" >/dev/null 2>&1; then
+          set +e
+          gh release view "$TAG" >/dev/null 2>&1
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then
             echo "Error: release '$TAG' already exists" >&2
+            exit 1
+          elif [ "$rc" -ne 1 ]; then
+            echo "Error: failed to check release '$TAG' (gh exit code: $rc)" >&2
             exit 1
           fi
 
@@ -97,6 +104,10 @@ jobs:
           BRANCH: ${{ steps.ver.outputs.branch }}
         run: |
           git add package.json bin/cli/package.json packages/jammin-sdk/package.json
+          if git diff --cached --quiet; then
+            echo "Error: no version changes to commit; package versions may already be ${TAG}" >&2
+            exit 1
+          fi
           git commit -m "chore(release): bump version to ${TAG}"
           git push origin "$BRANCH"
 
