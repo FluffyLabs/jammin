@@ -110,4 +110,4 @@ Any of the following resolve to the same image and commands:
 
 - `aslan-0.0.4` (canonical key in `SDK_CONFIGS`)
 - `as-lan-0.0.4` (versioned alias matching the framework's spelling)
-- `as-lan` (bare alias — follows the current default version)
+- `as-lan` (bare alias — follows the current default version; pin a versioned alias for reproducibility)

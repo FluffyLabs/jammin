@@ -47,6 +47,13 @@ describe("resolveSdkId", () => {
   test("Returns undefined for empty string", () => {
     expect(resolveSdkId("")).toBeUndefined();
   });
+
+  test("Every accepted SDK identifier (canonical or alias) is resolvable", () => {
+    const allAcceptedIds = [...Object.keys(SDK_CONFIGS), ...Object.keys(SDK_ALIASES)];
+    for (const id of allAcceptedIds) {
+      expect(resolveSdkId(id)).toBeDefined();
+    }
+  });
 });
 
 describe("resolveSdk", () => {
