@@ -62,6 +62,8 @@ bun test bin/cli/src/commands/create-command.test.ts  # Run specific test file
 bun test --watch                                    # Run tests in watch mode
 ```
 
+> **Heads-up for SDK changes.** The `@fluffylabs/jammin-sdk` package is published from `packages/jammin-sdk/dist/`, and CLI tests import it via the package name. After editing files under `packages/jammin-sdk/`, run `bun run build` before `bun test` so test imports see the new symbols. CI runs `bun run build` before `bun test` automatically; the manual step is only needed locally.
+
 ## Code Style & Conventions
 
 ### Linting & Formatting (Biome)
