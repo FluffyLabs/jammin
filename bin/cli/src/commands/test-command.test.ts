@@ -153,8 +153,7 @@ describe("test-command", () => {
         sdk: "jambrains-1cfc41c",
       };
 
-      expect(testService(service, "/test/project")).rejects.toThrow();
-      expect(testService(service, "/test/project")).rejects.toThrow("Tests failed for service 'failing-service'");
+      await expect(testService(service, "/test/project")).rejects.toThrow("Tests failed for service 'failing-service'");
     });
 
     test("should throw with descriptive message when SDK id is unknown", async () => {
@@ -165,7 +164,9 @@ describe("test-command", () => {
         sdk: "definitely-not-a-real-sdk" as any,
       };
 
-      expect(testService(service, "/test/project")).rejects.toThrow("Unknown SDK id: 'definitely-not-a-real-sdk'");
+      await expect(testService(service, "/test/project")).rejects.toThrow(
+        "Unknown SDK id: 'definitely-not-a-real-sdk'",
+      );
     });
 
     test("should return test output on success", async () => {

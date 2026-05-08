@@ -153,8 +153,9 @@ describe("build-command", () => {
         sdk: "jambrains-1cfc41c",
       };
 
-      expect(callDockerBuild(service, "/test/project")).rejects.toThrow();
-      expect(callDockerBuild(service, "/test/project")).rejects.toThrow("Build failed for service 'failing-service'");
+      await expect(callDockerBuild(service, "/test/project")).rejects.toThrow(
+        "Build failed for service 'failing-service'",
+      );
     });
 
     test("should throw with descriptive message when SDK id is unknown", async () => {
@@ -165,7 +166,9 @@ describe("build-command", () => {
         sdk: "definitely-not-a-real-sdk" as any,
       };
 
-      expect(callDockerBuild(service, "/test/project")).rejects.toThrow("Unknown SDK id: 'definitely-not-a-real-sdk'");
+      await expect(callDockerBuild(service, "/test/project")).rejects.toThrow(
+        "Unknown SDK id: 'definitely-not-a-real-sdk'",
+      );
     });
 
     test("should return build output on success", async () => {
