@@ -9,27 +9,27 @@ describe("SDK_ALIASES", () => {
     }
   });
 
-  test("Bare 'as-lan' alias resolves to aslan-0.0.4", () => {
-    expect(SDK_ALIASES["as-lan"]).toBe("aslan-0.0.4");
+  test("Bare 'as-lan' alias resolves to aslan-0.0.5", () => {
+    expect(SDK_ALIASES["as-lan"]).toBe("aslan-0.0.5");
   });
 
-  test("Versioned 'as-lan-0.0.4' alias resolves to aslan-0.0.4", () => {
-    expect(SDK_ALIASES["as-lan-0.0.4"]).toBe("aslan-0.0.4");
+  test("Versioned 'as-lan-0.0.5' alias resolves to aslan-0.0.5", () => {
+    expect(SDK_ALIASES["as-lan-0.0.5"]).toBe("aslan-0.0.5");
   });
 });
 
 describe("resolveSdkId", () => {
   test("Returns the input when it is already a canonical SDK_CONFIGS key", () => {
-    expect(resolveSdkId("aslan-0.0.4")).toBe("aslan-0.0.4");
+    expect(resolveSdkId("aslan-0.0.5")).toBe("aslan-0.0.5");
     expect(resolveSdkId("jam-sdk-0.1.26")).toBe("jam-sdk-0.1.26");
   });
 
-  test("Resolves the bare 'as-lan' alias to aslan-0.0.4", () => {
-    expect(resolveSdkId("as-lan")).toBe("aslan-0.0.4");
+  test("Resolves the bare 'as-lan' alias to aslan-0.0.5", () => {
+    expect(resolveSdkId("as-lan")).toBe("aslan-0.0.5");
   });
 
-  test("Resolves the versioned 'as-lan-0.0.4' alias to aslan-0.0.4", () => {
-    expect(resolveSdkId("as-lan-0.0.4")).toBe("aslan-0.0.4");
+  test("Resolves the versioned 'as-lan-0.0.5' alias to aslan-0.0.5", () => {
+    expect(resolveSdkId("as-lan-0.0.5")).toBe("aslan-0.0.5");
   });
 
   test("Returns undefined for unknown identifiers", () => {
@@ -58,13 +58,13 @@ describe("resolveSdkId", () => {
 
 describe("resolveSdk", () => {
   test("Returns SDK_CONFIGS entry for a canonical key", () => {
-    const result = resolveSdk("aslan-0.0.4");
-    expect(result).toBe(SDK_CONFIGS["aslan-0.0.4"]);
+    const result = resolveSdk("aslan-0.0.5");
+    expect(result).toBe(SDK_CONFIGS["aslan-0.0.5"]);
   });
 
   test("Returns SDK_CONFIGS entry for an alias key", () => {
     const result = resolveSdk("as-lan");
-    expect(result).toBe(SDK_CONFIGS["aslan-0.0.4"]);
+    expect(result).toBe(SDK_CONFIGS["aslan-0.0.5"]);
   });
 
   test("Returns the inline SdkConfig object unchanged", () => {
@@ -83,8 +83,8 @@ describe("ServiceConfig.sdk type accepts alias strings", () => {
 
   // Compile-time assertions: these fail tsc if the union narrows.
   type _AliasAccepted = Assert<"as-lan" extends ServiceConfig["sdk"] ? true : false>;
-  type _VersionedAliasAccepted = Assert<"as-lan-0.0.4" extends ServiceConfig["sdk"] ? true : false>;
-  type _CanonicalAccepted = Assert<"aslan-0.0.4" extends ServiceConfig["sdk"] ? true : false>;
+  type _VersionedAliasAccepted = Assert<"as-lan-0.0.5" extends ServiceConfig["sdk"] ? true : false>;
+  type _CanonicalAccepted = Assert<"aslan-0.0.5" extends ServiceConfig["sdk"] ? true : false>;
 
   test("Constructs a ServiceConfig literal with an alias key", () => {
     const cfg: ServiceConfig = {

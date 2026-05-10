@@ -27,16 +27,16 @@ export const SDK_CONFIGS = {
     build: "main.c3 -o service.jam",
     test: "bun test",
   },
-  "aslan-0.0.4": {
-    image: "ghcr.io/tomusdrw/jammin-as-lan:0.0.4",
+  "aslan-0.0.5": {
+    image: "ghcr.io/tomusdrw/jammin-as-lan:0.0.5",
     build: "npm run build",
     test: "npm test",
   },
 } as const satisfies Record<string, SdkConfig>;
 
 export const SDK_ALIASES = {
-  "as-lan": "aslan-0.0.4",
-  "as-lan-0.0.4": "aslan-0.0.4",
+  "as-lan": "aslan-0.0.5",
+  "as-lan-0.0.5": "aslan-0.0.5",
 } as const satisfies Record<string, keyof typeof SDK_CONFIGS>;
 
 /**
