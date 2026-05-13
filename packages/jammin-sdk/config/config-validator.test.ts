@@ -159,19 +159,19 @@ describe("Validate Build Config", () => {
     expect(() => validateBuildConfig(config)).toThrow("SDK image is required");
   });
 
-  test("Should accept canonical aslan-0.0.4 SDK", () => {
+  test("Should accept canonical aslan-0.0.5 SDK", () => {
     const config = {
       services: [
         {
           path: "./services/example",
           name: "example",
-          sdk: "aslan-0.0.4",
+          sdk: "aslan-0.0.5",
         },
       ],
     };
 
     const result = validateBuildConfig(config);
-    expect(result.services[0]?.sdk).toBe("aslan-0.0.4");
+    expect(result.services[0]?.sdk).toBe("aslan-0.0.5");
   });
 
   test("Should accept bare 'as-lan' alias as SDK", () => {
@@ -189,19 +189,19 @@ describe("Validate Build Config", () => {
     expect(result.services[0]?.sdk).toBe("as-lan");
   });
 
-  test("Should accept versioned 'as-lan-0.0.4' alias as SDK", () => {
+  test("Should accept versioned 'as-lan-0.0.5' alias as SDK", () => {
     const config = {
       services: [
         {
           path: "./services/example",
           name: "example",
-          sdk: "as-lan-0.0.4",
+          sdk: "as-lan-0.0.5",
         },
       ],
     };
 
     const result = validateBuildConfig(config);
-    expect(result.services[0]?.sdk).toBe("as-lan-0.0.4");
+    expect(result.services[0]?.sdk).toBe("as-lan-0.0.5");
   });
 
   test("Should reject unknown 'as-lan-0.0.3' alias", () => {
