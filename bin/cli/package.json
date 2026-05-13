@@ -1,6 +1,6 @@
 {
   "name": "@fluffylabs/jammin-cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "JAM development tooling CLI",
   "author": "Fluffy Labs",
   "license": "MPL-2.0",
