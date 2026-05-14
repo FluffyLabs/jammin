@@ -94,8 +94,8 @@ describe("build-command", () => {
       }
       const dockerCommand = spawnCall[0][2] as string;
 
-      expect(dockerCommand).toContain(SDK_CONFIGS["aslan-0.0.5"].image);
-      expect(dockerCommand).toContain(SDK_CONFIGS["aslan-0.0.5"].build);
+      expect(dockerCommand).toContain(SDK_CONFIGS["aslan-0.0.6"].image);
+      expect(dockerCommand).toContain(SDK_CONFIGS["aslan-0.0.6"].build);
       expect(dockerCommand).toContain(`${resolve("/test/project", "./services/example")}:/app`);
     });
 

@@ -86,14 +86,14 @@ $ docker run --rm -v $(pwd):/app jade test
 The as-lan docker image ships with Node.js, `wasm-pvm`, and the AssemblyScript toolchain pre-installed. Pull it:
 
 ```console
-$ docker pull ghcr.io/tomusdrw/jammin-as-lan:0.0.5
+$ docker pull ghcr.io/tomusdrw/jammin-as-lan:0.0.6
 ```
 
 Then `cd` into the example code directory and build:
 
 ```console
 $ cd jammin-create-aslan/services/example
-$ docker run --rm -v $(pwd):/app ghcr.io/tomusdrw/jammin-as-lan:0.0.5 npm run build
+$ docker run --rm -v $(pwd):/app ghcr.io/tomusdrw/jammin-as-lan:0.0.6 npm run build
 ```
 
 The image's entrypoint symlinks the global toolchain into `/app/node_modules` if no `node_modules` already exists in the mounted directory.
@@ -101,13 +101,13 @@ The image's entrypoint symlinks the global toolchain into `/app/node_modules` if
 #### Unit tests
 
 ```console
-$ docker run --rm -v $(pwd):/app ghcr.io/tomusdrw/jammin-as-lan:0.0.5 npm test
+$ docker run --rm -v $(pwd):/app ghcr.io/tomusdrw/jammin-as-lan:0.0.6 npm test
 ```
 
 #### SDK names accepted in jammin.build.yml
 
 Any of the following resolve to the same image and commands:
 
-- `aslan-0.0.5` (canonical key in `SDK_CONFIGS`)
-- `as-lan-0.0.5` (versioned alias matching the framework's spelling)
+- `aslan-0.0.6` (canonical key in `SDK_CONFIGS`)
+- `as-lan-0.0.6` (versioned alias matching the framework's spelling)
 - `as-lan` (bare alias — follows the current default version; pin a versioned alias for reproducibility)
