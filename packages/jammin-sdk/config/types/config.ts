@@ -32,9 +32,15 @@ export interface SdkConfig {
   test: string;
 }
 
-/** Internal: `SdkConfig` plus an optional `deprecated` flag used by the resolver. */
+/** Internal: `SdkConfig` plus optional flags consumed by the resolver. */
 export interface SdkConfigEntry extends SdkConfig {
   deprecated?: boolean;
+  /**
+   * Explicit replacement id used in the deprecation warning. Overrides the
+   * auto-suggested `<name>@<version>` form when the dash-style key cannot be
+   * mechanically converted (e.g. truncated sha digests).
+   */
+  replacement?: string;
 }
 
 export interface DeploymentConfig {
