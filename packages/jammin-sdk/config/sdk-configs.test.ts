@@ -50,6 +50,30 @@ describe("resolveSdk - wildcard substitution", () => {
     expect(result.image).toBe("ghcr.io/fluffylabs/jammin-jade:0.1.0-rc.1");
   });
 
+  test("Rewrites `:{version}` to `@{version}` for sha256 digest pins", () => {
+    const digest = "1cfc41c23f5c348aaee5f5c70aaa24f10c26baf903de4b4f6774e2032820ba87";
+    const result = resolveSdk(`aslan@sha256:${digest}`);
+    expect(result.image).toBe(`ghcr.io/tomusdrw/jammin-as-lan@sha256:${digest}`);
+  });
+
+  test("Resolves the jambrains wildcard with a sha256 digest", () => {
+    const digest = "1cfc41c23f5c348aaee5f5c70aaa24f10c26baf903de4b4f6774e2032820ba87";
+    const result = resolveSdk(`jambrains@sha256:${digest}`);
+    expect(result.image).toBe(`ghcr.io/jambrains/service-sdk@sha256:${digest}`);
+    expect(result.build).toBe("single-file main.c");
+  });
+
+  test("Sha pinning works for every wildcard SDK", () => {
+    const digest = `sha256:${"a".repeat(64)}`;
+    for (const key of Object.keys(SDK_CONFIGS).filter((k) => k.endsWith("@*"))) {
+      const name = key.slice(0, -2);
+      const result = resolveSdk(`${name}@${digest}`);
+      expect(result.image).toContain(`@${digest}`);
+      // Tag separator should be gone since the digest replaced it
+      expect(result.image).not.toContain(`:${digest}`);
+    }
+  });
+
   test("Does not mutate the entry stored in SDK_CONFIGS", () => {
     resolveSdk("aslan@9.9.9");
     expect(SDK_CONFIGS["aslan@*"].image).toBe("ghcr.io/tomusdrw/jammin-as-lan:{version}");
@@ -106,9 +130,18 @@ describe("resolveSdk - deprecated exact match", () => {
     expect(warnSpy).toHaveBeenCalledTimes(2);
   });
 
-  test("Does not warn for the jambrains-1cfc41c entry (not deprecated)", () => {
+  test("Warns for the jambrains-1cfc41c entry and suggests the full-digest replacement", () => {
     resolveSdk("jambrains-1cfc41c");
-    expect(warnSpy).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    const msg = warnSpy.mock.calls[0]?.[0] as string;
+    expect(msg).toContain("jambrains-1cfc41c");
+    expect(msg).toContain("deprecated");
+    expect(msg).toContain("0.4.0");
+    // The auto-suggestion (`jambrains@1cfc41c`) would be invalid under the
+    // strict sha256 version validator; the entry's explicit `replacement`
+    // points at the full-digest form instead.
+    expect(msg).toContain("jambrains@sha256:1cfc41c23f5c348aaee5f5c70aaa24f10c26baf903de4b4f6774e2032820ba87");
+    expect(msg).not.toMatch(/jambrains@1cfc41c\b/);
   });
 
   test("Returned object does not carry the internal `deprecated` flag", () => {
@@ -160,6 +193,20 @@ describe("isKnownSdkId", () => {
     expect(isKnownSdkId("aslan-0.0.6")).toBe(true);
     expect(isKnownSdkId("jam-sdk-0.1.26")).toBe(true);
     expect(isKnownSdkId("jambrains-1cfc41c")).toBe(true);
+  });
+
+  test("Returns true for a full sha256 digest version on any wildcard", () => {
+    const digest = "1cfc41c23f5c348aaee5f5c70aaa24f10c26baf903de4b4f6774e2032820ba87";
+    expect(isKnownSdkId(`aslan@sha256:${digest}`)).toBe(true);
+    expect(isKnownSdkId(`jambrains@sha256:${digest}`)).toBe(true);
+  });
+
+  test("Returns false for malformed sha256 versions", () => {
+    expect(isKnownSdkId("aslan@sha256:abc")).toBe(false);
+    expect(isKnownSdkId("aslan@sha256:")).toBe(false);
+    expect(isKnownSdkId("aslan@sha512:0123456789abcdef".padEnd(78, "0"))).toBe(false);
+    // Uppercase hex is not accepted - canonical digests are lowercase
+    expect(isKnownSdkId(`aslan@sha256:${"A".repeat(64)}`)).toBe(false);
   });
 
   test("Returns false for unknown ids", () => {

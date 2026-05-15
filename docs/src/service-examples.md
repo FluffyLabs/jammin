@@ -112,12 +112,14 @@ Use the `<name>@<version>` form:
 - `as-lan@0.0.6` (separate wildcard entry pointing at the same image)
 - `aslan@latest` — pulls the `latest` tag (not reproducible; pin a concrete version for shared projects)
 - `aslan@0.1.0-rc.1` — pre-release tags work, the version segment is passed through verbatim
+- `aslan@sha256:<64-hex-digest>` — sha-pinned form, available on every wildcard SDK. Resolves to `<repo>@sha256:<digest>` (no tag). Use this for images that only publish moving tags (e.g. `jambrains` publishes only `:latest`).
 
-The version segment must match `[A-Za-z0-9._-]+` and is substituted into the
-docker image tag at resolve time.
+The version segment must match either `[A-Za-z0-9._-]+` (a docker tag) or
+`sha256:` followed by exactly 64 lowercase hex chars (a digest). Partial
+digests are rejected at config-load time.
 
 > **Deprecated**: the pinned dash-style keys (`aslan-0.0.6`, `jam-sdk-0.1.26`,
-> `jade-0.0.15-pre.1`, `ajanta-0.1.0`, `jamc3-1.1.2`) still resolve in 0.3.x but
-> emit a one-time `console.warn` and will be removed in 0.4.0. Migrate to the
-> `<name>@<version>` form. The `jambrains-1cfc41c` entry is not deprecated — it
-> is pinned by sha256 digest, not by a version tag.
+> `jade-0.0.15-pre.1`, `ajanta-0.1.0`, `jamc3-1.1.2`, `jambrains-1cfc41c`) still
+> resolve in 0.3.x but emit a one-time `console.warn` and will be removed in
+> 0.4.0. Migrate to the `<name>@<version>` form. The `jambrains-1cfc41c` entry
+> migrates to `jambrains@sha256:1cfc41c23f5c348aaee5f5c70aaa24f10c26baf903de4b4f6774e2032820ba87`.
