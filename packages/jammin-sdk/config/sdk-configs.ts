@@ -24,7 +24,8 @@ export const SDK_CONFIGS = {
   // jambrains is pinned by sha256 digest, not by version tag. No wildcard
   // form. NOT deprecated.
   "jambrains-1cfc41c": {
-    image: "ghcr.io/jambrains/service-sdk:latest@sha256:1cfc41c23f5c348aaee5f5c70aaa24f10c26baf903de4b4f6774e2032820ba87",
+    image:
+      "ghcr.io/jambrains/service-sdk:latest@sha256:1cfc41c23f5c348aaee5f5c70aaa24f10c26baf903de4b4f6774e2032820ba87",
     build: "single-file main.c",
     test: "true",
   },

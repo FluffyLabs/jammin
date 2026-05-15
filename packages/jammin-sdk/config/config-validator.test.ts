@@ -44,7 +44,7 @@ describe("Validate Build Config", () => {
         {
           path: "./service.ts",
           name: "invalid service!@#",
-          sdk: "jam-sdk",
+          sdk: "jam-sdk@0.1.26",
         },
       ],
     };
@@ -159,77 +159,57 @@ describe("Validate Build Config", () => {
     expect(() => validateBuildConfig(config)).toThrow("SDK image is required");
   });
 
-  test("Should accept canonical aslan-0.0.6 SDK", () => {
+  test("Should accept wildcard-versioned SDK 'aslan@0.0.6'", () => {
     const config = {
-      services: [
-        {
-          path: "./services/example",
-          name: "example",
-          sdk: "aslan-0.0.6",
-        },
-      ],
+      services: [{ path: "./services/example", name: "example", sdk: "aslan@0.0.6" }],
     };
+    const result = validateBuildConfig(config);
+    expect(result.services[0]?.sdk).toBe("aslan@0.0.6");
+  });
 
+  test("Should accept wildcard-versioned alias 'as-lan@0.0.6'", () => {
+    const config = {
+      services: [{ path: "./services/example", name: "example", sdk: "as-lan@0.0.6" }],
+    };
+    const result = validateBuildConfig(config);
+    expect(result.services[0]?.sdk).toBe("as-lan@0.0.6");
+  });
+
+  test("Should accept 'aslan@latest'", () => {
+    const config = {
+      services: [{ path: "./services/example", name: "example", sdk: "aslan@latest" }],
+    };
+    const result = validateBuildConfig(config);
+    expect(result.services[0]?.sdk).toBe("aslan@latest");
+  });
+
+  test("Should accept deprecated pinned 'aslan-0.0.6'", () => {
+    const config = {
+      services: [{ path: "./services/example", name: "example", sdk: "aslan-0.0.6" }],
+    };
     const result = validateBuildConfig(config);
     expect(result.services[0]?.sdk).toBe("aslan-0.0.6");
   });
 
-  test("Should accept bare 'as-lan' alias as SDK", () => {
+  test("Should reject bare 'aslan' (no version)", () => {
     const config = {
-      services: [
-        {
-          path: "./services/example",
-          name: "example",
-          sdk: "as-lan",
-        },
-      ],
+      services: [{ path: "./services/example", name: "example", sdk: "aslan" }],
     };
-
-    const result = validateBuildConfig(config);
-    expect(result.services[0]?.sdk).toBe("as-lan");
+    expect(() => validateBuildConfig(config)).toThrow(/Unknown SDK id/);
   });
 
-  test("Should accept versioned 'as-lan-0.0.6' alias as SDK", () => {
+  test("Should reject unknown framework 'fake@1.0.0'", () => {
     const config = {
-      services: [
-        {
-          path: "./services/example",
-          name: "example",
-          sdk: "as-lan-0.0.6",
-        },
-      ],
+      services: [{ path: "./services/example", name: "example", sdk: "fake@1.0.0" }],
     };
-
-    const result = validateBuildConfig(config);
-    expect(result.services[0]?.sdk).toBe("as-lan-0.0.6");
+    expect(() => validateBuildConfig(config)).toThrow(/Unknown SDK id/);
   });
 
-  test("Should reject unknown 'as-lan-0.0.3' alias", () => {
+  test("Should reject version with whitespace 'aslan@bad version'", () => {
     const config = {
-      services: [
-        {
-          path: "./services/example",
-          name: "example",
-          sdk: "as-lan-0.0.3",
-        },
-      ],
+      services: [{ path: "./services/example", name: "example", sdk: "aslan@bad version" }],
     };
-
-    expect(() => validateBuildConfig(config)).toThrow(/supported SDK ids|aliases/);
-  });
-
-  test("Should reject misspelt canonical 'aslan' (no version)", () => {
-    const config = {
-      services: [
-        {
-          path: "./services/example",
-          name: "example",
-          sdk: "aslan",
-        },
-      ],
-    };
-
-    expect(() => validateBuildConfig(config)).toThrow(/supported SDK ids|aliases/);
+    expect(() => validateBuildConfig(config)).toThrow(/Unknown SDK id/);
   });
 
   describe("Deployment Config Validation", () => {
