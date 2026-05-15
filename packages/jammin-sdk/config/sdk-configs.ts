@@ -25,7 +25,7 @@ export const SDK_CONFIGS = {
   "jamc3-2.0.2": {
     image: "ghcr.io/dreverr/jamc3:2.0.2",
     build: "main.c3 -o service.jam",
-    test: "echo 'No test support for JAMC3'",
+    test: "--help",
   },
   "aslan-0.0.6": {
     image: "ghcr.io/tomusdrw/jammin-as-lan:0.0.6",
