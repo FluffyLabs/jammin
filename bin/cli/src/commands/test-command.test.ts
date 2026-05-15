@@ -78,11 +78,11 @@ describe("test-command", () => {
       expect(dockerCommand).toContain(`${resolve("/test/project", "./jade")}:/app`);
     });
 
-    test("should generate correct Docker command for as-lan alias", async () => {
+    test("should generate correct Docker command for wildcard as-lan@0.0.6", async () => {
       const service: ServiceConfig = {
         name: "as-lan-service",
         path: "./services/example",
-        sdk: "as-lan",
+        sdk: "as-lan@0.0.6",
       };
 
       await testService(service, "/test/project");
@@ -94,8 +94,8 @@ describe("test-command", () => {
       }
       const dockerCommand = spawnCall[0][2] as string;
 
-      expect(dockerCommand).toContain(SDK_CONFIGS["aslan-0.0.6"].image);
-      expect(dockerCommand).toContain(SDK_CONFIGS["aslan-0.0.6"].test);
+      expect(dockerCommand).toContain("ghcr.io/tomusdrw/jammin-as-lan:0.0.6");
+      expect(dockerCommand).toContain(SDK_CONFIGS["as-lan@*"].test);
       expect(dockerCommand).toContain(`${resolve("/test/project", "./services/example")}:/app`);
     });
 
