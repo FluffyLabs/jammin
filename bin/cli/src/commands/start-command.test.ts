@@ -192,6 +192,7 @@ describe("start-command", () => {
         "docker",
         "run",
         "--rm",
+        "--platform=linux/amd64",
         "-v",
         "/tmp/filtered-genesis.json:/app/genesis.json:ro",
         "-v",
