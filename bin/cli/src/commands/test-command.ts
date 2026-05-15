@@ -21,7 +21,17 @@ export async function testService(service: ServiceConfig, projectRoot: string): 
   const sdk = resolveSdk(service.sdk);
   const servicePath = resolve(projectRoot, service.path);
 
-  const dockerArgs = ["run", "--rm", "-v", `${servicePath}:/app`, sdk.image, ...sdk.test.split(" ")];
+  // SDK images currently ship only linux/amd64; force the platform so that the
+  // implicit `docker pull` works on Apple Silicon and other arm64 hosts (#111).
+  const dockerArgs = [
+    "run",
+    "--rm",
+    "--platform=linux/amd64",
+    "-v",
+    `${servicePath}:/app`,
+    sdk.image,
+    ...sdk.test.split(" "),
+  ];
   const dockerCommand = `docker ${dockerArgs.join(" ")}`;
 
   const proc = Bun.spawn(["sh", "-c", `${dockerCommand} 2>&1`], {

@@ -51,7 +51,11 @@ describe("test-command", () => {
       expect(spawnCall[0]).toEqual(["sh", "-c", expect.stringContaining("docker")]);
 
       const dockerCommand = spawnCall[0][2] as string;
-      expect(dockerCommand).toContain("docker run --rm -v");
+      expect(dockerCommand).toContain("docker run");
+      expect(dockerCommand).toContain("--rm");
+      // The jambrains image only publishes linux/amd64 manifests; without this
+      // flag the implicit pull fails on Apple Silicon hosts. See issue #111.
+      expect(dockerCommand).toContain("--platform=linux/amd64");
       expect(dockerCommand).toContain(`${resolve("/test/project", "./services/test")}:/app`);
       expect(dockerCommand).toContain(SDK_CONFIGS["jambrains-1cfc41c"].image);
       expect(dockerCommand).toContain(SDK_CONFIGS["jambrains-1cfc41c"].test);
