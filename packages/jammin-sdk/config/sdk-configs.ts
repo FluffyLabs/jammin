@@ -3,11 +3,14 @@ import type { SdkConfig, SdkConfigEntry } from "./types/config.js";
 const aslanCommon = { build: "npm run build", test: "npm test" } as const;
 const jadeCommon = { build: "build", test: "test" } as const;
 
+// Shared so `aslan@*` and `as-lan@*` cannot drift out of sync.
+const aslanWildcard = { image: "ghcr.io/tomusdrw/jammin-as-lan:{version}", ...aslanCommon } as const;
+
 export const SDK_CONFIGS = {
   // Wildcard entries: `<name>@*`. The {version} placeholder in `image` is
   // substituted with the version segment from the user's `<name>@<version>` id.
-  "aslan@*": { image: "ghcr.io/tomusdrw/jammin-as-lan:{version}", ...aslanCommon },
-  "as-lan@*": { image: "ghcr.io/tomusdrw/jammin-as-lan:{version}", ...aslanCommon },
+  "aslan@*": aslanWildcard,
+  "as-lan@*": aslanWildcard,
   "jam-sdk@*": {
     image: "ghcr.io/fluffylabs/jammin-jam-sdk:{version}",
     build: "jam-pvm-build -m service",
@@ -144,7 +147,7 @@ export function resolveSdk(sdk: string | SdkConfig): SdkConfig {
       if (Object.hasOwn(SDK_CONFIGS, wildcardKey)) {
         const entry = SDK_CONFIGS[wildcardKey as keyof typeof SDK_CONFIGS] as SdkConfigEntry;
         const config = stripDeprecatedFlag(entry);
-        return { ...config, image: config.image.replace("{version}", version) };
+        return { ...config, image: config.image.replaceAll("{version}", version) };
       }
     }
   }

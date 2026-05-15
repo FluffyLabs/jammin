@@ -61,7 +61,7 @@ describe("test-command", () => {
       const service: ServiceConfig = {
         name: "jade-service",
         path: "./jade",
-        sdk: "jade-0.0.15-pre.1",
+        sdk: "jade@0.0.15-pre.1",
       };
 
       await testService(service, "/test/project");
@@ -73,8 +73,8 @@ describe("test-command", () => {
       }
       const dockerCommand = spawnCall[0][2] as string;
 
-      expect(dockerCommand).toContain(SDK_CONFIGS["jade-0.0.15-pre.1"].image);
-      expect(dockerCommand).toContain(SDK_CONFIGS["jade-0.0.15-pre.1"].test);
+      expect(dockerCommand).toContain("ghcr.io/fluffylabs/jammin-jade:0.0.15-pre.1");
+      expect(dockerCommand).toContain(SDK_CONFIGS["jade@*"].test);
       expect(dockerCommand).toContain(`${resolve("/test/project", "./jade")}:/app`);
     });
 

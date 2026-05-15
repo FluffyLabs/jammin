@@ -33,7 +33,7 @@ services:
 	- path: ./services/service a
 		name: a
 		# built-in sdk
-		sdk: jam-sdk-0.1.26
+		sdk: jam-sdk@0.1.26
 	- path: ./services/service b
 		name: serviceB
 		sdk: custom
