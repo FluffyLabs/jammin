@@ -130,6 +130,30 @@ describe("build-command", () => {
       expect(dockerCommand).toContain(`${resolve("/test/project", "./custom")}:/app`);
     });
 
+    test("should honor SdkConfig.platform when set", async () => {
+      const service: ServiceConfig = {
+        name: "arm-service",
+        path: "./custom",
+        sdk: {
+          image: "multi-arch-image:latest",
+          build: "build",
+          test: "test",
+          platform: "linux/arm64",
+        },
+      };
+
+      await callDockerBuild(service, "/test/project");
+
+      const spawnCall = mockSpawn.mock.calls[0];
+      if (!spawnCall) {
+        throw new Error("spawnCall is undefined");
+      }
+      const dockerCommand = spawnCall[0][2] as string;
+
+      expect(dockerCommand).toContain("--platform=linux/arm64");
+      expect(dockerCommand).not.toContain("--platform=linux/amd64");
+    });
+
     test("should handle build failure with non-zero exit code", async () => {
       const mockFailedSpawn = mock(() => {
         return {

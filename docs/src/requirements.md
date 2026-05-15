@@ -40,6 +40,6 @@ Verify each tool with `bun --version`, `docker --version`, and `git --version` b
 
 ## Platform
 
-jammin always invokes the SDK build and test containers with `--platform=linux/amd64`. SDK Docker images must publish a `linux/amd64` manifest; native `arm64` (or other) manifests are ignored. On Apple Silicon and other non-amd64 hosts this means containers run under emulation (slower, but functional).
+jammin invokes the SDK build and test containers with `--platform=linux/amd64` by default. Most JAM SDK images today only publish a `linux/amd64` manifest, so on Apple Silicon and other non-amd64 hosts containers run under emulation (slower, but functional).
 
-This is a current limitation. If you are adding a new SDK in `packages/jammin-sdk/config/sdk-configs.ts`, make sure the image you reference is built for `linux/amd64`.
+If an SDK image publishes a different manifest (e.g. `linux/arm64`), override the default by setting `platform` on the `SdkConfig` entry in `packages/jammin-sdk/config/sdk-configs.ts` (or on an inline `SdkConfig` in your `jammin.build.yml`).
