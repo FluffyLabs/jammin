@@ -1,97 +1,185 @@
-import { describe, expect, test } from "bun:test";
-import { resolveSdk, resolveSdkId, SDK_ALIASES, SDK_CONFIGS } from "./sdk-configs.js";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { isKnownSdkId, resolveSdk, SDK_CONFIGS } from "./sdk-configs.js";
 import type { ServiceConfig } from "./types/config.js";
 
-describe("SDK_ALIASES", () => {
-  test("Every alias target points to a canonical SDK_CONFIGS key", () => {
-    for (const target of Object.values(SDK_ALIASES)) {
-      expect(Object.hasOwn(SDK_CONFIGS, target)).toBe(true);
+describe("SDK_CONFIGS wildcard invariants", () => {
+  test("Every '<name>@*' entry has '{version}' in its image template", () => {
+    for (const [key, entry] of Object.entries(SDK_CONFIGS)) {
+      if (key.endsWith("@*")) {
+        expect(entry.image).toContain("{version}");
+      }
     }
   });
 
-  test("Bare 'as-lan' alias resolves to aslan-0.0.6", () => {
-    expect(SDK_ALIASES["as-lan"]).toBe("aslan-0.0.6");
-  });
-
-  test("Versioned 'as-lan-0.0.6' alias resolves to aslan-0.0.6", () => {
-    expect(SDK_ALIASES["as-lan-0.0.6"]).toBe("aslan-0.0.6");
-  });
-});
-
-describe("resolveSdkId", () => {
-  test("Returns the input when it is already a canonical SDK_CONFIGS key", () => {
-    expect(resolveSdkId("aslan-0.0.6")).toBe("aslan-0.0.6");
-    expect(resolveSdkId("jam-sdk-0.1.26")).toBe("jam-sdk-0.1.26");
-  });
-
-  test("Resolves the bare 'as-lan' alias to aslan-0.0.6", () => {
-    expect(resolveSdkId("as-lan")).toBe("aslan-0.0.6");
-  });
-
-  test("Resolves the versioned 'as-lan-0.0.6' alias to aslan-0.0.6", () => {
-    expect(resolveSdkId("as-lan-0.0.6")).toBe("aslan-0.0.6");
-  });
-
-  test("Returns undefined for unknown identifiers", () => {
-    expect(resolveSdkId("nonsense")).toBeUndefined();
-    expect(resolveSdkId("as-lan-0.0.3")).toBeUndefined();
-    expect(resolveSdkId("aslan")).toBeUndefined();
-  });
-
-  test("Returns undefined for prototype properties (toString, constructor, etc.)", () => {
-    expect(resolveSdkId("toString")).toBeUndefined();
-    expect(resolveSdkId("constructor")).toBeUndefined();
-    expect(resolveSdkId("hasOwnProperty")).toBeUndefined();
-  });
-
-  test("Returns undefined for empty string", () => {
-    expect(resolveSdkId("")).toBeUndefined();
-  });
-
-  test("Every accepted SDK identifier (canonical or alias) is resolvable", () => {
-    const allAcceptedIds = [...Object.keys(SDK_CONFIGS), ...Object.keys(SDK_ALIASES)];
-    for (const id of allAcceptedIds) {
-      expect(resolveSdkId(id)).toBeDefined();
+  test("No entry has both a wildcard key and `deprecated: true`", () => {
+    for (const [key, entry] of Object.entries(SDK_CONFIGS)) {
+      if (key.endsWith("@*")) {
+        expect(entry.deprecated).toBeFalsy();
+      }
     }
   });
 });
 
-describe("resolveSdk", () => {
-  test("Returns SDK_CONFIGS entry for a canonical key", () => {
-    const result = resolveSdk("aslan-0.0.6");
-    expect(result).toBe(SDK_CONFIGS["aslan-0.0.6"]);
-  });
-
-  test("Returns SDK_CONFIGS entry for an alias key", () => {
-    const result = resolveSdk("as-lan");
-    expect(result).toBe(SDK_CONFIGS["aslan-0.0.6"]);
-  });
-
+describe("resolveSdk - inline SdkConfig", () => {
   test("Returns the inline SdkConfig object unchanged", () => {
     const inline = { image: "custom:1", build: "make", test: "make test" };
-    const result = resolveSdk(inline);
-    expect(result).toBe(inline);
-  });
-
-  test("Throws with a descriptive message for unknown string ids", () => {
-    expect(() => resolveSdk("nonsense")).toThrow("Unknown SDK id: 'nonsense'");
+    expect(resolveSdk(inline)).toBe(inline);
   });
 });
 
-describe("ServiceConfig.sdk type accepts alias strings", () => {
+describe("resolveSdk - wildcard substitution", () => {
+  test("Substitutes {version} in 'aslan@0.1.0'", () => {
+    const result = resolveSdk("aslan@0.1.0");
+    expect(result.image).toBe("ghcr.io/tomusdrw/jammin-as-lan:0.1.0");
+    expect(result.build).toBe("npm run build");
+    expect(result.test).toBe("npm test");
+  });
+
+  test("Substitutes {version} in 'as-lan@1.2.3' (separate wildcard entry, same template)", () => {
+    const result = resolveSdk("as-lan@1.2.3");
+    expect(result.image).toBe("ghcr.io/tomusdrw/jammin-as-lan:1.2.3");
+  });
+
+  test("Accepts 'latest' as a literal version string", () => {
+    const result = resolveSdk("aslan@latest");
+    expect(result.image).toBe("ghcr.io/tomusdrw/jammin-as-lan:latest");
+  });
+
+  test("Accepts pre-release version with dot and hyphen", () => {
+    const result = resolveSdk("jade@0.1.0-rc.1");
+    expect(result.image).toBe("ghcr.io/fluffylabs/jammin-jade:0.1.0-rc.1");
+  });
+
+  test("Does not mutate the entry stored in SDK_CONFIGS", () => {
+    resolveSdk("aslan@9.9.9");
+    expect(SDK_CONFIGS["aslan@*"].image).toBe("ghcr.io/tomusdrw/jammin-as-lan:{version}");
+  });
+
+  test("Returned object does not carry the internal `deprecated` flag", () => {
+    const result = resolveSdk("aslan@0.1.0") as Record<string, unknown>;
+    expect("deprecated" in result).toBe(false);
+  });
+});
+
+describe("resolveSdk - deprecated exact match", () => {
+  let warnSpy: ReturnType<typeof mock>;
+  let originalWarn: typeof console.warn;
+
+  beforeEach(() => {
+    originalWarn = console.warn;
+    warnSpy = mock(() => {});
+    console.warn = warnSpy;
+    const mod = require("./sdk-configs.js") as { __resetDeprecationWarnings?: () => void };
+    mod.__resetDeprecationWarnings?.();
+  });
+
+  afterEach(() => {
+    console.warn = originalWarn;
+  });
+
+  test("Resolves 'aslan-0.0.6' to the dash entry's image", () => {
+    const result = resolveSdk("aslan-0.0.6");
+    expect(result.image).toBe("ghcr.io/tomusdrw/jammin-as-lan:0.0.6");
+    expect(result.build).toBe("npm run build");
+  });
+
+  test("Emits a console.warn mentioning the deprecation and a suggested replacement", () => {
+    resolveSdk("aslan-0.0.6");
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    const msg = warnSpy.mock.calls[0]?.[0] as string;
+    expect(msg).toContain("aslan-0.0.6");
+    expect(msg).toContain("deprecated");
+    expect(msg).toContain("0.4.0");
+    expect(msg).toContain("aslan@0.0.6");
+  });
+
+  test("Deduplicates: same deprecated id warns at most once per process", () => {
+    resolveSdk("aslan-0.0.6");
+    resolveSdk("aslan-0.0.6");
+    resolveSdk("aslan-0.0.6");
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test("Different deprecated ids each warn once", () => {
+    resolveSdk("aslan-0.0.6");
+    resolveSdk("jade-0.0.15-pre.1");
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+  });
+
+  test("Does not warn for the jambrains-1cfc41c entry (not deprecated)", () => {
+    resolveSdk("jambrains-1cfc41c");
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  test("Returned object does not carry the internal `deprecated` flag", () => {
+    const result = resolveSdk("aslan-0.0.6") as Record<string, unknown>;
+    expect("deprecated" in result).toBe(false);
+  });
+});
+
+describe("resolveSdk - errors", () => {
+  test("Throws for a bare framework name with no version", () => {
+    expect(() => resolveSdk("aslan")).toThrow("Unknown SDK id: 'aslan'");
+  });
+
+  test("Throws for an unknown framework prefix", () => {
+    expect(() => resolveSdk("fake@1.0.0")).toThrow("Unknown SDK id: 'fake@1.0.0'");
+  });
+
+  test("Throws for a version containing whitespace", () => {
+    expect(() => resolveSdk("aslan@bad version")).toThrow("Unknown SDK id: 'aslan@bad version'");
+  });
+
+  test("Throws for a version containing a slash", () => {
+    expect(() => resolveSdk("aslan@1.0/0")).toThrow("Unknown SDK id: 'aslan@1.0/0'");
+  });
+
+  test("Throws for an empty version after '@'", () => {
+    expect(() => resolveSdk("aslan@")).toThrow("Unknown SDK id: 'aslan@'");
+  });
+
+  test("Throws with the original input for an empty string", () => {
+    expect(() => resolveSdk("")).toThrow("Unknown SDK id: ''");
+  });
+});
+
+describe("isKnownSdkId", () => {
+  test("Returns true for exact wildcard-substituted ids", () => {
+    expect(isKnownSdkId("aslan@0.1.0")).toBe(true);
+    expect(isKnownSdkId("aslan@latest")).toBe(true);
+    expect(isKnownSdkId("jade@0.0.15-pre.1")).toBe(true);
+  });
+
+  test("Returns true for exact deprecated dash keys", () => {
+    expect(isKnownSdkId("aslan-0.0.6")).toBe(true);
+    expect(isKnownSdkId("jam-sdk-0.1.26")).toBe(true);
+    expect(isKnownSdkId("jambrains-1cfc41c")).toBe(true);
+  });
+
+  test("Returns false for unknown ids", () => {
+    expect(isKnownSdkId("aslan")).toBe(false);
+    expect(isKnownSdkId("fake@1.0.0")).toBe(false);
+    expect(isKnownSdkId("aslan@bad version")).toBe(false);
+    expect(isKnownSdkId("aslan@")).toBe(false);
+    expect(isKnownSdkId("")).toBe(false);
+  });
+
+  test("Returns false for prototype property names", () => {
+    expect(isKnownSdkId("toString")).toBe(false);
+    expect(isKnownSdkId("constructor")).toBe(false);
+    expect(isKnownSdkId("hasOwnProperty")).toBe(false);
+  });
+});
+
+describe("ServiceConfig.sdk type accepts new wildcard form", () => {
   type Assert<T extends true> = T;
+  type _Versioned = Assert<"aslan@0.1.0" extends ServiceConfig["sdk"] ? true : false>;
+  type _AsLanVersioned = Assert<"as-lan@1.2.3" extends ServiceConfig["sdk"] ? true : false>;
+  type _DeprecatedPinned = Assert<"aslan-0.0.6" extends ServiceConfig["sdk"] ? true : false>;
+  type _Jambrains = Assert<"jambrains-1cfc41c" extends ServiceConfig["sdk"] ? true : false>;
 
-  // Compile-time assertions: these fail tsc if the union narrows.
-  type _AliasAccepted = Assert<"as-lan" extends ServiceConfig["sdk"] ? true : false>;
-  type _VersionedAliasAccepted = Assert<"as-lan-0.0.6" extends ServiceConfig["sdk"] ? true : false>;
-  type _CanonicalAccepted = Assert<"aslan-0.0.6" extends ServiceConfig["sdk"] ? true : false>;
-
-  test("Constructs a ServiceConfig literal with an alias key", () => {
-    const cfg: ServiceConfig = {
-      path: "./svc",
-      name: "svc",
-      sdk: "as-lan",
-    };
-    expect(cfg.sdk).toBe("as-lan");
+  test("Constructs a ServiceConfig literal with wildcard-versioned id", () => {
+    const cfg: ServiceConfig = { path: "./svc", name: "svc", sdk: "aslan@0.1.0" };
+    expect(cfg.sdk).toBe("aslan@0.1.0");
   });
 });
