@@ -22,10 +22,10 @@ export const SDK_CONFIGS = {
     build: "ajanta build main.py -o service.jam",
     test: "true",
   },
-  "jamc3-1.1.2": {
-    image: "ghcr.io/dreverr/jamc3:1.1.2",
+  "jamc3-2.0.2": {
+    image: "ghcr.io/dreverr/jamc3:2.0.2",
     build: "main.c3 -o service.jam",
-    test: "bun test",
+    test: "echo 'No test support for JAMC3'",
   },
   "aslan-0.0.6": {
     image: "ghcr.io/tomusdrw/jammin-as-lan:0.0.6",
