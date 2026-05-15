@@ -1,6 +1,6 @@
 // Core configuration types matching YAML schema
 
-import type { SDK_ALIASES, SDK_CONFIGS } from "../sdk-configs.js";
+import type { SDK_CONFIGS } from "../sdk-configs.js";
 
 // jammin.build.yml types
 
@@ -9,13 +9,18 @@ export interface JamminBuildConfig {
   deployment?: DeploymentConfig;
 }
 
+type WildcardKey = Extract<keyof typeof SDK_CONFIGS, `${string}@*`>;
+type WildcardName = WildcardKey extends `${infer N}@*` ? N : never;
+type PinnedKey = Exclude<keyof typeof SDK_CONFIGS, WildcardKey>;
+type VersionedKey = `${WildcardName}@${string}`;
+
 export interface ServiceConfig {
   /** Path to service directory */
   path: string;
   /** Service identifier */
   name: string;
-  /** SDK name (built-in) or custom sdk */
-  sdk: keyof typeof SDK_CONFIGS | keyof typeof SDK_ALIASES | SdkConfig;
+  /** SDK id: `<name>@<version>`, a deprecated pinned key, or an inline config. */
+  sdk: PinnedKey | VersionedKey | SdkConfig;
 }
 
 export interface SdkConfig {
@@ -25,6 +30,11 @@ export interface SdkConfig {
   build: string;
   /** Test command */
   test: string;
+}
+
+/** Internal: `SdkConfig` plus an optional `deprecated` flag used by the resolver. */
+export interface SdkConfigEntry extends SdkConfig {
+  deprecated?: boolean;
 }
 
 export interface DeploymentConfig {

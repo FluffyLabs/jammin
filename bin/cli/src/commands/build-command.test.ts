@@ -61,7 +61,7 @@ describe("build-command", () => {
       const service: ServiceConfig = {
         name: "jade-service",
         path: "./jade",
-        sdk: "jade-0.0.15-pre.1",
+        sdk: "jade@0.0.15-pre.1",
       };
 
       await callDockerBuild(service, "/test/project");
@@ -73,16 +73,16 @@ describe("build-command", () => {
       }
       const dockerCommand = spawnCall[0][2] as string;
 
-      expect(dockerCommand).toContain(SDK_CONFIGS["jade-0.0.15-pre.1"].image);
-      expect(dockerCommand).toContain(SDK_CONFIGS["jade-0.0.15-pre.1"].build);
+      expect(dockerCommand).toContain("ghcr.io/fluffylabs/jammin-jade:0.0.15-pre.1");
+      expect(dockerCommand).toContain(SDK_CONFIGS["jade@*"].build);
       expect(dockerCommand).toContain(`${resolve("/test/project", "./jade")}:/app`);
     });
 
-    test("should generate correct Docker command for as-lan alias", async () => {
+    test("should generate correct Docker command for wildcard as-lan@0.0.6", async () => {
       const service: ServiceConfig = {
         name: "as-lan-service",
         path: "./services/example",
-        sdk: "as-lan",
+        sdk: "as-lan@0.0.6",
       };
 
       await callDockerBuild(service, "/test/project");
@@ -94,8 +94,8 @@ describe("build-command", () => {
       }
       const dockerCommand = spawnCall[0][2] as string;
 
-      expect(dockerCommand).toContain(SDK_CONFIGS["aslan-0.0.6"].image);
-      expect(dockerCommand).toContain(SDK_CONFIGS["aslan-0.0.6"].build);
+      expect(dockerCommand).toContain("ghcr.io/tomusdrw/jammin-as-lan:0.0.6");
+      expect(dockerCommand).toContain(SDK_CONFIGS["as-lan@*"].build);
       expect(dockerCommand).toContain(`${resolve("/test/project", "./services/example")}:/app`);
     });
 

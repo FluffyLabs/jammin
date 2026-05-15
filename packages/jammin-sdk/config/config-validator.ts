@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { SDK_ALIASES, SDK_CONFIGS } from "./sdk-configs.js";
+import { isKnownSdkId, SDK_CONFIGS } from "./sdk-configs.js";
+import type { JamminBuildConfig, JamminNetworksConfig } from "./types/config.js";
 
 // Zod schemas for runtime validation of YAML configs
 
@@ -23,22 +24,29 @@ export const SdkConfigSchema = z.object({
   test: z.string().min(1, "Test command is required"),
 });
 
+function listSupportedIds(): string {
+  const keys = Object.keys(SDK_CONFIGS);
+  const wildcards = keys.filter((k) => k.endsWith("@*")).map((k) => k.replace("@*", "@<version>"));
+  const pinned = keys.filter((k) => !k.endsWith("@*"));
+  return `${wildcards.join(", ")} (or deprecated: ${pinned.join(", ")})`;
+}
+
 const ServiceConfigSchema = z.object({
   path: z.string().min(1, "Service path is required"),
   name: z
     .string()
     .min(1, "Service name is required")
     .regex(/^[a-zA-Z0-9_-]+$/, "Service name must contain only letters, numbers, hyphens, and underscores"),
-  sdk: z.union(
-    [
-      z.enum([
-        ...(Object.keys(SDK_CONFIGS) as (keyof typeof SDK_CONFIGS)[]),
-        ...(Object.keys(SDK_ALIASES) as (keyof typeof SDK_ALIASES)[]),
-      ]),
-      SdkConfigSchema,
-    ],
-    `Expected a valid custom SDK configuration or one of the supported SDK ids (${Object.keys(SDK_CONFIGS).join(", ")}) or aliases (${Object.keys(SDK_ALIASES).join(", ")})`,
-  ),
+  sdk: z
+    .union([z.string(), SdkConfigSchema], "Expected an SDK id string or an inline SDK configuration")
+    .superRefine((val, ctx) => {
+      if (typeof val === "string" && !isKnownSdkId(val)) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Unknown SDK id '${val}'. Supported ids: ${listSupportedIds()}`,
+        });
+      }
+    }),
 });
 
 const ServiceDeploymentConfigSchema = z
@@ -169,11 +177,14 @@ export const JamminNetworksConfigSchema = z
   });
 
 /** Validate and parse build config */
-export function validateBuildConfig(data: unknown) {
-  return JamminBuildConfigSchema.parse(data);
+export function validateBuildConfig(data: unknown): JamminBuildConfig {
+  // The refine() on `sdk` guarantees the parsed string is a known SDK id,
+  // so the cast back to the precise `ServiceConfig.sdk` template-literal
+  // union is sound at runtime.
+  return JamminBuildConfigSchema.parse(data) as JamminBuildConfig;
 }
 
 /** Validate and parse networks config */
-export function validateNetworksConfig(data: unknown) {
+export function validateNetworksConfig(data: unknown): JamminNetworksConfig {
   return JamminNetworksConfigSchema.parse(data);
 }
