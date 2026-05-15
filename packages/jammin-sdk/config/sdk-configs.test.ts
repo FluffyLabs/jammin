@@ -141,6 +141,12 @@ describe("resolveSdk - errors", () => {
   test("Throws with the original input for an empty string", () => {
     expect(() => resolveSdk("")).toThrow("Unknown SDK id: ''");
   });
+
+  test("Throws for a literal wildcard key like 'aslan@*'", () => {
+    // The wildcard keys are an internal template, not a user-facing id.
+    expect(() => resolveSdk("aslan@*")).toThrow("Unknown SDK id: 'aslan@*'");
+    expect(() => resolveSdk("jamc3@*")).toThrow("Unknown SDK id: 'jamc3@*'");
+  });
 });
 
 describe("isKnownSdkId", () => {
@@ -162,6 +168,11 @@ describe("isKnownSdkId", () => {
     expect(isKnownSdkId("aslan@bad version")).toBe(false);
     expect(isKnownSdkId("aslan@")).toBe(false);
     expect(isKnownSdkId("")).toBe(false);
+  });
+
+  test("Returns false for literal wildcard keys like 'aslan@*'", () => {
+    expect(isKnownSdkId("aslan@*")).toBe(false);
+    expect(isKnownSdkId("jamc3@*")).toBe(false);
   });
 
   test("Returns false for prototype property names", () => {

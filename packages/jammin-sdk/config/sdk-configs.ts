@@ -69,6 +69,10 @@ const VERSION_RE = /^[A-Za-z0-9._-]+$/;
 
 /** Predicate used by the validator to check if an SDK id is known. */
 export function isKnownSdkId(id: string): boolean {
+  // The literal `<name>@*` keys are an internal template mechanism, not user-facing ids.
+  if (id.endsWith("@*")) {
+    return false;
+  }
   if (Object.hasOwn(SDK_CONFIGS, id)) {
     return true;
   }
@@ -128,6 +132,12 @@ function warnOnceForDeprecated(id: string): void {
 export function resolveSdk(sdk: string | SdkConfig): SdkConfig {
   if (typeof sdk !== "string") {
     return sdk;
+  }
+
+  // The literal `<name>@*` keys are an internal template mechanism. Reject
+  // them so we never hand back an unresolved `{version}` image.
+  if (sdk.endsWith("@*")) {
+    throw new Error(`Unknown SDK id: '${sdk}'`);
   }
 
   if (Object.hasOwn(SDK_CONFIGS, sdk)) {
