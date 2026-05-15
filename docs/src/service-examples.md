@@ -104,10 +104,20 @@ The image's entrypoint symlinks the global toolchain into `/app/node_modules` if
 $ docker run --rm -v $(pwd):/app ghcr.io/tomusdrw/jammin-as-lan:0.0.6 npm test
 ```
 
-#### SDK names accepted in jammin.build.yml
+#### SDK ids accepted in jammin.build.yml
 
-Any of the following resolve to the same image and commands:
+Use the `<name>@<version>` form:
 
-- `aslan-0.0.6` (canonical key in `SDK_CONFIGS`)
-- `as-lan-0.0.6` (versioned alias matching the framework's spelling)
-- `as-lan` (bare alias — follows the current default version; pin a versioned alias for reproducibility)
+- `aslan@0.0.6` (canonical wildcard)
+- `as-lan@0.0.6` (separate wildcard entry pointing at the same image)
+- `aslan@latest` — pulls the `latest` tag (not reproducible; pin a concrete version for shared projects)
+- `aslan@0.1.0-rc.1` — pre-release tags work, the version segment is passed through verbatim
+
+The version segment must match `[A-Za-z0-9._-]+` and is substituted into the
+docker image tag at resolve time.
+
+> **Deprecated**: the pinned dash-style keys (`aslan-0.0.6`, `jam-sdk-0.1.26`,
+> `jade-0.0.15-pre.1`, `ajanta-0.1.0`, `jamc3-1.1.2`) still resolve in 0.3.x but
+> emit a one-time `console.warn` and will be removed in 0.4.0. Migrate to the
+> `<name>@<version>` form. The `jambrains-1cfc41c` entry is not deprecated — it
+> is pinned by sha256 digest, not by a version tag.
