@@ -24,7 +24,11 @@ export interface ServiceConfig {
 }
 
 export interface SdkConfig {
-  /** Docker image name */
+  /**
+   * Docker image name. The image MUST publish a `linux/amd64` manifest:
+   * jammin runs build/test containers with `--platform=linux/amd64`, so
+   * native arm64 (or other) manifests are ignored. See `docs/src/requirements.md`.
+   */
   image: string;
   /** Build command */
   build: string;
