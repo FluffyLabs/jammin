@@ -58,6 +58,9 @@ export async function startContainer(filteredGenesisPath: string): Promise<void>
   const dockerArgs: string[] = [
     "run",
     "--rm",
+    // Match `pullImage` above. Defense in depth: if the local image cache
+    // happens to hold a different-arch entry, force the amd64 one.
+    "--platform=linux/amd64",
     "-v",
     `${filteredGenesisPath}:/app/genesis.json:ro`,
     "-v",

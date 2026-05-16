@@ -24,12 +24,21 @@ export interface ServiceConfig {
 }
 
 export interface SdkConfig {
-  /** Docker image name */
+  /**
+   * Docker image name. The referenced image must publish a manifest matching
+   * `platform` (defaults to `linux/amd64`). See `docs/src/requirements.md`.
+   */
   image: string;
   /** Build command */
   build: string;
   /** Test command */
   test: string;
+  /**
+   * Docker platform passed via `--platform=<value>`. Defaults to `linux/amd64`
+   * because most JAM SDK images today only ship an amd64 manifest. Override
+   * (e.g. `"linux/arm64"`) only when the image publishes a matching manifest.
+   */
+  platform?: string;
 }
 
 /** Internal: `SdkConfig` plus optional flags consumed by the resolver. */

@@ -1,42 +1,18 @@
 import { mkdir } from "node:fs/promises";
-import { join, relative, resolve } from "node:path";
+import { join, relative } from "node:path";
 import * as p from "@clack/prompts";
 import type { ServiceConfig } from "@fluffylabs/jammin-sdk";
-import { getServiceConfigs, resolveSdk } from "@fluffylabs/jammin-sdk";
+import { getServiceConfigs } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
+import { DockerError, runSdkDocker } from "../utils/run-sdk-docker.ts";
 
-export class DockerError extends Error {
-  constructor(
-    message: string,
-    public output: string,
-  ) {
-    super(message);
-  }
-}
+export { DockerError } from "../utils/run-sdk-docker.ts";
 
 /**
  * Test a single service using Docker
  */
 export async function testService(service: ServiceConfig, projectRoot: string): Promise<string> {
-  const sdk = resolveSdk(service.sdk);
-  const servicePath = resolve(projectRoot, service.path);
-
-  const dockerArgs = ["run", "--rm", "-v", `${servicePath}:/app`, sdk.image, ...sdk.test.split(" ")];
-  const dockerCommand = `docker ${dockerArgs.join(" ")}`;
-
-  const proc = Bun.spawn(["sh", "-c", `${dockerCommand} 2>&1`], {
-    stdout: "pipe",
-    stderr: "pipe",
-    cwd: projectRoot,
-  });
-
-  const [combinedOutput, exitCode] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
-
-  if (exitCode !== 0) {
-    throw new DockerError(`Tests failed for service '${service.name}' with exit code ${exitCode}`, combinedOutput);
-  }
-
-  return combinedOutput;
+  return runSdkDocker(service, projectRoot, "test");
 }
 
 /**

@@ -8,42 +8,17 @@ import {
   getJamFiles,
   getServiceConfigs,
   loadServices,
-  resolveSdk,
 } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
+import { runSdkDocker } from "../utils/run-sdk-docker.ts";
+
+export { DockerError } from "../utils/run-sdk-docker.ts";
 
 /**
  * Build a single service using Docker
  */
-export class DockerError extends Error {
-  constructor(
-    message: string,
-    public output: string,
-  ) {
-    super(message);
-  }
-}
-
 export async function callDockerBuild(service: ServiceConfig, projectRoot: string): Promise<string> {
-  const sdk = resolveSdk(service.sdk);
-  const servicePath = resolve(projectRoot, service.path);
-
-  const dockerArgs = ["run", "--rm", "-v", `${servicePath}:/app`, sdk.image, ...sdk.build.split(" ")];
-  const dockerCommand = `docker ${dockerArgs.join(" ")}`;
-
-  const proc = Bun.spawn(["sh", "-c", `${dockerCommand} 2>&1`], {
-    stdout: "pipe",
-    stderr: "pipe",
-    cwd: projectRoot,
-  });
-
-  const [combinedOutput, exitCode] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
-
-  if (exitCode !== 0) {
-    throw new DockerError(`Build failed for service '${service.name}' with exit code ${exitCode}`, combinedOutput);
-  }
-
-  return combinedOutput;
+  return runSdkDocker(service, projectRoot, "build");
 }
 
 export async function buildService(service: ServiceConfig, projectRoot: string): Promise<string> {

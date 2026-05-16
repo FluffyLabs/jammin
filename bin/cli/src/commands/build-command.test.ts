@@ -51,7 +51,11 @@ describe("build-command", () => {
       expect(spawnCall[0]).toEqual(["sh", "-c", expect.stringContaining("docker")]);
 
       const dockerCommand = spawnCall[0][2] as string;
-      expect(dockerCommand).toContain("docker run --rm -v");
+      expect(dockerCommand).toContain("docker run");
+      expect(dockerCommand).toContain("--rm");
+      // The jambrains image only publishes linux/amd64 manifests; without this
+      // flag the implicit pull fails on Apple Silicon hosts. See issue #111.
+      expect(dockerCommand).toContain("--platform=linux/amd64");
       expect(dockerCommand).toContain(`${resolve("/test/project", "./services/test")}:/app`);
       expect(dockerCommand).toContain(SDK_CONFIGS["jambrains-1cfc41c"].image);
       expect(dockerCommand).toContain(SDK_CONFIGS["jambrains-1cfc41c"].build);
@@ -124,6 +128,30 @@ describe("build-command", () => {
       expect(dockerCommand).toContain("custom-image:latest");
       expect(dockerCommand).toContain("custom build command with args");
       expect(dockerCommand).toContain(`${resolve("/test/project", "./custom")}:/app`);
+    });
+
+    test("should honor SdkConfig.platform when set", async () => {
+      const service: ServiceConfig = {
+        name: "arm-service",
+        path: "./custom",
+        sdk: {
+          image: "multi-arch-image:latest",
+          build: "build",
+          test: "test",
+          platform: "linux/arm64",
+        },
+      };
+
+      await callDockerBuild(service, "/test/project");
+
+      const spawnCall = mockSpawn.mock.calls[0];
+      if (!spawnCall) {
+        throw new Error("spawnCall is undefined");
+      }
+      const dockerCommand = spawnCall[0][2] as string;
+
+      expect(dockerCommand).toContain("--platform=linux/arm64");
+      expect(dockerCommand).not.toContain("--platform=linux/amd64");
     });
 
     test("should handle build failure with non-zero exit code", async () => {

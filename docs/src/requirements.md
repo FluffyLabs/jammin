@@ -37,3 +37,9 @@ sudo apt-get install -y git
 ```
 
 Verify each tool with `bun --version`, `docker --version`, and `git --version` before running jammin commands.
+
+## Platform
+
+jammin invokes the SDK build and test containers with `--platform=linux/amd64` by default. Most JAM SDK images today only publish a `linux/amd64` manifest, so on Apple Silicon and other non-amd64 hosts containers run under emulation (slower, but functional).
+
+If an SDK image publishes a different manifest (e.g. `linux/arm64`), override the default by setting `platform` on the `SdkConfig` entry in `packages/jammin-sdk/config/sdk-configs.ts` (or on an inline `SdkConfig` in your `jammin.build.yml`).
