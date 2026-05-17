@@ -212,4 +212,27 @@ describe("TestJam.fromGenesis", () => {
       `Genesis file not found at ${missingPath}. Run 'jammin deploy' first.`,
     );
   });
+
+  test("accumulate() runs against state loaded from a genesis file", async () => {
+    const genesis = generateGenesis([]);
+    const tmpDir = join(tmpdir(), `jammin-acc-${Date.now()}`);
+    await mkdir(tmpDir, { recursive: true });
+    const tmpPath = join(tmpDir, "genesis.json");
+    await Bun.write(tmpPath, JSON.stringify(toJip4Json(genesis)));
+
+    try {
+      const jam = await TestJam.fromGenesis(tmpPath);
+      const report = await createWorkReportAsync({
+        results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
+      });
+
+      const result = await jam.withWorkReport(report).accumulate();
+
+      expect(result).toBeDefined();
+      expect(result.stateUpdate).toBeDefined();
+      expect(result.accumulationStatistics.size).toBe(1);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
 });
