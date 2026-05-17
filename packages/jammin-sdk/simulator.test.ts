@@ -173,12 +173,9 @@ describe("TestJam.fromGenesis", () => {
     return {
       id: genesis.id,
       bootnodes: genesis.bootnodes ?? [],
-      genesis_header: genesis.genesisHeader.toString().substring(2),
+      genesis_header: genesis.genesisHeader.toString().slice(2),
       genesis_state: Object.fromEntries(
-        [...genesis.genesisState.entries()].map(([key, value]) => [
-          key.toString().substring(2),
-          value.toString().substring(2),
-        ]),
+        [...genesis.genesisState.entries()].map(([key, value]) => [key.toString().slice(2), value.toString().slice(2)]),
       ),
     };
   }
