@@ -4,8 +4,10 @@ import { BytesBlob } from "@typeberry/lib/bytes";
 import { Encoder } from "@typeberry/lib/codec";
 import { asKnownSize } from "@typeberry/lib/collections";
 import { type ChainSpec, PvmBackend, tinyChainSpec } from "@typeberry/lib/config";
+import { JipChainSpec } from "@typeberry/lib/config-node";
 import { ed25519, keyDerivation } from "@typeberry/lib/crypto";
 import { Blake2b, type OpaqueHash, ZERO_HASH } from "@typeberry/lib/hash";
+import { parseFromJson } from "@typeberry/lib/json-parser";
 import * as jamNumbers from "@typeberry/lib/numbers";
 import { InMemoryState, type LookupHistorySlots, type ServiceAccountInfo, type State } from "@typeberry/lib/state";
 import { type SerializedState, type StateEntries, serializeStateUpdate } from "@typeberry/lib/state-merkleization";
@@ -362,6 +364,31 @@ export class TestJam {
    */
   static empty(): TestJam {
     return new TestJam(loadStateFromGenesis(generateGenesis([])));
+  }
+
+  /**
+   * Create a new TestJam instance with state loaded from a JIP-4 genesis file.
+   *
+   * @param path - Path to the genesis.json file. Defaults to `./dist/genesis.json`.
+   * @returns Promise resolving to a new TestJam instance with state loaded from the file.
+   * @throws If the file is missing, malformed JSON, or doesn't match the JIP-4 schema.
+   *
+   * @example
+   * ```typescript
+   * // After running `jammin deploy`:
+   * const jam = await TestJam.fromGenesis();
+   *
+   * // Or from an explicit path:
+   * const jam = await TestJam.fromGenesis("./fixtures/genesis.json");
+   * ```
+   */
+  static async fromGenesis(path = "./dist/genesis.json"): Promise<TestJam> {
+    const file = Bun.file(path);
+    if (!(await file.exists())) {
+      throw new Error(`Genesis file not found at ${path}. Run 'jammin deploy' first.`);
+    }
+    const genesis = parseFromJson(JSON.parse(await file.text()), JipChainSpec.fromJson);
+    return new TestJam(loadStateFromGenesis(genesis));
   }
 
   /**
