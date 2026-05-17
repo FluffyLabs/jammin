@@ -1,10 +1,10 @@
-import { Header } from "@typeberry/lib/block";
+import { Header, type ServiceId as ServiceIdType } from "@typeberry/lib/block";
 import { BytesBlob } from "@typeberry/lib/bytes";
 import { Encoder } from "@typeberry/lib/codec";
 import { tinyChainSpec } from "@typeberry/lib/config";
 import { JipChainSpec } from "@typeberry/lib/config-node";
 import { Blake2b, ZERO_HASH } from "@typeberry/lib/hash";
-import { sumU32, sumU64 } from "@typeberry/lib/numbers";
+import { sumU32, sumU64, type U32 as U32Type, type U64 as U64Type } from "@typeberry/lib/numbers";
 import {
   InMemoryState,
   LookupHistoryItem,
@@ -183,6 +183,8 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
       }
     }
 
+    warnOnStorageUtilisationMismatch(serviceId, service.info, calculatedStorageBytes, calculatedStorageCount);
+
     // create service
     update.updated?.set(
       serviceId,
@@ -202,6 +204,35 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
   memState.applyUpdate(update);
 
   return memState;
+}
+
+/**
+ * Print a notice when the user-defined storage utilisation values do not match
+ * the values computed from preimages and storage items. The user-defined value
+ * takes precedence — this only logs both numbers so the user can spot
+ * discrepancies.
+ */
+function warnOnStorageUtilisationMismatch(
+  serviceId: ServiceIdType,
+  info: ServiceBuildOutput["info"],
+  calculatedStorageBytes: U64Type,
+  calculatedStorageCount: U32Type,
+): void {
+  const userBytes = info?.storageUtilisationBytes;
+  if (userBytes !== undefined && userBytes !== calculatedStorageBytes) {
+    console.warn(
+      `[jammin] Service ${serviceId}: user-defined storageUtilisationBytes (${userBytes}) ` +
+        `differs from computed value (${calculatedStorageBytes}). Using user-defined value.`,
+    );
+  }
+
+  const userCount = info?.storageUtilisationCount;
+  if (userCount !== undefined && userCount !== calculatedStorageCount) {
+    console.warn(
+      `[jammin] Service ${serviceId}: user-defined storageUtilisationCount (${userCount}) ` +
+        `differs from computed value (${calculatedStorageCount}). Using user-defined value.`,
+    );
+  }
 }
 
 /** Creates a new genesis state with provided services */

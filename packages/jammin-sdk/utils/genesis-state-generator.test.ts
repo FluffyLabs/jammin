@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import { Bytes, BytesBlob } from "@typeberry/lib/bytes";
 import { HashDictionary } from "@typeberry/lib/collections";
 import { Blake2b, HASH_SIZE } from "@typeberry/lib/hash";
@@ -198,6 +198,112 @@ describe("genesis-generator", () => {
       };
 
       expect(() => generateState([serviceWithMissingPreimage])).toThrow("Preimage blob not found for hash");
+    });
+
+    test("should not warn when user-defined storage utilisation matches computed value", async () => {
+      const warnSpy = mock(() => {});
+      const originalWarn = console.warn;
+      console.warn = warnSpy;
+      try {
+        // basicService has no storage, so computed bytes = 81 (BASE) + 94 (code) = 175, count = 2.
+        const serviceWithMatchingInfo: ServiceBuildOutput = {
+          ...basicService,
+          id: ServiceId(400),
+          info: {
+            storageUtilisationBytes: U64(175),
+            storageUtilisationCount: U32(2),
+          },
+        };
+
+        generateState([serviceWithMatchingInfo]);
+
+        expect(warnSpy).not.toHaveBeenCalled();
+      } finally {
+        console.warn = originalWarn;
+      }
+    });
+
+    test("should warn when user-defined storageUtilisationBytes differs from computed value", async () => {
+      const warnSpy = mock(() => {});
+      const originalWarn = console.warn;
+      console.warn = warnSpy;
+      try {
+        const userDefinedBytes = U64(9_999_999n);
+        const serviceWithMismatch: ServiceBuildOutput = {
+          ...basicService,
+          id: ServiceId(401),
+          info: {
+            storageUtilisationBytes: userDefinedBytes,
+          },
+        };
+
+        const state = generateState([serviceWithMismatch]);
+
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+        const msg = warnSpy.mock.calls[0]?.[0] as string;
+        expect(msg).toContain("Service 401");
+        expect(msg).toContain("storageUtilisationBytes");
+        expect(msg).toContain("9999999");
+        expect(msg).toContain("175");
+
+        // User-defined value still wins.
+        const info = state.services.get(ServiceId(401))?.getInfo();
+        expect(info?.storageUtilisationBytes).toEqual(userDefinedBytes);
+      } finally {
+        console.warn = originalWarn;
+      }
+    });
+
+    test("should warn when user-defined storageUtilisationCount differs from computed value", async () => {
+      const warnSpy = mock(() => {});
+      const originalWarn = console.warn;
+      console.warn = warnSpy;
+      try {
+        const userDefinedCount = U32(42);
+        const serviceWithMismatch: ServiceBuildOutput = {
+          ...basicService,
+          id: ServiceId(402),
+          info: {
+            storageUtilisationCount: userDefinedCount,
+          },
+        };
+
+        const state = generateState([serviceWithMismatch]);
+
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+        const msg = warnSpy.mock.calls[0]?.[0] as string;
+        expect(msg).toContain("Service 402");
+        expect(msg).toContain("storageUtilisationCount");
+        expect(msg).toContain("42");
+        expect(msg).toContain("(2)");
+
+        const info = state.services.get(ServiceId(402))?.getInfo();
+        expect(info?.storageUtilisationCount).toEqual(userDefinedCount);
+      } finally {
+        console.warn = originalWarn;
+      }
+    });
+
+    test("should warn for both bytes and count when both differ", async () => {
+      const warnSpy = mock(() => {});
+      const originalWarn = console.warn;
+      console.warn = warnSpy;
+      try {
+        const serviceWithMismatch: ServiceBuildOutput = {
+          ...basicService,
+          id: ServiceId(403),
+          info: {
+            storageUtilisationBytes: U64(1n),
+            storageUtilisationCount: U32(1),
+          },
+        };
+
+        generateState([serviceWithMismatch]);
+
+        expect(warnSpy).toHaveBeenCalledTimes(2);
+      } finally {
+        console.warn = originalWarn;
+      }
     });
 
     test("should calculate storage utilisation correctly with additional preimages", async () => {
