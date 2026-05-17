@@ -1,7 +1,13 @@
 import { beforeAll, describe, expect, test } from "bun:test";
+import { mkdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { BytesBlob } from "@typeberry/lib/bytes";
 import * as config from "@typeberry/lib/config";
+import { SerializedState } from "@typeberry/lib/state-merkleization";
 import { generateGuarantees, TestJam } from "./simulator.js";
 import { CoreId, Gas, ServiceId, Slot } from "./types.js";
+import { generateGenesis } from "./utils/index.js";
 import { createWorkReportAsync } from "./work-report.js";
 
 describe("simulateAccumulation", () => {
@@ -151,5 +157,79 @@ describe("generateGuarantees", () => {
     const indices = guarantees[0]?.credentials.map((c) => Number(c.validatorIndex)) ?? [];
     expect(indices[0]).toBeLessThan(indices[1] ?? 0);
     expect(indices[1]).toBeLessThan(indices[2] ?? 0);
+  });
+});
+
+describe("TestJam factory state shape", () => {
+  test("TestJam.empty() holds SerializedState at runtime", () => {
+    const jam = TestJam.empty();
+    expect(jam.state).toBeInstanceOf(SerializedState);
+  });
+});
+
+describe("TestJam.fromGenesis", () => {
+  // Serialise a JipChainSpec to the JIP-4 JSON shape (hex-encoded keys/values).
+  function toJip4Json(genesis: ReturnType<typeof generateGenesis>) {
+    return {
+      id: genesis.id,
+      bootnodes: genesis.bootnodes ?? [],
+      genesis_header: genesis.genesisHeader.toString().slice(2),
+      genesis_state: Object.fromEntries(
+        [...genesis.genesisState.entries()].map(([key, value]) => [key.toString().slice(2), value.toString().slice(2)]),
+      ),
+    };
+  }
+
+  test("loads state from a written genesis.json file", async () => {
+    const service = {
+      id: ServiceId(7),
+      code: BytesBlob.parseBlob("0xdeadbeef"),
+    };
+    const genesis = generateGenesis([service]);
+
+    const tmpDir = join(tmpdir(), `jammin-test-${Date.now()}`);
+    await mkdir(tmpDir, { recursive: true });
+    const tmpPath = join(tmpDir, "genesis.json");
+    await Bun.write(tmpPath, JSON.stringify(toJip4Json(genesis)));
+
+    try {
+      const jam = await TestJam.fromGenesis(tmpPath);
+      expect(jam.state).toBeInstanceOf(SerializedState);
+
+      const info = jam.getServiceInfo(ServiceId(7));
+      expect(info).toBeDefined();
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  test("throws a clear error when the genesis file is missing", async () => {
+    const missingPath = join(tmpdir(), `definitely-not-here-${Date.now()}.json`);
+    await expect(TestJam.fromGenesis(missingPath)).rejects.toThrow(
+      `Genesis file not found at ${missingPath}. Run 'jammin deploy' first.`,
+    );
+  });
+
+  test("accumulate() runs against state loaded from a genesis file", async () => {
+    const genesis = generateGenesis([]);
+    const tmpDir = join(tmpdir(), `jammin-acc-${Date.now()}`);
+    await mkdir(tmpDir, { recursive: true });
+    const tmpPath = join(tmpDir, "genesis.json");
+    await Bun.write(tmpPath, JSON.stringify(toJip4Json(genesis)));
+
+    try {
+      const jam = await TestJam.fromGenesis(tmpPath);
+      const report = await createWorkReportAsync({
+        results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
+      });
+
+      const result = await jam.withWorkReport(report).accumulate();
+
+      expect(result).toBeDefined();
+      expect(result.stateUpdate).toBeDefined();
+      expect(result.accumulationStatistics.size).toBe(1);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
   });
 });
