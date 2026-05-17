@@ -18,7 +18,7 @@ import {
 import { asOpaqueType } from "@typeberry/lib/utils";
 import { loadBuildConfig } from "./config/config-loader.js";
 import { Slot } from "./types.js";
-import { generateState, loadServices } from "./utils/index.js";
+import { generateGenesis, loadServices, loadStateFromGenesis } from "./utils/index.js";
 import type { WorkReport } from "./work-report.js";
 
 // Re-export types for convenience
@@ -345,8 +345,8 @@ export class TestJam {
    */
   static async create(): Promise<TestJam> {
     const config = await loadBuildConfig();
-    const state = generateState(await loadServices(config));
-    return new TestJam(state);
+    const genesis = generateGenesis(await loadServices(config));
+    return new TestJam(loadStateFromGenesis(genesis));
   }
 
   /**
@@ -361,8 +361,7 @@ export class TestJam {
    * ```
    */
   static empty(): TestJam {
-    const state = generateState([]);
-    return new TestJam(state);
+    return new TestJam(loadStateFromGenesis(generateGenesis([])));
   }
 
   /**

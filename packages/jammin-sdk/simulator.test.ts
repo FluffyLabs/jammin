@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import * as config from "@typeberry/lib/config";
+import { SerializedState } from "@typeberry/lib/state-merkleization";
 import { generateGuarantees, TestJam } from "./simulator.js";
 import { CoreId, Gas, ServiceId, Slot } from "./types.js";
 import { createWorkReportAsync } from "./work-report.js";
@@ -151,5 +152,12 @@ describe("generateGuarantees", () => {
     const indices = guarantees[0]?.credentials.map((c) => Number(c.validatorIndex)) ?? [];
     expect(indices[0]).toBeLessThan(indices[1] ?? 0);
     expect(indices[1]).toBeLessThan(indices[2] ?? 0);
+  });
+});
+
+describe("TestJam factory state shape", () => {
+  test("TestJam.empty() holds SerializedState at runtime", () => {
+    const jam = TestJam.empty();
+    expect(jam.state).toBeInstanceOf(SerializedState);
   });
 });
