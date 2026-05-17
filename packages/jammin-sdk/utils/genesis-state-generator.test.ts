@@ -6,7 +6,7 @@ import { type StorageKey, tryAsLookupHistorySlots } from "@typeberry/lib/state";
 import { asOpaqueType } from "@typeberry/lib/utils";
 import { Gas, ServiceId, Slot, U32, U64 } from "../types";
 import type { ServiceBuildOutput } from "./generate-service-output";
-import { generateGenesis, generateState, toJip4Schema } from "./genesis-state-generator";
+import { generateGenesis, generateState, loadStateFromGenesis, toJip4Schema } from "./genesis-state-generator";
 
 const blake2b = await Blake2b.createHasher();
 
@@ -328,6 +328,67 @@ describe("genesis-generator", () => {
 
       expect(info?.storageUtilisationCount).toBe(U32(4));
       expect(info?.storageUtilisationBytes).toEqual(U64(260));
+    });
+  });
+
+  describe("loadStateFromGenesis", () => {
+    test("round-trips a service code blob via genesis serialisation", () => {
+      const genesis = generateGenesis([basicService]);
+      const state = loadStateFromGenesis(genesis);
+
+      const service = state.getService(ServiceId(42));
+      expect(service).not.toBeNull();
+
+      const codeHash = blake2b.hashBytes(basicService.code).asOpaque();
+      expect(service?.getInfo().codeHash.toString()).toBe(codeHash.toString());
+    });
+
+    test("round-trips service storage entries", () => {
+      const storageKeyStr = "key1";
+      const storageValueStr = "value1";
+
+      const serviceWithStorage: ServiceBuildOutput = {
+        ...basicService,
+        id: ServiceId(100),
+        storage: { [storageKeyStr]: storageValueStr },
+      };
+
+      const genesis = generateGenesis([serviceWithStorage]);
+      const state = loadStateFromGenesis(genesis);
+
+      const service = state.getService(ServiceId(100));
+      expect(service).not.toBeNull();
+
+      const storageKey: StorageKey = asOpaqueType(BytesBlob.blobFromString(storageKeyStr));
+      const retrieved = service?.getStorage(storageKey);
+      expect(retrieved?.toString()).toBe(BytesBlob.blobFromString(storageValueStr).toString());
+    });
+
+    test("round-trips preimage blobs", () => {
+      const preimageBlob = BytesBlob.parseBlob("0xaabbccdd");
+      const preimageHash = blake2b.hashBytes(preimageBlob).asOpaque();
+
+      const serviceWithPreimage: ServiceBuildOutput = {
+        ...basicService,
+        id: ServiceId(300),
+        preimageBlobs: HashDictionary.fromEntries([[preimageHash, preimageBlob]]),
+        preimageRequests: new Map([[preimageHash, tryAsLookupHistorySlots([Slot(0)])]]),
+      };
+
+      const genesis = generateGenesis([serviceWithPreimage]);
+      const state = loadStateFromGenesis(genesis);
+
+      const service = state.getService(ServiceId(300));
+      expect(service).not.toBeNull();
+      expect(service?.getPreimage(preimageHash)?.toString()).toBe(preimageBlob.toString());
+    });
+
+    test("round-trips an empty genesis with no services", () => {
+      const genesis = generateGenesis([]);
+      const state = loadStateFromGenesis(genesis);
+
+      expect(state.getService(ServiceId(0))).toBeNull();
+      expect(state.getService(ServiceId(42))).toBeNull();
     });
   });
 });

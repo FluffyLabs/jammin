@@ -19,7 +19,7 @@ import {
   UpdateService,
   UpdateStorage,
 } from "@typeberry/lib/state";
-import { StateEntries } from "@typeberry/lib/state-merkleization";
+import { loadState, type SerializedState, StateEntries } from "@typeberry/lib/state-merkleization";
 import { asOpaqueType } from "@typeberry/lib/utils";
 import { Gas, ServiceId, Slot, U32, U64 } from "../types.js";
 import type { ServiceBuildOutput } from "./generate-service-output.js";
@@ -244,4 +244,9 @@ export function generateGenesis(services: ServiceBuildOutput[]): Genesis {
     genesisHeader: Encoder.encodeObject(Header.Codec, Header.empty(), spec),
     genesisState: new Map(Array.from(state.entries())),
   });
+}
+
+/** Load the SDK state from a parsed JIP-4 chain spec. */
+export function loadStateFromGenesis(genesis: Genesis): SerializedState<StateEntries> {
+  return loadState(spec, blake2b, genesis.genesisState.entries());
 }
