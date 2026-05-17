@@ -387,7 +387,7 @@ export class TestJam {
     if (!(await file.exists())) {
       throw new Error(`Genesis file not found at ${path}. Run 'jammin deploy' first.`);
     }
-    const genesis = parseFromJson(JSON.parse(await file.text()), JipChainSpec.fromJson);
+    const genesis = parseFromJson<JipChainSpec>(JSON.parse(await file.text()), JipChainSpec.fromJson);
     return new TestJam(loadStateFromGenesis(genesis));
   }
 
