@@ -95,6 +95,11 @@ Examples:
     s.start("Loading service configuration...");
     const config = await loadBuildConfig();
     const services = serviceName ? config.services.filter((svc) => svc.name === serviceName) : config.services;
+    if (serviceName && services.length === 0) {
+      s.stop(`❌ Service '${serviceName}' not found in jammin.build.yml`);
+      p.outro("❌ Build aborted.");
+      process.exit(1);
+    }
     s.stop("✅ Configuration loaded");
 
     const projectRoot = process.cwd();
@@ -116,7 +121,7 @@ Examples:
     try {
       s.start("Generating test configuration...");
       const buildOutputs = await loadServices(config, projectRoot);
-      await generateTestConfigInProjectDir(buildOutputs, config, projectRoot);
+      await generateTestConfigInProjectDir(buildOutputs, projectRoot);
       s.stop("✅ Test configuration generated");
       p.log.message("📝 Generated: config/jammin.test.config.ts");
     } catch (_error) {

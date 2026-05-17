@@ -15,6 +15,8 @@ import type { JamminBuildConfig } from "../config/types/config.js";
 import { ServiceId, Slot } from "../types.js";
 
 export interface ServiceBuildOutput {
+  /** Service name from the build config. Used to correlate outputs with their declarations. */
+  name: string;
   id: ServiceIdType;
   code: BytesBlob;
   storage?: Record<string, string>;
@@ -61,6 +63,7 @@ export async function loadServices(
     outputs.push(
       await generateServiceOutput(
         jamFilePath,
+        service.name,
         serviceId,
         deployConfig?.storage,
         deployConfig?.info,
@@ -75,6 +78,7 @@ export async function loadServices(
 
 export async function generateServiceOutput(
   jamFilePath: string,
+  name: string,
   serviceId = 0,
   storage?: Record<string, string>,
   info?: {
@@ -124,6 +128,7 @@ export async function generateServiceOutput(
   );
 
   return {
+    name,
     id: ServiceId(serviceId),
     code,
     storage,

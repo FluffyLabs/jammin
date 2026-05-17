@@ -1,6 +1,5 @@
 import { resolve } from "node:path";
 import type { tinyChainSpec } from "@typeberry/lib/config";
-import type { JamminBuildConfig } from "../config/types/config.js";
 import type { ServiceBuildOutput } from "./generate-service-output.js";
 
 /** Directory name for generated config output */
@@ -26,23 +25,14 @@ export interface GeneratedTestConfig {
  * - ChainSpec configuration
  * - Service names and IDs
  */
-export async function generateTestConfigFile(
-  services: ServiceBuildOutput[],
-  config: JamminBuildConfig,
-  outputPath: string,
-): Promise<void> {
+export async function generateTestConfigFile(services: ServiceBuildOutput[], outputPath: string): Promise<void> {
   const serviceMap: Record<string, { id: number; name: string }> = {};
 
-  // Match services from config with their IDs from build outputs (positional).
-  for (let i = 0; i < config.services.length; i++) {
-    const service = config.services[i];
-    const buildOutput = services[i];
-    if (service && buildOutput) {
-      serviceMap[service.name] = {
-        id: buildOutput.id,
-        name: service.name,
-      };
-    }
+  for (const output of services) {
+    serviceMap[output.name] = {
+      id: output.id,
+      name: output.name,
+    };
   }
 
   const tsCode = generateTestConfigCode(serviceMap);
@@ -56,11 +46,10 @@ export async function generateTestConfigFile(
  */
 export async function generateTestConfigInProjectDir(
   services: ServiceBuildOutput[],
-  config: JamminBuildConfig,
   projectRoot: string = process.cwd(),
 ): Promise<string> {
   const outputPath = resolve(projectRoot, CONFIG_DIR, TEST_CONFIG_FILENAME);
-  await generateTestConfigFile(services, config, outputPath);
+  await generateTestConfigFile(services, outputPath);
   return outputPath;
 }
 
