@@ -551,9 +551,10 @@ const report = createWorkReport(blake2b, {
 For advanced use cases, you can manually manage state:
 
 ```typescript
-import { generateState, loadServices } from "@fluffylabs/jammin-sdk";
+import { generateState, loadBuildConfig, loadServices } from "@fluffylabs/jammin-sdk";
 
-const services = await loadServices();
+const config = await loadBuildConfig();
+const services = await loadServices(config);
 const state = generateState(services);
 
 // Use state directly with simulateAccumulation

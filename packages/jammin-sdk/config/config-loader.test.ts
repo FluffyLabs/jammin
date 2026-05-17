@@ -1,17 +1,41 @@
-import { describe, expect, test } from "bun:test";
-import { resolve } from "node:path";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { copyFile, mkdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { loadBuildConfig, loadNetworksConfig } from "./config-loader.js";
 import { ConfigError } from "./types/errors.js";
 
-const VALID_BUILD = "./test-files/valid-build.yml";
-const INVALID_BUILD = "./test-files/invalid-build.yml";
-const VALID_NETWORKS = "./test-files/valid-networks.yml";
-const INVALID_NETWORKS = "./test-files/invalid-networks.yml";
+const FIXTURES = {
+  validBuild: resolve(__dirname, "./test-files/valid-build.yml"),
+  invalidBuild: resolve(__dirname, "./test-files/invalid-build.yml"),
+  validNetworks: resolve(__dirname, "./test-files/valid-networks.yml"),
+  invalidNetworks: resolve(__dirname, "./test-files/invalid-networks.yml"),
+};
+
+let originalCwd: () => string;
+let testCwd: string;
+
+async function setupTestCwd(): Promise<void> {
+  testCwd = join(tmpdir(), `jammin-config-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  await mkdir(testCwd, { recursive: true });
+  // Drop a .git marker so findConfigFile stops walking parents.
+  await mkdir(join(testCwd, ".git"), { recursive: true });
+  originalCwd = process.cwd;
+  process.cwd = mock(() => testCwd);
+}
+
+async function teardownTestCwd(): Promise<void> {
+  process.cwd = originalCwd;
+  await rm(testCwd, { recursive: true }).catch(() => {});
+}
 
 describe("Config Loader - loadBuildConfig", () => {
+  beforeEach(setupTestCwd);
+  afterEach(teardownTestCwd);
+
   test("Should load and parse valid build config from file", async () => {
-    const configPath = resolve(__dirname, VALID_BUILD);
-    const config = await loadBuildConfig(configPath);
+    await copyFile(FIXTURES.validBuild, join(testCwd, "jammin.build.yml"));
+    const config = await loadBuildConfig();
 
     expect(config.services).toBeDefined();
     expect(config.services.length).toBeGreaterThan(0);
@@ -20,30 +44,42 @@ describe("Config Loader - loadBuildConfig", () => {
   });
 
   test("Should load config with custom SDKs and deployment", async () => {
-    const configPath = resolve(__dirname, VALID_BUILD);
-    const config = await loadBuildConfig(configPath);
+    await copyFile(FIXTURES.validBuild, join(testCwd, "jammin.build.yml"));
+    const config = await loadBuildConfig();
 
     expect(config.deployment).toBeDefined();
     expect(config.deployment?.spawn).toBe("local");
   });
 
   test("Should throw ConfigError for invalid build config file", async () => {
-    const configPath = resolve(__dirname, INVALID_BUILD);
+    await copyFile(FIXTURES.invalidBuild, join(testCwd, "jammin.build.yml"));
 
-    expect(loadBuildConfig(configPath)).rejects.toThrow(ConfigError);
+    expect(loadBuildConfig()).rejects.toThrow(ConfigError);
   });
 
-  test("Should throw ConfigError for non-existent file", async () => {
-    const configPath = resolve(__dirname, "nonexistent-config.yml");
+  test("Should throw ConfigError when no config file is found", async () => {
+    expect(loadBuildConfig()).rejects.toThrow(ConfigError);
+  });
 
-    expect(loadBuildConfig(configPath)).rejects.toThrow(ConfigError);
+  test("Should walk up parent directories to find config", async () => {
+    await copyFile(FIXTURES.validBuild, join(testCwd, "jammin.build.yml"));
+    const nestedCwd = join(testCwd, "services", "auth");
+    await mkdir(nestedCwd, { recursive: true });
+    process.cwd = mock(() => nestedCwd);
+
+    const config = await loadBuildConfig();
+
+    expect(config.services[0]?.name).toBe("auth-service");
   });
 });
 
 describe("Config Loader - loadNetworksConfig", () => {
+  beforeEach(setupTestCwd);
+  afterEach(teardownTestCwd);
+
   test("Should load and parse valid networks config from file", async () => {
-    const configPath = resolve(__dirname, VALID_NETWORKS);
-    const config = await loadNetworksConfig(configPath);
+    await copyFile(FIXTURES.validNetworks, join(testCwd, "jammin.networks.yml"));
+    const config = await loadNetworksConfig();
 
     expect(config.networks).toBeDefined();
     expect(Object.keys(config.networks).length).toBeGreaterThan(0);
@@ -51,8 +87,8 @@ describe("Config Loader - loadNetworksConfig", () => {
   });
 
   test("Should load config with multiple node definitions", async () => {
-    const configPath = resolve(__dirname, VALID_NETWORKS);
-    const config = await loadNetworksConfig(configPath);
+    await copyFile(FIXTURES.validNetworks, join(testCwd, "jammin.networks.yml"));
+    const config = await loadNetworksConfig();
 
     expect(config.networks.local).toBeDefined();
     if (Array.isArray(config.networks.local)) {
@@ -64,8 +100,8 @@ describe("Config Loader - loadNetworksConfig", () => {
   });
 
   test("Should load config with compose network definition", async () => {
-    const configPath = resolve(__dirname, VALID_NETWORKS);
-    const config = await loadNetworksConfig(configPath);
+    await copyFile(FIXTURES.validNetworks, join(testCwd, "jammin.networks.yml"));
+    const config = await loadNetworksConfig();
 
     expect(config.networks.staging).toBeDefined();
     if (!Array.isArray(config.networks.staging)) {
@@ -74,8 +110,8 @@ describe("Config Loader - loadNetworksConfig", () => {
   });
 
   test("Should load config with multiple networks", async () => {
-    const configPath = resolve(__dirname, VALID_NETWORKS);
-    const config = await loadNetworksConfig(configPath);
+    await copyFile(FIXTURES.validNetworks, join(testCwd, "jammin.networks.yml"));
+    const config = await loadNetworksConfig();
 
     const networkNames = Object.keys(config.networks);
     expect(networkNames.length).toBeGreaterThanOrEqual(2);
@@ -84,14 +120,12 @@ describe("Config Loader - loadNetworksConfig", () => {
   });
 
   test("Should throw ConfigError for invalid networks config file", async () => {
-    const configPath = resolve(__dirname, INVALID_NETWORKS);
+    await copyFile(FIXTURES.invalidNetworks, join(testCwd, "jammin.networks.yml"));
 
-    expect(loadNetworksConfig(configPath)).rejects.toThrow(ConfigError);
+    expect(loadNetworksConfig()).rejects.toThrow(ConfigError);
   });
 
-  test("Should throw ConfigError for non-existent file", async () => {
-    const configPath = resolve(__dirname, "nonexistent-networks.yml");
-
-    expect(loadNetworksConfig(configPath)).rejects.toThrow(ConfigError);
+  test("Should throw ConfigError when no config file is found", async () => {
+    expect(loadNetworksConfig()).rejects.toThrow(ConfigError);
   });
 });

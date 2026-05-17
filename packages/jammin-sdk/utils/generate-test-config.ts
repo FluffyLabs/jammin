@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import type { tinyChainSpec } from "@typeberry/lib/config";
-import { loadBuildConfig } from "../config/config-loader.js";
+import type { JamminBuildConfig } from "../config/types/config.js";
 import type { ServiceBuildOutput } from "./generate-service-output.js";
 
 /** Directory name for generated config output */
@@ -25,18 +25,15 @@ export interface GeneratedTestConfig {
  * - Service ID mappings
  * - ChainSpec configuration
  * - Service names and IDs
- *
- * @param services - Array of service build outputs
- * @param outputPath - Path where to write the generated test config file
  */
-export async function generateTestConfigFile(services: ServiceBuildOutput[], outputPath: string): Promise<void> {
-  // Create service mapping: service name -> { id, name }
+export async function generateTestConfigFile(
+  services: ServiceBuildOutput[],
+  config: JamminBuildConfig,
+  outputPath: string,
+): Promise<void> {
   const serviceMap: Record<string, { id: number; name: string }> = {};
 
-  // Load the config to get service names
-  const config = await loadBuildConfig();
-
-  // Match services from config with their IDs from build outputs
+  // Match services from config with their IDs from build outputs (positional).
   for (let i = 0; i < config.services.length; i++) {
     const service = config.services[i];
     const buildOutput = services[i];
@@ -48,10 +45,8 @@ export async function generateTestConfigFile(services: ServiceBuildOutput[], out
     }
   }
 
-  // Generate TypeScript code
   const tsCode = generateTestConfigCode(serviceMap);
 
-  // Write to file
   await Bun.write(outputPath, tsCode);
 }
 
@@ -61,11 +56,12 @@ export async function generateTestConfigFile(services: ServiceBuildOutput[], out
  */
 export async function generateTestConfigInProjectDir(
   services: ServiceBuildOutput[],
+  config: JamminBuildConfig,
   projectRoot: string = process.cwd(),
 ): Promise<string> {
-  const configPath = resolve(projectRoot, CONFIG_DIR, TEST_CONFIG_FILENAME);
-  await generateTestConfigFile(services, configPath);
-  return configPath;
+  const outputPath = resolve(projectRoot, CONFIG_DIR, TEST_CONFIG_FILENAME);
+  await generateTestConfigFile(services, config, outputPath);
+  return outputPath;
 }
 
 /**

@@ -11,7 +11,7 @@ import { HashDictionary } from "@typeberry/lib/collections";
 import { HASH_SIZE } from "@typeberry/lib/hash";
 import { tryAsU32, tryAsU64 } from "@typeberry/lib/numbers";
 import { type LookupHistorySlots, type ServiceAccountInfo, tryAsLookupHistorySlots } from "@typeberry/lib/state";
-import { loadBuildConfig } from "../config/config-loader.js";
+import type { JamminBuildConfig } from "../config/types/config.js";
 import { ServiceId, Slot } from "../types.js";
 
 export interface ServiceBuildOutput {
@@ -24,11 +24,16 @@ export interface ServiceBuildOutput {
 }
 
 /**
- * Load services from the dist/ directory
+ * Load services from the dist/ directory.
+ *
+ * Callers are responsible for loading the build config via `loadBuildConfig()`
+ * and passing it in. This makes it explicit when the config is being read from disk.
  */
-export async function loadServices(projectRoot: string = process.cwd()): Promise<ServiceBuildOutput[]> {
+export async function loadServices(
+  config: JamminBuildConfig,
+  projectRoot: string = process.cwd(),
+): Promise<ServiceBuildOutput[]> {
   const outputs: ServiceBuildOutput[] = [];
-  const config = await loadBuildConfig();
   const serviceDeployConfigs = config.deployment?.services ?? {};
   const usedIds = new Set<number>();
 
