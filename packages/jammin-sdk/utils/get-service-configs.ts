@@ -3,8 +3,8 @@ import { loadBuildConfig, type ServiceConfig } from "../config/index.js";
 /**
  * Get service configurations from build configuration.
  */
-export async function getServiceConfigs(configPath?: string, serviceName?: string): Promise<ServiceConfig[]> {
-  const config = await loadBuildConfig(configPath);
+export async function getServiceConfigs(serviceName?: string): Promise<ServiceConfig[]> {
+  const config = await loadBuildConfig();
 
   let services = config.services;
 

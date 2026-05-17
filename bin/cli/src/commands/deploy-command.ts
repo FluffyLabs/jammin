@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { generateGenesis, getServiceConfigs, loadServices, saveStateFile } from "@fluffylabs/jammin-sdk";
+import { generateGenesis, loadBuildConfig, loadServices, saveStateFile } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
 import { buildService } from "./build-command";
 
@@ -28,7 +28,13 @@ Examples:
 
     const s = p.spinner();
     s.start("Loading service configuration...");
-    const services = await getServiceConfigs(undefined, serviceName);
+    const config = await loadBuildConfig();
+    const services = serviceName ? config.services.filter((svc) => svc.name === serviceName) : config.services;
+    if (serviceName && services.length === 0) {
+      s.stop(`❌ Service '${serviceName}' not found in jammin.build.yml`);
+      p.outro("❌ Deploy aborted.");
+      process.exit(1);
+    }
     s.stop("✅ Configuration loaded");
 
     s.start("🔨 Building...");
@@ -38,7 +44,7 @@ Examples:
     s.stop("✅ Building was successful!");
 
     s.start("Generating Genesis State...");
-    const buildOutputs = await loadServices(projectRoot);
+    const buildOutputs = await loadServices(config, projectRoot);
     const genesisOutput = "dist/genesis.json";
     await saveStateFile(generateGenesis(buildOutputs), `${projectRoot}/${genesisOutput}`);
     s.stop("✅ Genesis state generated!");

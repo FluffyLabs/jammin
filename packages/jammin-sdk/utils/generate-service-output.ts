@@ -11,10 +11,12 @@ import { HashDictionary } from "@typeberry/lib/collections";
 import { HASH_SIZE } from "@typeberry/lib/hash";
 import { tryAsU32, tryAsU64 } from "@typeberry/lib/numbers";
 import { type LookupHistorySlots, type ServiceAccountInfo, tryAsLookupHistorySlots } from "@typeberry/lib/state";
-import { loadBuildConfig } from "../config/config-loader.js";
+import type { JamminBuildConfig } from "../config/types/config.js";
 import { ServiceId, Slot } from "../types.js";
 
 export interface ServiceBuildOutput {
+  /** Service name from the build config. Used to correlate outputs with their declarations. */
+  name: string;
   id: ServiceIdType;
   code: BytesBlob;
   storage?: Record<string, string>;
@@ -24,11 +26,16 @@ export interface ServiceBuildOutput {
 }
 
 /**
- * Load services from the dist/ directory
+ * Load services from the dist/ directory.
+ *
+ * Callers are responsible for loading the build config via `loadBuildConfig()`
+ * and passing it in. This makes it explicit when the config is being read from disk.
  */
-export async function loadServices(projectRoot: string = process.cwd()): Promise<ServiceBuildOutput[]> {
+export async function loadServices(
+  config: JamminBuildConfig,
+  projectRoot: string = process.cwd(),
+): Promise<ServiceBuildOutput[]> {
   const outputs: ServiceBuildOutput[] = [];
-  const config = await loadBuildConfig();
   const serviceDeployConfigs = config.deployment?.services ?? {};
   const usedIds = new Set<number>();
 
@@ -56,6 +63,7 @@ export async function loadServices(projectRoot: string = process.cwd()): Promise
     outputs.push(
       await generateServiceOutput(
         jamFilePath,
+        service.name,
         serviceId,
         deployConfig?.storage,
         deployConfig?.info,
@@ -70,6 +78,7 @@ export async function loadServices(projectRoot: string = process.cwd()): Promise
 
 export async function generateServiceOutput(
   jamFilePath: string,
+  name: string,
   serviceId = 0,
   storage?: Record<string, string>,
   info?: {
@@ -119,6 +128,7 @@ export async function generateServiceOutput(
   );
 
   return {
+    name,
     id: ServiceId(serviceId),
     code,
     storage,

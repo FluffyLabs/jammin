@@ -6,7 +6,7 @@ import {
   copyJamToDist,
   generateTestConfigInProjectDir,
   getJamFiles,
-  getServiceConfigs,
+  loadBuildConfig,
   loadServices,
 } from "@fluffylabs/jammin-sdk";
 import { Command } from "commander";
@@ -54,23 +54,27 @@ export async function buildService(service: ServiceConfig, projectRoot: string):
 export const buildCommand = new Command("build")
   .description("build your entire project or a specific service")
   .argument("[service]", "service name to build")
-  .option("-c, --config <path>", "path to build config file")
   .addHelpText(
     "after",
     `
 Examples:
   $ jammin build
   $ jammin build auth-service
-  $ jammin build --config ./custom.build.yml
 `,
   )
-  .action(async (serviceName, options) => {
+  .action(async (serviceName) => {
     const targetLabel = serviceName ? "service" : "project";
     p.intro(`🔨 Building ${targetLabel}`);
 
     const s = p.spinner();
     s.start("Loading service configuration...");
-    const services = await getServiceConfigs(options.config, serviceName);
+    const config = await loadBuildConfig();
+    const services = serviceName ? config.services.filter((svc) => svc.name === serviceName) : config.services;
+    if (serviceName && services.length === 0) {
+      s.stop(`❌ Service '${serviceName}' not found in jammin.build.yml`);
+      p.outro("❌ Build aborted.");
+      process.exit(1);
+    }
     s.stop("✅ Configuration loaded");
 
     const projectRoot = process.cwd();
@@ -91,8 +95,8 @@ Examples:
 
     try {
       s.start("Generating test configuration...");
-      const services = await loadServices(projectRoot);
-      await generateTestConfigInProjectDir(services, projectRoot);
+      const buildOutputs = await loadServices(config, projectRoot);
+      await generateTestConfigInProjectDir(buildOutputs, projectRoot);
       s.stop("✅ Test configuration generated");
       p.log.message("📝 Generated: config/jammin.test.config.ts");
     } catch (_error) {

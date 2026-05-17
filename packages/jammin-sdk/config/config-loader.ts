@@ -1,6 +1,6 @@
 import { parse } from "yaml";
 import { prettifyError, ZodError } from "zod";
-import { findConfigFile, pathExists } from "../utils/file-utils.js";
+import { findConfigFile } from "../utils/file-utils.js";
 import { validateBuildConfig, validateNetworksConfig } from "./config-validator.js";
 import type { JamminBuildConfig, JamminNetworksConfig } from "./types/config.js";
 import { ConfigError } from "./types/errors.js";
@@ -37,20 +37,11 @@ async function loadYamlFile(filePath: string): Promise<unknown> {
 }
 
 /** Generic config loader with validation */
-async function loadConfig<T>(
-  configPath: string | undefined,
-  configFileName: string,
-  validator: (data: unknown) => T,
-  configType: string,
-): Promise<T> {
-  const filePath = configPath || (await findConfigFile(configFileName));
+async function loadConfig<T>(configFileName: string, validator: (data: unknown) => T, configType: string): Promise<T> {
+  const filePath = await findConfigFile(configFileName);
 
   if (!filePath) {
     throw new ConfigError(`Config file '${configFileName}' not found in current directory or parent directories`);
-  }
-
-  if (!(await pathExists(filePath))) {
-    throw new ConfigError(`Config file not found: ${filePath}`, filePath);
   }
 
   const data = await loadYamlFile(filePath);
@@ -65,11 +56,11 @@ async function loadConfig<T>(
 }
 
 /** Load build configuration */
-export async function loadBuildConfig(configPath?: string): Promise<JamminBuildConfig> {
-  return loadConfig(configPath, CONFIG_FILES.BUILD, validateBuildConfig, "build");
+export async function loadBuildConfig(): Promise<JamminBuildConfig> {
+  return loadConfig(CONFIG_FILES.BUILD, validateBuildConfig, "build");
 }
 
 /** Load networks configuration */
-export async function loadNetworksConfig(configPath?: string): Promise<JamminNetworksConfig> {
-  return loadConfig(configPath, CONFIG_FILES.NETWORKS, validateNetworksConfig, "networks");
+export async function loadNetworksConfig(): Promise<JamminNetworksConfig> {
+  return loadConfig(CONFIG_FILES.NETWORKS, validateNetworksConfig, "networks");
 }

@@ -16,6 +16,7 @@ import {
   type AccumulateState,
 } from "@typeberry/lib/transition";
 import { asOpaqueType } from "@typeberry/lib/utils";
+import { loadBuildConfig } from "./config/config-loader.js";
 import { Slot } from "./types.js";
 import { generateState, loadServices } from "./utils/index.js";
 import type { WorkReport } from "./work-report.js";
@@ -343,7 +344,8 @@ export class TestJam {
    * ```
    */
   static async create(): Promise<TestJam> {
-    const state = generateState(await loadServices());
+    const config = await loadBuildConfig();
+    const state = generateState(await loadServices(config));
     return new TestJam(state);
   }
 

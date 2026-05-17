@@ -61,9 +61,6 @@ jammin build [service] [options]
 **Arguments:**
 - `[service]` - Optional service name to build. If omitted, builds all services in the project.
 
-**Options:**
-- `-c, --config <path>` - Path to build config file (defaults to standard config location).
-
 **Examples:**
 ```bash
 # Build all services in the project
@@ -71,12 +68,6 @@ jammin build
 
 # Build a specific service
 jammin build auth-service
-
-# Build with a custom config file
-jammin build --config ./custom.build.yml
-
-# Build a specific service with custom config
-jammin build auth-service --config ./custom.build.yml
 ```
 
 **Notes:**
@@ -98,9 +89,6 @@ jammin test [service] [options]
 **Arguments:**
 - `[service]` - Optional service name to test. If omitted, tests all services in the project.
 
-**Options:**
-- `-c, --config <path>` - Path to build config file (defaults to standard config location).
-
 **Examples:**
 ```bash
 # Test all services in the project
@@ -108,12 +96,6 @@ jammin test
 
 # Test a specific service
 jammin test auth-service
-
-# Test with a custom config file
-jammin test --config ./custom.build.yml
-
-# Test a specific service with custom config
-jammin test auth-service --config ./custom.build.yml
 ```
 
 **Notes:**

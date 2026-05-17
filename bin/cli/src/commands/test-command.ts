@@ -21,23 +21,21 @@ export async function testService(service: ServiceConfig, projectRoot: string): 
 export const testCommand = new Command("test")
   .description("run tests for your entire project or a specific service")
   .argument("[service]", "service name to test")
-  .option("-c, --config <path>", "path to build config file")
   .addHelpText(
     "after",
     `
 Examples:
   $ jammin test
   $ jammin test auth-service
-  $ jammin test --config ./custom.build.yml
 `,
   )
-  .action(async (serviceName, options) => {
+  .action(async (serviceName) => {
     const targetLabel = serviceName ? "service" : "project";
     p.intro(`🧪 Testing ${targetLabel}`);
 
     const s = p.spinner();
     s.start("Loading service configuration...");
-    const services = await getServiceConfigs(options.config, serviceName);
+    const services = await getServiceConfigs(serviceName);
     s.stop("✅ Configuration loaded");
 
     const projectRoot = process.cwd();
