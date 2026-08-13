@@ -527,8 +527,7 @@ export class TestJam {
    * ```
    */
   async accumulate(): Promise<AccumulateResult> {
-    const reports = this.workReports;
-    this.workReports = [];
+    const reports = this.workReports.slice();
     const result = await simulateAccumulation(this.state, reports, this.options);
     if (this.state instanceof InMemoryState) {
       const updateResult = this.state.applyUpdate(result.stateUpdate);
@@ -543,6 +542,7 @@ export class TestJam {
       this.state.backend.applyUpdate(serializeStateUpdate(chainSpec, this.blake2b, result.stateUpdate));
       this.state.updateBackend(this.state.backend);
     }
+    this.workReports.splice(0, reports.length);
     return result;
   }
 

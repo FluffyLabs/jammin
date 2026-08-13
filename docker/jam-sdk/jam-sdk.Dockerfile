@@ -4,7 +4,7 @@ FROM rust:1.89-slim-bookworm
 RUN rustup component add rust-src --toolchain nightly-2025-05-10
 
 # Install the JAM PVM build tool
-RUN cargo install jam-pvm-build@0.1.26
+RUN cargo install jam-pvm-build@0.1.26 --locked
 
 # This fixes an issue where jam-pvm-build looks for rustup home in the wrong place
 RUN ln -s /usr/local/rustup /root/.rustup
