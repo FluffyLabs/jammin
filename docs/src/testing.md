@@ -226,6 +226,123 @@ await round(3, 2n, true); // uncheckpointed write is rolled back
 await round(4, 3n, true); // write made before checkpoint survives
 ```
 
+For larger scenarios, capture a checkpoint and explore independent branches:
+
+```typescript
+const funded = jam.snapshot("funded");
+
+await testSuccessfulPurchase(jam);
+jam.restore(funded);
+await testRejectedPurchase(jam);
+
+const competingBranch = await jam.fork(funded);
+await testConcurrentPurchase(competingBranch);
+
+jam.reset(); // back to the state created by fromServices()
+```
+
+Snapshots include JAM state, generated report IDs, accumulated history and dynamically discovered services. `fork()`
+copies all of them; later writes in either branch do not affect the other branch. `jam.history` lists completed
+accumulation traces in scenario order.
+
+## Dynamically created services
+
+After a successful `new_service` host call, jammin reads the created IDs from the state update and registers them as
+`service-<id>`:
+
+```typescript
+const result = await jam.accumulate({
+  slot: 10,
+  reports: [{ service: "factory", output: createKitty }],
+});
+
+const created = result.createdServices[0];
+if (created !== undefined) {
+  jam.nameService(created.id, "kitty-1");
+  jam.service("kitty-1").info();
+}
+```
+
+`jam.createdServices` contains all services discovered since genesis. Naming a service makes subsequent reports,
+state readers and assertions easier to follow.
+
+## Guarantee, assurance and accumulation pipeline
+
+Use `jam.pipeline()` when a test should exercise availability instead of injecting an already available report:
+
+```typescript
+const pipeline = await jam.pipeline();
+const report = pipeline.report({
+  id: "counter-through-availability",
+  service: "counter",
+  gas: 5_000_000n,
+});
+
+const pending = await pipeline.guarantee(report);
+const fourOfSix = await pending.assure({ votes: 4 });
+expect(fourOfSix.status).toBe("pending");
+
+const fiveOfSix = await pending.assure({ votes: 5 });
+expect(fiveOfSix.status).toBe("available");
+await fiveOfSix.accumulate({ slot: 21 });
+```
+
+The pipeline runs Typeberry's real `Reports` and `Assurances` transitions. It creates deterministic development
+validator keys, derives guarantor core assignments, signs the `jam_guarantee` and `jam_available` messages and
+installs a valid recent anchor and authorizer pool. Protocol failures such as an invalid parent anchor are returned
+with the Typeberry error name. The default vote count is the chain specification's strict supermajority.
+
+## Refine work packages
+
+`jam.workPackage()` keeps work-item order and derives service IDs, code hashes, extrinsic hashes and the canonical
+work-package hash:
+
+```typescript
+const workPackage = jam.workPackage({
+  authorizationService: "authorizer",
+  context: {
+    anchor: bestBlockHash,
+    stateRoot: bestBlockStateRoot,
+    beefyRoot,
+    lookupAnchor: bestBlockHash,
+    lookupAnchorSlot: bestBlockSlot,
+  },
+  items: [
+    {
+      service: "producer",
+      payload: "produce",
+      extrinsics: [inputBlob],
+      exportCount: 2,
+    },
+    {
+      service: "consumer",
+      payload: "consume",
+      imports: [{ treeRoot: previousExportsRoot, index: 7 }],
+      exportCount: 1,
+    },
+  ],
+});
+
+const refined = await jam.refine(workPackage, {
+  coreIndex: 0,
+  backend: new TypeberryRpcRefineBackend("http://127.0.0.1:19800"),
+});
+
+refined.report;
+refined.exports[0]; // two producer segments
+refined.exports[1]; // one consumer segment
+```
+
+The RPC backend calls Typeberry's `typeberry_refineWorkPackage`, decodes the returned work report and splits its flat
+export bytes back into per-work-item segments. It also rejects responses inconsistent with each item's
+`exportCount`. The backend is an interface, so tests may inject an in-process backend without changing the work
+package code. A package sent to a real node must use an anchor and state root present in that node's state database;
+zero-valued context defaults are only useful for construction tests and custom backends.
+
+Typeberry's current custom RPC does not fetch imported segment data from the DA layer yet. jammin encodes import
+specifications correctly, but a work package that executes `fetch` for those imports needs a Typeberry backend with
+import resolution (or a custom `JamRefineBackend`).
+
 ## Low-level escape hatch
 
 Use `jam.raw` when testing protocol details which the high-level API deliberately does not hide:

@@ -12,8 +12,17 @@ import type { ServiceAccountInfo } from "@typeberry/lib/state";
 import type { AccumulateResult } from "@typeberry/lib/transition";
 import { loadBuildConfig } from "./config/config-loader.js";
 import type { ServiceAccountInfoConfig } from "./config/types/config.js";
+import { JamPipeline, type JamPipelineOptions } from "./pipeline.js";
+import {
+  createJamWorkPackage,
+  type JamRefinement,
+  type JamRefineOptions,
+  type JamWorkPackage,
+  type JamWorkPackageConfig,
+  refineWorkPackage,
+} from "./refine.js";
 import type { SimulatorOptions } from "./simulator.js";
-import { TestJam } from "./simulator.js";
+import { TestJam, type TestJamSnapshot } from "./simulator.js";
 import { CoreId, Gas, Slot, ServiceId as toServiceId } from "./types.js";
 import { createServiceOutput, loadServices, type ServiceBuildOutput } from "./utils/generate-service-output.js";
 import {
@@ -138,6 +147,18 @@ export interface JamExecutedService {
 export interface JamAccumulationTrace {
   readonly slot: TimeSlot;
   readonly executedServices: readonly JamExecutedService[];
+}
+
+/** Immutable checkpoint of a high-level JAM test scenario. */
+export class JamTestSnapshot {
+  constructor(
+    /** Optional label useful when a test keeps several checkpoints. */
+    public readonly label: string | undefined,
+    readonly raw: TestJamSnapshot,
+    readonly reportSequence: number,
+    readonly history: readonly JamAccumulationTrace[],
+    readonly services: readonly JamServiceDescriptor[],
+  ) {}
 }
 
 /** Assertion failure produced by the high-level jammin test API. */
@@ -356,6 +377,8 @@ export class JamAccumulation<ServiceName extends string = string> {
     private readonly registryByName: ReadonlyMap<string, JamServiceDescriptor>,
     private readonly registryById: ReadonlyMap<ServiceId, JamServiceDescriptor>,
     public readonly reportGas: ReadonlyMap<ServiceId, ServiceGas>,
+    /** Services created by `new_service` during this accumulation. */
+    public readonly createdServices: readonly JamServiceDescriptor[] = [],
   ) {
     this.expect = new JamAccumulationExpectations(this);
     this.trace = {
@@ -390,21 +413,26 @@ export class JamTest<ServiceName extends string = string> {
   public readonly expect: JamStateExpectations<ServiceName>;
   public readonly services: Readonly<Record<ServiceName, JamServiceDescriptor>>;
   private reportSequence = 0;
+  private accumulationHistory: JamAccumulationTrace[] = [];
+  private readonly initialSnapshot: JamTestSnapshot;
+  private readonly initialServiceIds: ReadonlySet<ServiceId>;
 
   private constructor(
     public readonly raw: TestJam,
     services: Record<ServiceName, JamServiceDescriptor>,
-    private readonly blake2b: Blake2b,
+    public readonly blake2b: Blake2b,
   ) {
     this.services = Object.freeze(services);
     const descriptors = Object.values(services) as JamServiceDescriptor[];
     this.registryByName = new Map(descriptors.map((descriptor) => [descriptor.name, descriptor]));
     this.registryById = new Map(descriptors.map((descriptor) => [descriptor.id, descriptor]));
+    this.initialServiceIds = new Set(descriptors.map((descriptor) => descriptor.id));
     this.expect = new JamStateExpectations(this);
+    this.initialSnapshot = this.snapshot("initial");
   }
 
-  private readonly registryByName: ReadonlyMap<string, JamServiceDescriptor>;
-  private readonly registryById: ReadonlyMap<ServiceId, JamServiceDescriptor>;
+  private registryByName: Map<string, JamServiceDescriptor>;
+  private registryById: Map<ServiceId, JamServiceDescriptor>;
 
   /** Load services from the current jammin project. */
   static async create(): Promise<JamTest<string>> {
@@ -441,6 +469,100 @@ export class JamTest<ServiceName extends string = string> {
   /** Resolve a service and return typed state readers. */
   service(serviceRef: JamServiceReference<ServiceName>): JamServiceHandle {
     return new JamServiceHandle(this.raw, this.resolve(serviceRef));
+  }
+
+  /** Completed accumulation calls in execution order. */
+  get history(): readonly JamAccumulationTrace[] {
+    return [...this.accumulationHistory];
+  }
+
+  /** Services discovered after a successful `new_service` host call. */
+  get createdServices(): readonly JamServiceDescriptor[] {
+    return [...this.registryById.values()].filter((descriptor) => !this.initialServiceIds.has(descriptor.id));
+  }
+
+  /** Capture state and scenario bookkeeping for later restore or fork. */
+  snapshot(label?: string): JamTestSnapshot {
+    return new JamTestSnapshot(
+      label,
+      this.raw.snapshot(),
+      this.reportSequence,
+      [...this.accumulationHistory],
+      [...this.registryById.values()],
+    );
+  }
+
+  /** Restore this test to a checkpoint and discard later scenario history. */
+  restore(snapshot: JamTestSnapshot): this {
+    this.raw.restore(snapshot.raw);
+    this.reportSequence = snapshot.reportSequence;
+    this.accumulationHistory = [...snapshot.history];
+    this.registryByName = new Map(snapshot.services.map((descriptor) => [descriptor.name, descriptor]));
+    this.registryById = new Map(snapshot.services.map((descriptor) => [descriptor.id, descriptor]));
+    return this;
+  }
+
+  /** Restore the genesis state created by {@link JamTest.fromServices}. */
+  reset(): this {
+    return this.restore(this.initialSnapshot);
+  }
+
+  /** Create an independent test branch from the current state or a checkpoint. */
+  async fork(snapshot = this.snapshot()): Promise<JamTest<ServiceName>> {
+    const services = { ...this.services } as Record<ServiceName, JamServiceDescriptor>;
+    const fork = new JamTest(await this.raw.fork(snapshot.raw), services, this.blake2b);
+    fork.reportSequence = snapshot.reportSequence;
+    fork.accumulationHistory = [...snapshot.history];
+    fork.registryByName = new Map(snapshot.services.map((descriptor) => [descriptor.name, descriptor]));
+    fork.registryById = new Map(snapshot.services.map((descriptor) => [descriptor.id, descriptor]));
+    return fork;
+  }
+
+  /** Give a dynamically created numeric service ID a stable scenario name. */
+  nameService(id: number | ServiceId, name: string): JamServiceDescriptor {
+    if (name.length === 0) {
+      throw new Error("A JAM service name must not be empty");
+    }
+    const serviceId = toServiceId(id);
+    const current = this.registryById.get(serviceId);
+    if (current === undefined) {
+      throw new Error(`Unknown JAM service ${serviceId}`);
+    }
+    if (this.initialServiceIds.has(serviceId)) {
+      throw new Error(`Service ${serviceId} already has its declared name '${current.name}'`);
+    }
+    const named = this.registryByName.get(name);
+    if (named !== undefined && named.id !== serviceId) {
+      throw new Error(`JAM service name '${name}' is already used by service ${named.id}`);
+    }
+    this.registryByName.delete(current.name);
+    const descriptor = { ...current, name };
+    this.registryByName.set(name, descriptor);
+    this.registryById.set(serviceId, descriptor);
+    return descriptor;
+  }
+
+  /** Create a guarantee → assurance → accumulation protocol sandbox. */
+  async pipeline(options: JamPipelineOptions = {}): Promise<JamPipeline<ServiceName>> {
+    return await JamPipeline.create(this, options);
+  }
+
+  /** Hash a UTF-8 label with the test's Blake2b implementation. */
+  hash(label: string): Blake2bHash {
+    return this.blake2b.hashBytes(BytesBlob.blobFromString(label));
+  }
+
+  /** Build and hash a Refine work package from named services and byte-like inputs. */
+  workPackage(config: JamWorkPackageConfig<ServiceName>): JamWorkPackage {
+    return createJamWorkPackage(this.blake2b, config, (serviceRef) => {
+      const descriptor = this.resolve(serviceRef);
+      return { id: descriptor.id, codeHash: descriptor.codeHash };
+    });
+  }
+
+  /** Execute a work package through a direct or RPC Refine backend. */
+  async refine(workPackage: JamWorkPackage, options: JamRefineOptions): Promise<JamRefinement> {
+    return await refineWorkPackage(workPackage, options);
   }
 
   /** Build a work report using registered service metadata and safe defaults. */
@@ -487,7 +609,16 @@ export class JamTest<ServiceName extends string = string> {
       .withWorkReports(reports)
       .accumulate();
 
-    return new JamAccumulation(rawResult, this.registryByName, this.registryById, reportGas);
+    const createdServices = this.discoverServices(rawResult.stateUpdate.created ?? []);
+    const accumulation = new JamAccumulation(
+      rawResult,
+      this.registryByName,
+      this.registryById,
+      reportGas,
+      createdServices,
+    );
+    this.accumulationHistory.push(accumulation.trace);
+    return accumulation;
   }
 
   private createResultConfig(config: JamWorkResultConfig<ServiceName>): WorkResultConfig {
@@ -505,6 +636,35 @@ export class JamTest<ServiceName extends string = string> {
 
   private resolve(serviceRef: JamServiceReference<ServiceName>): JamServiceDescriptor {
     return resolveDescriptor(serviceRef, this.registryByName, this.registryById);
+  }
+
+  private discoverServices(ids: readonly ServiceId[]): JamServiceDescriptor[] {
+    const discovered: JamServiceDescriptor[] = [];
+    for (const id of ids) {
+      if (this.registryById.has(id)) {
+        continue;
+      }
+      const info = this.raw.getServiceInfo(id);
+      if (info === undefined) {
+        continue;
+      }
+      const code = this.raw.getServicePreimage(id, info.codeHash.asOpaque()) ?? BytesBlob.empty();
+      let name = `service-${id}`;
+      let suffix = 2;
+      while (this.registryByName.has(name)) {
+        name = `service-${id}-${suffix++}`;
+      }
+      const descriptor: JamServiceDescriptor = {
+        name,
+        id,
+        code,
+        codeHash: info.codeHash,
+      };
+      this.registryByName.set(name, descriptor);
+      this.registryById.set(id, descriptor);
+      discovered.push(descriptor);
+    }
+    return discovered;
   }
 }
 

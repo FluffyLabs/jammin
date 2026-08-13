@@ -155,3 +155,28 @@ describe("JamTest Lab 02 acceptance scenario", () => {
     expect(() => jam.expect.storage.u64("counter", "cntr", 99n)).toThrow(JamTestAssertionError);
   });
 });
+
+describe("JamTest scenario branches", () => {
+  test("snapshots, restores, forks and resets without sharing mutable state", async () => {
+    const jam = await counterJam();
+    await jam.accumulate({ slot: 1, reports: [{ service: "counter" }] });
+    const afterFirstIncrement = jam.snapshot("after-first-increment");
+
+    await jam.accumulate({ slot: 2, reports: [{ service: "counter" }] });
+    jam.expect.storage.u64("counter", "cntr", 2n);
+    expect(jam.history.map((entry) => entry.slot)).toEqual([1, 2]);
+
+    jam.restore(afterFirstIncrement);
+    jam.expect.storage.u64("counter", "cntr", 1n);
+    expect(jam.history.map((entry) => entry.slot)).toEqual([1]);
+
+    const fork = await jam.fork();
+    await fork.accumulate({ slot: 2, reports: [{ service: "counter" }] });
+    fork.expect.storage.u64("counter", "cntr", 2n);
+    jam.expect.storage.u64("counter", "cntr", 1n);
+
+    jam.reset();
+    jam.expect.storage.missing("counter", "cntr");
+    expect(jam.history).toEqual([]);
+  });
+});
