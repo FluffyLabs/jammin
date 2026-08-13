@@ -3,6 +3,7 @@ import {
   RefineContext,
   type ServiceGas,
   type ServiceId,
+  tryAsWorkItemsCount,
   WorkExecResult,
   WorkExecResultKind,
   type WorkPackageInfo,
@@ -16,10 +17,12 @@ import {
 export type { WorkReport };
 
 import { BytesBlob } from "@typeberry/lib/bytes";
-import type { CodecRecord } from "@typeberry/lib/codec";
+import { type CodecRecord, Encoder } from "@typeberry/lib/codec";
 import { FixedSizeArray } from "@typeberry/lib/collections";
 import { type Blake2b, type Blake2bHash, ZERO_HASH } from "@typeberry/lib/hash";
-import { CoreId, Gas, Slot, U8, U16, U32 } from "./types.js";
+import { CoreId, Gas, Slot, U16, U32 } from "./types.js";
+
+const SYNTHETIC_WORK_PACKAGE_DOMAIN = BytesBlob.blobFromString("jammin_work_package");
 
 /** Work result status types */
 export type WorkResultStatus =
@@ -49,7 +52,11 @@ export interface WorkResultConfig {
 
 /** Configuration for complete work report with optional fields */
 export interface WorkReportConfig {
-  /** Work package specification - use U32/U16 from types.ts for branded types */
+  /**
+   * Work package specification - use U32/U16 from types.ts for branded types.
+   * When hash is omitted, the test helper derives a deterministic synthetic hash
+   * from the report contents. Pass the real work package hash for protocol tests.
+   */
   workPackageSpec?: Partial<CodecRecord<WorkPackageSpec>>;
   /** Blockchain state context - use Slot from types.ts for branded types */
   context?: Partial<CodecRecord<RefineContext>>;
@@ -156,12 +163,16 @@ export function createWorkResult(blake2b: Blake2b, config: WorkResultConfig): Wo
  * ```
  */
 export function createWorkReport(blake2b: Blake2b, config: WorkReportConfig): WorkReport {
+  if (config.results.length === 0) {
+    throw new Error("Work report must contain at least one work result");
+  }
+
   const results = config.results.map((resultConfig) => createWorkResult(blake2b, resultConfig));
 
   const wpSpec = config.workPackageSpec ?? {};
   const ctx = config.context ?? {};
 
-  return WorkReport.create({
+  const report = WorkReport.create({
     workPackageSpec: WorkPackageSpec.create({
       hash: wpSpec.hash ?? ZERO_HASH.asOpaque(),
       length: wpSpec.length ?? U32(0),
@@ -181,8 +192,28 @@ export function createWorkReport(blake2b: Blake2b, config: WorkReportConfig): Wo
     authorizerHash: (config.authorizerHash ?? ZERO_HASH).asOpaque(),
     authorizationOutput: config.authorizationOutput ?? BytesBlob.blobFrom(new Uint8Array()),
     segmentRootLookup: config.segmentRootLookup ?? [],
-    results: FixedSizeArray.new(results, U8(results.length)),
+    results: FixedSizeArray.new(results, tryAsWorkItemsCount(results.length)),
     authorizationGasUsed: config.authorizationGasUsed ?? Gas(0n),
+  });
+
+  if (wpSpec.hash !== undefined) {
+    return report;
+  }
+
+  const encodedReport = Encoder.encodeObject(WorkReport.Codec, report);
+  const syntheticHash = blake2b.hashBlobs([SYNTHETIC_WORK_PACKAGE_DOMAIN, encodedReport]);
+  return WorkReport.create({
+    workPackageSpec: WorkPackageSpec.create({
+      ...report.workPackageSpec,
+      hash: syntheticHash.asOpaque(),
+    }),
+    context: report.context,
+    coreIndex: report.coreIndex,
+    authorizerHash: report.authorizerHash,
+    authorizationOutput: report.authorizationOutput,
+    segmentRootLookup: report.segmentRootLookup,
+    results: report.results,
+    authorizationGasUsed: report.authorizationGasUsed,
   });
 }
 

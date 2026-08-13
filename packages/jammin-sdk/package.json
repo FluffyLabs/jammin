@@ -17,6 +17,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./testing-helpers": {
+      "import": "./dist/testing-helpers.js",
+      "types": "./dist/testing-helpers.d.ts"
     }
   },
   "description": "JAM SDK for e2e integration tests and object encoding",

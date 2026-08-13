@@ -1,19 +1,40 @@
-import { beforeAll, describe, expect, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { WorkReport as JamWorkReport, tryAsValidatorIndex } from "@typeberry/lib/block";
 import { BytesBlob } from "@typeberry/lib/bytes";
+import { Encoder } from "@typeberry/lib/codec";
 import * as config from "@typeberry/lib/config";
+import { ed25519, initWasm, keyDerivation } from "@typeberry/lib/crypto";
+import { Blake2b } from "@typeberry/lib/hash";
+import * as jamNumbers from "@typeberry/lib/numbers";
 import { SerializedState } from "@typeberry/lib/state-merkleization";
-import { generateGuarantees, TestJam } from "./simulator.js";
+import { type GuaranteeSigner, generateGuarantees, TestJam } from "./simulator.js";
+import { counterServiceBytes } from "./test-fixtures/counter-service.js";
+import { expectAccumulationSuccess } from "./testing-helpers.js";
 import { CoreId, Gas, ServiceId, Slot } from "./types.js";
-import { generateGenesis } from "./utils/index.js";
+import { generateGenesis, toJip4Schema } from "./utils/index.js";
 import { createWorkReportAsync } from "./work-report.js";
+
+async function createGuaranteeSigners(indices: number[]): Promise<GuaranteeSigner[]> {
+  const blake2b = await Blake2b.createHasher();
+  return await Promise.all(
+    indices.map(async (index) => {
+      const seed = keyDerivation.trivialSeed(jamNumbers.tryAsU32(index));
+      const secretKey = keyDerivation.deriveEd25519SecretKey(seed, blake2b);
+      return {
+        validatorIndex: tryAsValidatorIndex(index),
+        keyPair: await ed25519.privateKey(secretKey),
+      };
+    }),
+  );
+}
 
 describe("simulateAccumulation", () => {
   let jam: TestJam;
 
-  beforeAll(() => {
+  beforeEach(() => {
     jam = TestJam.empty();
   });
 
@@ -103,13 +124,20 @@ describe("simulateAccumulation", () => {
 });
 
 describe("generateGuarantees", () => {
+  let signers: GuaranteeSigner[];
+
+  beforeAll(async () => {
+    await initWasm();
+    signers = await createGuaranteeSigners([0, 1, 2]);
+  });
+
   test("should generate guarantees for a single report", async () => {
     const report = await createWorkReportAsync({
       coreIndex: CoreId(0),
       results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
     });
 
-    const guarantees = await generateGuarantees([report]);
+    const guarantees = await generateGuarantees([report], { signers });
 
     expect(guarantees).toHaveLength(1);
     expect(guarantees[0]?.report).toBe(report);
@@ -126,7 +154,10 @@ describe("generateGuarantees", () => {
       results: [{ serviceId: ServiceId(1), gas: Gas(2000n) }],
     });
 
-    const guarantees = await generateGuarantees([report1, report2]);
+    const secondCoreSigners = await createGuaranteeSigners([3, 4, 5]);
+    const guarantees = await generateGuarantees([report1, report2], {
+      signers: (report) => (report.coreIndex === CoreId(0) ? signers : secondCoreSigners),
+    });
 
     expect(guarantees).toHaveLength(2);
     expect(guarantees[0]?.report).toBe(report1);
@@ -141,6 +172,7 @@ describe("generateGuarantees", () => {
 
     const guarantees = await generateGuarantees([report], {
       slot: Slot(42),
+      signers,
     });
 
     expect(Number(guarantees[0]?.slot)).toBe(42);
@@ -152,11 +184,63 @@ describe("generateGuarantees", () => {
       results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
     });
 
-    const guarantees = await generateGuarantees([report]);
+    const guarantees = await generateGuarantees([report], { signers: [...signers].reverse() });
 
     const indices = guarantees[0]?.credentials.map((c) => Number(c.validatorIndex)) ?? [];
     expect(indices[0]).toBeLessThan(indices[1] ?? 0);
     expect(indices[1]).toBeLessThan(indices[2] ?? 0);
+  });
+
+  test("signs the domain-separated JAM guarantee payload", async () => {
+    const report = await createWorkReportAsync({
+      coreIndex: CoreId(0),
+      results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
+    });
+    const [guarantee] = await generateGuarantees([report], { signers });
+    const blake2b = await Blake2b.createHasher();
+    const reportHash = blake2b.hashBytes(Encoder.encodeObject(JamWorkReport.Codec, report));
+    const payload = BytesBlob.blobFromParts(BytesBlob.blobFromString("jam_guarantee").raw, reportHash.raw);
+    const keysByIndex = new Map(signers.map((signer) => [signer.validatorIndex, signer.keyPair.pubKey]));
+    const credentials = guarantee?.credentials ?? [];
+    const verificationInputs = credentials.map((credential) => {
+      const key = keysByIndex.get(credential.validatorIndex);
+      if (key === undefined) {
+        throw new Error(`Missing test key for validator ${credential.validatorIndex}`);
+      }
+      return {
+        signature: credential.signature,
+        key,
+        message: payload,
+      };
+    });
+    const verification = await ed25519.verify(verificationInputs);
+    const bareHashVerification = await ed25519.verify(
+      verificationInputs.map((input) => ({
+        ...input,
+        message: reportHash,
+      })),
+    );
+
+    expect(verification).toEqual([true, true, true]);
+    expect(bareHashVerification).toEqual([false, false, false]);
+  });
+
+  test("rejects an invalid signer set", async () => {
+    const report = await createWorkReportAsync({
+      coreIndex: CoreId(0),
+      results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
+    });
+
+    await expect(generateGuarantees([report], { signers: signers.slice(0, 1) })).rejects.toThrow(
+      "A guarantee requires 2 or 3 signers",
+    );
+    const duplicateSigner = signers[0];
+    if (duplicateSigner === undefined) {
+      throw new Error("Expected a guarantee signer fixture");
+    }
+    await expect(generateGuarantees([report], { signers: [duplicateSigner, duplicateSigner] })).rejects.toThrow(
+      "Guarantee signers must have unique validator indices",
+    );
   });
 });
 
@@ -228,6 +312,48 @@ describe("TestJam.fromGenesis", () => {
       expect(result).toBeDefined();
       expect(result.stateUpdate).toBeDefined();
       expect(result.accumulationStatistics.size).toBe(1);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  test("executes a real PVM service and persists its state update", async () => {
+    const serviceId = ServiceId(700);
+    const code = BytesBlob.blobFrom(counterServiceBytes());
+    const blake2b = await Blake2b.createHasher();
+    const genesis = generateGenesis([{ name: "counter", id: serviceId, code }]);
+    const tmpDir = join(tmpdir(), `jammin-counter-${Date.now()}`);
+    await mkdir(tmpDir, { recursive: true });
+    const tmpPath = join(tmpDir, "genesis.json");
+    await Bun.write(tmpPath, JSON.stringify(toJip4Schema(genesis)));
+
+    try {
+      const jam = await TestJam.fromGenesis(tmpPath);
+      const report = await createWorkReportAsync({
+        workPackageSpec: {
+          hash: blake2b.hashString("jammin-counter-slot-1").asOpaque(),
+        },
+        results: [
+          {
+            serviceId,
+            codeHash: blake2b.hashBytes(code),
+            gas: Gas(10_000_000n),
+          },
+        ],
+      });
+
+      const result = await jam
+        .withOptions({ slot: Slot(1), debug: false })
+        .withWorkReport(report)
+        .accumulate();
+      const statistics = result.accumulationStatistics.get(serviceId);
+      const storedCounter = jam.getServiceStorage(serviceId, BytesBlob.blobFromString("cntr"));
+
+      expectAccumulationSuccess(result, { executedServices: [serviceId] });
+      expect(statistics?.gasUsed).toBeGreaterThan(0n);
+      expect(jam.state.timeslot).toBe(Slot(1));
+      expect(storedCounter?.raw).toEqual(Uint8Array.from([1, 0, 0, 0, 0, 0, 0, 0]));
+      expect(jam.getServiceInfo(serviceId)?.lastAccumulation).toBe(Slot(1));
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }

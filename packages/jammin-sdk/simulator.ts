@@ -1,14 +1,20 @@
 import * as jamBlock from "@typeberry/lib/block";
-import { Credential, type EntropyHash, ReportGuarantee, type TimeSlot } from "@typeberry/lib/block";
+import {
+  Credential,
+  type EntropyHash,
+  ReportGuarantee,
+  type TimeSlot,
+  type ValidatorIndex,
+} from "@typeberry/lib/block";
 import { BytesBlob } from "@typeberry/lib/bytes";
 import { Encoder } from "@typeberry/lib/codec";
 import { asKnownSize } from "@typeberry/lib/collections";
 import { type ChainSpec, PvmBackend, tinyChainSpec } from "@typeberry/lib/config";
 import { JipChainSpec } from "@typeberry/lib/config-node";
-import { ed25519, keyDerivation } from "@typeberry/lib/crypto";
+import { ed25519 } from "@typeberry/lib/crypto";
 import { Blake2b, type OpaqueHash, ZERO_HASH } from "@typeberry/lib/hash";
 import { parseFromJson } from "@typeberry/lib/json-parser";
-import * as jamNumbers from "@typeberry/lib/numbers";
+import type { U32 } from "@typeberry/lib/numbers";
 import { InMemoryState, type LookupHistorySlots, type ServiceAccountInfo, type State } from "@typeberry/lib/state";
 import { type SerializedState, type StateEntries, serializeStateUpdate } from "@typeberry/lib/state-merkleization";
 import {
@@ -17,10 +23,10 @@ import {
   type AccumulateResult,
   type AccumulateState,
 } from "@typeberry/lib/transition";
-import { asOpaqueType } from "@typeberry/lib/utils";
+import { asOpaqueType, resultToString } from "@typeberry/lib/utils";
 import { loadBuildConfig } from "./config/config-loader.js";
 import { Slot } from "./types.js";
-import { generateGenesis, loadServices, loadStateFromGenesis } from "./utils/index.js";
+import { generateGenesis, loadServices, loadStateFromGenesis, type ServiceBuildOutput } from "./utils/index.js";
 import type { WorkReport } from "./work-report.js";
 
 // Re-export types for convenience
@@ -32,6 +38,18 @@ export type { AccumulateResult, AccumulateState, State };
 export interface GuaranteeOptions {
   /** Time slot for the guarantee (default: 0) */
   slot?: TimeSlot;
+
+  /**
+   * Signers whose public keys and core assignments must match validator state.
+   * Pass a resolver when different reports need different guarantors.
+   */
+  signers: readonly GuaranteeSigner[] | ((workReport: WorkReport) => readonly GuaranteeSigner[]);
+}
+
+/** A validator credential source for a work-report guarantee. */
+export interface GuaranteeSigner {
+  validatorIndex: ValidatorIndex;
+  keyPair: ed25519.Ed25519Pair;
 }
 
 /**
@@ -134,19 +152,8 @@ export interface SimulatorOptions {
 }
 
 /**
- * Generate deterministic Ed25519 key pair for a dev validator
- * Uses trivial seed derivation for testing purposes
- */
-async function generateValidatorKeyPair(validatorIndex: number, blake2b: Blake2b): Promise<ed25519.Ed25519Pair> {
-  const seed = keyDerivation.trivialSeed(jamNumbers.tryAsU32(validatorIndex));
-  const ed25519SecretSeed = keyDerivation.deriveEd25519SecretKey(seed, blake2b);
-
-  return await ed25519.privateKey(ed25519SecretSeed);
-}
-
-/**
  * Create an Ed25519 signature for a work report
- * The signature is over the hash of the work report
+ * The signature uses JAM's guarantee domain separator followed by the report hash.
  */
 async function signWorkReport(
   workReport: WorkReport,
@@ -156,8 +163,9 @@ async function signWorkReport(
   const reportBlob = Encoder.encodeObject(jamBlock.WorkReport.Codec, workReport);
 
   const reportHash = blake2b.hashBytes(reportBlob);
+  const signingPayload = BytesBlob.blobFromParts(BytesBlob.blobFromString("jam_guarantee").raw, reportHash.raw);
 
-  return await ed25519.sign(keyPair, reportHash);
+  return await ed25519.sign(keyPair, signingPayload);
 }
 
 /**
@@ -174,34 +182,42 @@ async function signWorkReport(
  *   results: [{ serviceId: ServiceId(1), gas: Gas(30000n) }],
  * });
  *
- * // Generate guarantees for multiple reports
- * const guarantees = await generateGuarantees([report1, report2]);
+ * // The signers must correspond to the validator state and core assignment.
+ * const guarantees = await generateGuarantees([report1, report2], {
+ *   signers: (report) => signersByCore.get(report.coreIndex) ?? [],
+ * });
  * ```
  */
 export async function generateGuarantees(
   workReports: WorkReport[],
-  options: GuaranteeOptions = {},
+  options: GuaranteeOptions,
 ): Promise<ReportGuarantee[]> {
   const slot = options.slot ?? Slot(0);
-  const credentialCount = 3;
-  const startValidatorIndex = 0;
 
   const blake2b = await Blake2b.createHasher();
 
   const guarantees: ReportGuarantee[] = [];
 
   for (const workReport of workReports) {
-    const credentials: Credential[] = [];
+    const signers = typeof options.signers === "function" ? options.signers(workReport) : options.signers;
+    if (signers.length < 2 || signers.length > 3) {
+      throw new Error(`A guarantee requires 2 or 3 signers, got ${signers.length}`);
+    }
 
-    for (let i = 0; i < credentialCount; i++) {
-      const validatorIndexNum = startValidatorIndex + i;
-      const validatorIndex = jamBlock.tryAsValidatorIndex(validatorIndexNum);
-      const keyPair = await generateValidatorKeyPair(validatorIndexNum, blake2b);
-      const signature = await signWorkReport(workReport, keyPair, blake2b);
+    const sortedSigners = [...signers].sort((a, b) => a.validatorIndex - b.validatorIndex);
+    const credentials: Credential[] = [];
+    let previousValidatorIndex = -1;
+
+    for (const signer of sortedSigners) {
+      if (signer.validatorIndex === previousValidatorIndex) {
+        throw new Error(`Guarantee signers must have unique validator indices, got ${signer.validatorIndex} twice`);
+      }
+      previousValidatorIndex = signer.validatorIndex;
+      const signature = await signWorkReport(workReport, signer.keyPair, blake2b);
 
       credentials.push(
         Credential.create({
-          validatorIndex,
+          validatorIndex: signer.validatorIndex,
           signature,
         }),
       );
@@ -347,8 +363,12 @@ export class TestJam {
    */
   static async create(): Promise<TestJam> {
     const config = await loadBuildConfig();
-    const genesis = generateGenesis(await loadServices(config));
-    return new TestJam(loadStateFromGenesis(genesis));
+    return TestJam.fromServiceOutputs(await loadServices(config));
+  }
+
+  /** Create a low-level simulator from already loaded service declarations. */
+  static fromServiceOutputs(services: ServiceBuildOutput[]): TestJam {
+    return new TestJam(loadStateFromGenesis(generateGenesis(services)));
   }
 
   /**
@@ -487,6 +507,12 @@ export class TestJam {
     return this;
   }
 
+  /** Add several work reports to the next accumulation. */
+  withWorkReports(reports: readonly WorkReport[]): this {
+    this.workReports.push(...reports);
+    return this;
+  }
+
   /**
    * Execute accumulation with all queued work reports and apply state changes.
    * Work reports are automatically cleared after accumulation completes.
@@ -501,16 +527,21 @@ export class TestJam {
    * ```
    */
   async accumulate(): Promise<AccumulateResult> {
-    const result = await simulateAccumulation(this.state, this.workReports, this.options);
+    const reports = this.workReports;
     this.workReports = [];
+    const result = await simulateAccumulation(this.state, reports, this.options);
     if (this.state instanceof InMemoryState) {
-      this.state.applyUpdate(result);
+      const updateResult = this.state.applyUpdate(result.stateUpdate);
+      if (updateResult.isError) {
+        throw new Error(`Failed to apply accumulation state update: ${resultToString(updateResult)}`);
+      }
     } else {
       if (!this.blake2b) {
         this.blake2b = await Blake2b.createHasher();
       }
       const chainSpec = this.options.chainSpec ?? tinyChainSpec;
-      this.state.backend.applyUpdate(serializeStateUpdate(chainSpec, this.blake2b, result));
+      this.state.backend.applyUpdate(serializeStateUpdate(chainSpec, this.blake2b, result.stateUpdate));
+      this.state.updateBackend(this.state.backend);
     }
     return result;
   }
@@ -577,11 +608,7 @@ export class TestJam {
    * const history = jam.getServicePreimageLookup(ServiceId(0), someHash, U32(32));
    * ```
    */
-  getServicePreimageLookup(
-    id: jamBlock.ServiceId,
-    hash: OpaqueHash,
-    len: jamNumbers.U32,
-  ): LookupHistorySlots | undefined | null {
+  getServicePreimageLookup(id: jamBlock.ServiceId, hash: OpaqueHash, len: U32): LookupHistorySlots | undefined | null {
     return this.state.getService(id)?.getLookupHistory(hash.asOpaque(), len);
   }
 }

@@ -106,7 +106,7 @@ describe("createWorkReport", () => {
       results: [{ serviceId: ServiceId(1) }],
     });
 
-    expect(report.workPackageSpec.hash).toEqual(h.ZERO_HASH.asOpaque());
+    expect(report.workPackageSpec.hash).not.toEqual(h.ZERO_HASH.asOpaque());
     expect(report.context.anchor).toEqual(h.ZERO_HASH.asOpaque());
     expect(report.coreIndex).toBe(CoreId(0));
     expect(report.authorizerHash).toEqual(h.ZERO_HASH.asOpaque());
@@ -114,6 +114,21 @@ describe("createWorkReport", () => {
     expect(report.segmentRootLookup).toEqual([]);
     expect(report.results.length).toBe(1);
     expect(report.authorizationGasUsed).toBe(Gas(0n));
+  });
+
+  test("derives a deterministic synthetic work package hash", () => {
+    const first = createWorkReport(blake2b, {
+      results: [{ serviceId: ServiceId(1), gas: Gas(100n) }],
+    });
+    const same = createWorkReport(blake2b, {
+      results: [{ serviceId: ServiceId(1), gas: Gas(100n) }],
+    });
+    const different = createWorkReport(blake2b, {
+      results: [{ serviceId: ServiceId(2), gas: Gas(100n) }],
+    });
+
+    expect(first.workPackageSpec.hash).toEqual(same.workPackageSpec.hash);
+    expect(first.workPackageSpec.hash).not.toEqual(different.workPackageSpec.hash);
   });
 
   test("creates a work report with all options", () => {
@@ -248,12 +263,10 @@ describe("createWorkReport", () => {
     expect(report.results[0]?.load.gasUsed).toBe(Gas(800n));
   });
 
-  test("creates work report with empty results array", () => {
-    const report = createWorkReport(blake2b, {
-      results: [],
-    });
-    expect(report).toBeDefined();
-    expect(report.results.length).toBe(0);
+  test("rejects a work report with an empty results array", () => {
+    expect(() => createWorkReport(blake2b, { results: [] })).toThrow(
+      "Work report must contain at least one work result",
+    );
   });
 });
 
