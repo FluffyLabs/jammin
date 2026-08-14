@@ -152,6 +152,25 @@ describe("simulateAccumulation", () => {
     const emptyNextAttempt = await jam.accumulate();
     expect(emptyNextAttempt.accumulationStatistics.size).toBe(0);
   });
+
+  test("detaches queued reports before concurrent accumulation calls", async () => {
+    const firstReport = await createWorkReportAsync({
+      results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
+    });
+    const secondReport = await createWorkReportAsync({
+      results: [{ serviceId: ServiceId(1), gas: Gas(1000n) }],
+    });
+
+    const firstAccumulation = jam.withWorkReport(firstReport).accumulate();
+    const secondAccumulation = jam.withWorkReport(secondReport).accumulate();
+    const [firstResult, secondResult] = await Promise.all([firstAccumulation, secondAccumulation]);
+
+    expect([...firstResult.accumulationStatistics.keys()]).toEqual([ServiceId(0)]);
+    expect([...secondResult.accumulationStatistics.keys()]).toEqual([ServiceId(1)]);
+
+    const emptyNextAttempt = await jam.accumulate();
+    expect(emptyNextAttempt.accumulationStatistics.size).toBe(0);
+  });
 });
 
 describe("generateGuarantees", () => {

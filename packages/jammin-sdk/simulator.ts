@@ -515,7 +515,8 @@ export class TestJam {
 
   /**
    * Execute accumulation with all queued work reports and apply state changes.
-   * Work reports are automatically cleared after accumulation completes.
+   * Work reports are detached when the call starts, allowing later calls to
+   * consume newly queued reports. Detached reports are restored on failure.
    *
    * @returns Promise resolving to accumulation result including state updates
    * @throws Error if accumulation fails
@@ -527,23 +528,27 @@ export class TestJam {
    * ```
    */
   async accumulate(): Promise<AccumulateResult> {
-    const reports = this.workReports.slice();
-    const result = await simulateAccumulation(this.state, reports, this.options);
-    if (this.state instanceof InMemoryState) {
-      const updateResult = this.state.applyUpdate(result.stateUpdate);
-      if (updateResult.isError) {
-        throw new Error(`Failed to apply accumulation state update: ${resultToString(updateResult)}`);
+    const reports = this.workReports.splice(0);
+    try {
+      const result = await simulateAccumulation(this.state, reports, this.options);
+      if (this.state instanceof InMemoryState) {
+        const updateResult = this.state.applyUpdate(result.stateUpdate);
+        if (updateResult.isError) {
+          throw new Error(`Failed to apply accumulation state update: ${resultToString(updateResult)}`);
+        }
+      } else {
+        if (!this.blake2b) {
+          this.blake2b = await Blake2b.createHasher();
+        }
+        const chainSpec = this.options.chainSpec ?? tinyChainSpec;
+        this.state.backend.applyUpdate(serializeStateUpdate(chainSpec, this.blake2b, result.stateUpdate));
+        this.state.updateBackend(this.state.backend);
       }
-    } else {
-      if (!this.blake2b) {
-        this.blake2b = await Blake2b.createHasher();
-      }
-      const chainSpec = this.options.chainSpec ?? tinyChainSpec;
-      this.state.backend.applyUpdate(serializeStateUpdate(chainSpec, this.blake2b, result.stateUpdate));
-      this.state.updateBackend(this.state.backend);
+      return result;
+    } catch (error) {
+      this.workReports.unshift(...reports);
+      throw error;
     }
-    this.workReports.splice(0, reports.length);
-    return result;
   }
 
   /**
