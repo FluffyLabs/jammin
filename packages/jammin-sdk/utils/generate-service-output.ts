@@ -99,24 +99,52 @@ export async function generateServiceOutput(
   const fileBytes = await Bun.file(absolutePath).bytes();
   const code = BytesBlob.blobFrom(fileBytes);
 
+  return createServiceOutput(code, name, serviceId, storage, info, preimageBlobs, preimageRequests);
+}
+
+/**
+ * Create a genesis service declaration from an already loaded JAM binary.
+ * This is the in-memory counterpart of {@link generateServiceOutput}.
+ */
+export function createServiceOutput(
+  code: BytesBlob,
+  name: string,
+  serviceId = 0,
+  storage?: Record<string, string>,
+  info?: {
+    balance?: bigint;
+    accumulateMinGas?: bigint;
+    onTransferMinGas?: bigint;
+    storageUtilisationBytes?: bigint;
+    gratisStorage?: bigint;
+    storageUtilisationCount?: number;
+    created?: number;
+    lastAccumulation?: number;
+    parentService?: number;
+  },
+  preimageBlobs?: Record<string, string>,
+  preimageRequests?: Record<string, number[]>,
+): ServiceBuildOutput {
   const serviceAccountInfo = Object.fromEntries(
     Object.entries({
-      balance: info?.balance ? tryAsU64(info?.balance) : undefined,
-      accumulateMinGas: info?.accumulateMinGas ? tryAsServiceGas(info?.accumulateMinGas) : undefined,
-      onTransferMinGas: info?.onTransferMinGas ? tryAsServiceGas(info?.onTransferMinGas) : undefined,
-      storageUtilisationBytes: info?.storageUtilisationBytes ? tryAsU64(info?.storageUtilisationBytes) : undefined,
-      gratisStorage: info?.gratisStorage ? tryAsU64(info?.gratisStorage) : undefined,
-      storageUtilisationCount: info?.storageUtilisationCount ? tryAsU32(info?.storageUtilisationCount) : undefined,
-      created: info?.created ? tryAsTimeSlot(info?.created) : undefined,
-      lastAccumulation: info?.lastAccumulation ? tryAsTimeSlot(info?.lastAccumulation) : undefined,
-      parentService: info?.parentService ? tryAsServiceId(info?.parentService) : undefined,
+      balance: info?.balance !== undefined ? tryAsU64(info.balance) : undefined,
+      accumulateMinGas: info?.accumulateMinGas !== undefined ? tryAsServiceGas(info.accumulateMinGas) : undefined,
+      onTransferMinGas: info?.onTransferMinGas !== undefined ? tryAsServiceGas(info.onTransferMinGas) : undefined,
+      storageUtilisationBytes:
+        info?.storageUtilisationBytes !== undefined ? tryAsU64(info.storageUtilisationBytes) : undefined,
+      gratisStorage: info?.gratisStorage !== undefined ? tryAsU64(info.gratisStorage) : undefined,
+      storageUtilisationCount:
+        info?.storageUtilisationCount !== undefined ? tryAsU32(info.storageUtilisationCount) : undefined,
+      created: info?.created !== undefined ? tryAsTimeSlot(info.created) : undefined,
+      lastAccumulation: info?.lastAccumulation !== undefined ? tryAsTimeSlot(info.lastAccumulation) : undefined,
+      parentService: info?.parentService !== undefined ? tryAsServiceId(info.parentService) : undefined,
     }).filter(([_, value]) => value !== undefined),
   );
 
   const preimageBlobsDict = HashDictionary.fromEntries(
     Object.entries(preimageBlobs ?? {}).map(([hash, blob]) => [
       Bytes.parseBytes(hash, HASH_SIZE).asOpaque(),
-      BytesBlob.blobFromString(blob),
+      BytesBlob.parseBlob(blob),
     ]),
   );
 

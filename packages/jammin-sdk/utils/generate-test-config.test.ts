@@ -34,7 +34,7 @@ describe("generateTestConfigCode", () => {
     const code = generateTestConfigCode({});
 
     expect(code).toContain('from "@fluffylabs/jammin-sdk"');
-    expect(code).toContain("import { config, ServiceId, TestJam }");
+    expect(code).toContain("import { config, JamTest, ServiceId }");
   });
 
   test("includes SERVICES constant with correct service entries", () => {
@@ -57,7 +57,7 @@ describe("generateTestConfigCode", () => {
   test("includes pre-configured testJam instance", () => {
     const code = generateTestConfigCode({});
 
-    expect(code).toContain("export const testJam = await TestJam.create()");
+    expect(code).toContain("export const testJam = await JamTest.create()");
   });
 
   test("handles service names with special characters", () => {

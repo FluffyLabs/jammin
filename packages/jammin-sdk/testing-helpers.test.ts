@@ -1,7 +1,11 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import { ZERO_HASH } from "@typeberry/lib/hash";
+import { tryAsValidatorIndex } from "@typeberry/lib/block";
+import { ed25519, keyDerivation } from "@typeberry/lib/crypto";
+import { Blake2b, ZERO_HASH } from "@typeberry/lib/hash";
+import { tryAsU32 } from "@typeberry/lib/numbers";
 import { ServiceAccountInfo } from "@typeberry/lib/state";
 import {
+  AccumulationAssertionError,
   expectAccumulationSuccess,
   expectServiceInfoChange,
   expectStateChange,
@@ -28,6 +32,17 @@ describe("testing-helpers", () => {
 
       const guarantees = await generateGuarantees([report], {
         slot: Slot(42),
+        signers: await Promise.all(
+          [0, 1, 2].map(async (index) => {
+            const blake2b = await Blake2b.createHasher();
+            const seed = keyDerivation.trivialSeed(tryAsU32(index));
+            const secretKey = keyDerivation.deriveEd25519SecretKey(seed, blake2b);
+            return {
+              validatorIndex: tryAsValidatorIndex(index),
+              keyPair: await ed25519.privateKey(secretKey),
+            };
+          }),
+        ),
       });
 
       expect(guarantees).toHaveLength(1);
@@ -45,6 +60,18 @@ describe("testing-helpers", () => {
 
       // Should not throw
       expectAccumulationSuccess(result);
+    });
+
+    test("should reject a structural success when an expected service did not execute", async () => {
+      const serviceId = ServiceId(404);
+      const report = await createWorkReportAsync({
+        results: [{ serviceId, gas: Gas(1000n) }],
+      });
+      const result = await TestJam.empty().withWorkReport(report).withOptions({ debug: false }).accumulate();
+
+      expect(() => expectAccumulationSuccess(result, { executedServices: [serviceId] })).toThrow(
+        AccumulationAssertionError,
+      );
     });
   });
 

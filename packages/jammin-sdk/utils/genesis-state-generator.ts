@@ -20,7 +20,7 @@ import {
   UpdateStorage,
 } from "@typeberry/lib/state";
 import { loadState, type SerializedState, StateEntries } from "@typeberry/lib/state-merkleization";
-import { asOpaqueType } from "@typeberry/lib/utils";
+import { asOpaqueType, resultToString } from "@typeberry/lib/utils";
 import { Gas, ServiceId, Slot, U32, U64 } from "../types.js";
 import type { ServiceBuildOutput } from "./generate-service-output.js";
 
@@ -201,7 +201,10 @@ export function generateState(services: ServiceBuildOutput[]): InMemoryState {
     );
   }
 
-  memState.applyUpdate(update);
+  const updateResult = memState.applyUpdate(update);
+  if (updateResult.isError) {
+    throw new Error(`Failed to apply generated genesis state: ${resultToString(updateResult)}`);
+  }
 
   return memState;
 }

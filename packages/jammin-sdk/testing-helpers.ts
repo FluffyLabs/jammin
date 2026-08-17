@@ -5,10 +5,20 @@
  * @module testing-helpers
  */
 
+import type { ServiceId } from "@typeberry/lib/block";
 import type { ServiceAccountInfo } from "@typeberry/lib/state";
 import type { AccumulateResult } from "@typeberry/lib/transition";
 
-export type { AccumulateResult, AccumulateState, GuaranteeOptions, SimulatorOptions, State } from "./simulator.js";
+export * from "./jam-test.js";
+
+export type {
+  AccumulateResult,
+  AccumulateState,
+  GuaranteeOptions,
+  GuaranteeSigner,
+  SimulatorOptions,
+  State,
+} from "./simulator.js";
 export { generateGuarantees, simulateAccumulation, TestJam } from "./simulator.js";
 export type { WorkReport, WorkReportConfig, WorkResultConfig, WorkResultStatus } from "./work-report.js";
 export { createWorkReport, createWorkReportAsync, createWorkResult } from "./work-report.js";
@@ -40,11 +50,18 @@ export class StateChangeAssertionError extends Error {
   }
 }
 
+/** Additional proof required from a successful accumulation. */
+export interface AccumulationSuccessExpectation {
+  /** Services which must have actually consumed PVM gas. */
+  executedServices?: readonly ServiceId[];
+}
+
 /**
  * Assert that accumulation completed successfully without errors.
  * Validates that the accumulation result has the expected structure.
  *
  * @param result - Accumulation result to validate
+ * @param expectation - Optional services whose PVM execution must be proven
  * @throws AccumulationAssertionError if accumulation structure is invalid
  *
  * @example
@@ -61,7 +78,10 @@ export class StateChangeAssertionError extends Error {
  * expectAccumulationSuccess(result);
  * ```
  */
-export function expectAccumulationSuccess(result: AccumulateResult): void {
+export function expectAccumulationSuccess(
+  result: AccumulateResult,
+  expectation: AccumulationSuccessExpectation = {},
+): void {
   if (!result.stateUpdate) {
     throw new AccumulationAssertionError("Accumulation result missing stateUpdate", result);
   }
@@ -72,6 +92,19 @@ export function expectAccumulationSuccess(result: AccumulateResult): void {
 
   if (!result.accumulationOutputLog) {
     throw new AccumulationAssertionError("Accumulation result missing accumulationOutputLog", result);
+  }
+
+  for (const serviceId of expectation.executedServices ?? []) {
+    const statistics = result.accumulationStatistics.get(serviceId);
+    if (statistics === undefined) {
+      throw new AccumulationAssertionError(`Missing accumulation statistics for service ${serviceId}`, result);
+    }
+    if (statistics.gasUsed <= 0n) {
+      throw new AccumulationAssertionError(
+        `Service ${serviceId} did not execute PVM code (reported gas used: ${statistics.gasUsed})`,
+        result,
+      );
+    }
   }
 }
 
