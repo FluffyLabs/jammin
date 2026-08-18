@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -298,6 +298,23 @@ describe("TestJam factory state shape", () => {
   test("TestJam.empty() holds SerializedState at runtime", () => {
     const jam = TestJam.empty();
     expect(jam.state).toBeInstanceOf(SerializedState);
+  });
+
+  test("fork preserves a configured chain specification", async () => {
+    const customChainSpec = new config.ChainSpec({ ...config.tinyChainSpec, name: "custom" });
+    const jam = TestJam.empty().withOptions({ chainSpec: customChainSpec });
+    const fromStateEntries = spyOn(SerializedState, "fromStateEntries");
+
+    try {
+      const fork = await jam.fork();
+      await fork.fork();
+
+      expect(fromStateEntries.mock.calls).toHaveLength(2);
+      expect(fromStateEntries.mock.calls[0]?.[0]).toBe(customChainSpec);
+      expect(fromStateEntries.mock.calls[1]?.[0]).toBe(customChainSpec);
+    } finally {
+      fromStateEntries.mockRestore();
+    }
   });
 });
 

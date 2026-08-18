@@ -470,8 +470,9 @@ export class TestJam {
   /** Create an independent simulator branch from the current state or a snapshot. */
   async fork(snapshot = this.snapshot()): Promise<TestJam> {
     const blake2b = await Blake2b.createHasher();
-    const state = SerializedState.fromStateEntries(this.chainSpec, blake2b, snapshot.entriesCopy());
-    return new TestJam(state, this.chainSpec);
+    const chainSpec = this.effectiveChainSpec();
+    const state = SerializedState.fromStateEntries(chainSpec, blake2b, snapshot.entriesCopy());
+    return new TestJam(state, chainSpec);
   }
 
   /**
@@ -593,7 +594,10 @@ export class TestJam {
   async accumulate(): Promise<AccumulateResult> {
     const reports = this.workReports.splice(0);
     try {
-      const result = await simulateAccumulation(this.state, reports, this.options);
+      const result = await simulateAccumulation(this.state, reports, {
+        ...this.options,
+        chainSpec: this.effectiveChainSpec(),
+      });
       await this.applyStateUpdate(result.stateUpdate);
       return result;
     } catch (error) {
@@ -613,10 +617,13 @@ export class TestJam {
       if (!this.blake2b) {
         this.blake2b = await Blake2b.createHasher();
       }
-      const chainSpec = this.options.chainSpec ?? tinyChainSpec;
-      this.state.backend.applyUpdate(serializeStateUpdate(chainSpec, this.blake2b, update));
+      this.state.backend.applyUpdate(serializeStateUpdate(this.effectiveChainSpec(), this.blake2b, update));
       this.state.updateBackend(this.state.backend);
     }
+  }
+
+  private effectiveChainSpec(): ChainSpec {
+    return this.options.chainSpec ?? this.chainSpec;
   }
 
   /**

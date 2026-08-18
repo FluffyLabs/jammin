@@ -93,6 +93,7 @@ export class TypeberryRpcRefineBackend implements JamRefineBackend {
   constructor(
     private readonly endpoint = "http://127.0.0.1:19800",
     private readonly fetchRpc: JamRpcFetch = fetch,
+    private readonly timeoutMs = 30_000,
   ) {}
 
   async refine(input: {
@@ -100,33 +101,49 @@ export class TypeberryRpcRefineBackend implements JamRefineBackend {
     workPackage: JamWorkPackage;
     chainSpec: ChainSpec;
   }): Promise<JamRefinement> {
-    const encoded = Encoder.encodeObject(WorkPackage.Codec, input.workPackage.value, input.chainSpec);
-    const response = await this.fetchRpc(this.endpoint, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: ++this.requestId,
-        method: "typeberry_refineWorkPackage",
-        params: [
-          input.coreIndex,
-          toBase64(encoded.raw),
-          input.workPackage.extrinsics.map((blob) => toBase64(blob.raw)),
-        ],
-      }),
-    });
-    if (!response.ok) {
-      throw new Error(`Typeberry Refine RPC failed with HTTP ${response.status}`);
+    if (input.workPackage.value.items.some((item) => item.importSegments.length > 0)) {
+      throw new Error(
+        "Typeberry RPC Refine backend does not support imported segments; use an import-resolving Typeberry backend or a custom JamRefineBackend",
+      );
     }
-    const payload: unknown = await response.json();
-    const result = parseRpcResult(payload);
-    const report = Decoder.decodeObject<WorkReport>(
-      WorkReport.Codec,
-      BytesBlob.blobFrom(result.report),
-      input.chainSpec,
-    );
-    const exports = splitExports(input.workPackage.value, result.exports);
-    return { report, exports };
+    const encoded = Encoder.encodeObject(WorkPackage.Codec, input.workPackage.value, input.chainSpec);
+    const signal = AbortSignal.timeout(this.timeoutMs);
+    try {
+      const response = await this.fetchRpc(this.endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: ++this.requestId,
+          method: "typeberry_refineWorkPackage",
+          params: [
+            input.coreIndex,
+            toBase64(encoded.raw),
+            input.workPackage.extrinsics.map((blob) => toBase64(blob.raw)),
+          ],
+        }),
+        signal,
+      });
+      if (!response.ok) {
+        throw new Error(`Typeberry Refine RPC failed with HTTP ${response.status}`);
+      }
+      const payload: unknown = await response.json();
+      const result = parseRpcResult(payload);
+      const report = Decoder.decodeObject<WorkReport>(
+        WorkReport.Codec,
+        BytesBlob.blobFrom(result.report),
+        input.chainSpec,
+      );
+      const exports = splitExports(input.workPackage.value, result.exports);
+      return { report, exports };
+    } catch (error) {
+      if (signal.aborted) {
+        throw new Error(`Typeberry Refine RPC request to ${this.endpoint} timed out after ${this.timeoutMs}ms`, {
+          cause: error,
+        });
+      }
+      throw error;
+    }
   }
 }
 

@@ -16,9 +16,8 @@ async function refineJam() {
 }
 
 describe("JamTest Refine", () => {
-  test("builds ordered multi-item packages with imports, extrinsics and exports", async () => {
+  test("builds ordered multi-item packages with extrinsics and exports", async () => {
     const jam = await refineJam();
-    const importedRoot = jam.hash("prior-exports-root");
     const workPackage = jam.workPackage({
       authorizationService: "authorizer",
       authorization: "allow",
@@ -33,7 +32,6 @@ describe("JamTest Refine", () => {
         {
           service: "second",
           payload: "two",
-          imports: [{ treeRoot: importedRoot, index: 7 }],
           extrinsics: ["second-a"],
           exportCount: 2,
         },
@@ -43,7 +41,6 @@ describe("JamTest Refine", () => {
     expect(workPackage.value.authCodeHost).toBe(10);
     expect(workPackage.value.items.map((item) => item.service)).toEqual([11, 12]);
     expect(workPackage.value.items.map((item) => item.exportCount)).toEqual([1, 2]);
-    expect(workPackage.value.items[1]?.importSegments[0]?.index).toBe(7);
     expect(workPackage.extrinsics.map((blob) => blob.asText())).toEqual(["first-a", "first-b", "second-a"]);
 
     const report = jam.report({
@@ -74,6 +71,41 @@ describe("JamTest Refine", () => {
     expect(refined.exports[0]?.[0]?.raw[0]).toBe(1);
     expect(refined.exports[1]?.[0]?.raw[0]).toBe(2);
     expect(refined.exports[1]?.[1]?.raw[0]).toBe(3);
+  });
+
+  test("rejects imported segments before calling the Typeberry RPC", async () => {
+    const jam = await refineJam();
+    const importedRoot = jam.hash("prior-exports-root");
+    const workPackage = jam.workPackage({
+      items: [{ service: "first", imports: [{ treeRoot: importedRoot, index: 7 }] }],
+    });
+    let rpcCalled = false;
+    const backend = new TypeberryRpcRefineBackend("http://typeberry.test", async () => {
+      rpcCalled = true;
+      return Response.json({});
+    });
+
+    await expect(jam.refine(workPackage, { backend })).rejects.toThrow("does not support imported segments");
+    expect(workPackage.value.items[0]?.importSegments[0]?.index).toBe(7);
+    expect(rpcCalled).toBe(false);
+  });
+
+  test("aborts stalled Typeberry RPC requests after the configured timeout", async () => {
+    const jam = await refineJam();
+    const workPackage = jam.workPackage({ items: [{ service: "first" }] });
+    const endpoint = "http://slow-typeberry.test";
+    const backend = new TypeberryRpcRefineBackend(
+      endpoint,
+      async (_input, init) =>
+        await new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+        }),
+      5,
+    );
+
+    await expect(jam.refine(workPackage, { backend })).rejects.toThrow(
+      `Typeberry Refine RPC request to ${endpoint} timed out after 5ms`,
+    );
   });
 
   test("rejects a node response whose export bytes do not match the package manifest", async () => {
