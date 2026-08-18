@@ -15,8 +15,14 @@ import { ed25519 } from "@typeberry/lib/crypto";
 import { Blake2b, type OpaqueHash, ZERO_HASH } from "@typeberry/lib/hash";
 import { parseFromJson } from "@typeberry/lib/json-parser";
 import type { U32 } from "@typeberry/lib/numbers";
-import { InMemoryState, type LookupHistorySlots, type ServiceAccountInfo, type State } from "@typeberry/lib/state";
-import { type SerializedState, type StateEntries, serializeStateUpdate } from "@typeberry/lib/state-merkleization";
+import {
+  InMemoryState,
+  type LookupHistorySlots,
+  type ServiceAccountInfo,
+  type ServicesUpdate,
+  type State,
+} from "@typeberry/lib/state";
+import { SerializedState, StateEntries, serializeStateUpdate } from "@typeberry/lib/state-merkleization";
 import {
   Accumulate,
   type AccumulateInput,
@@ -31,6 +37,34 @@ import type { WorkReport } from "./work-report.js";
 
 // Re-export types for convenience
 export type { AccumulateResult, AccumulateState, State };
+
+/** Immutable copy of the simulator state used by {@link TestJam.restore}. */
+export class TestJamSnapshot {
+  private readonly entries: StateEntries;
+
+  private constructor(entries: StateEntries) {
+    this.entries = entries;
+  }
+
+  private static cloneEntries(entries: StateEntries): StateEntries {
+    return StateEntries.fromEntriesUnsafe(entries.entries());
+  }
+
+  /** Create a checkpoint from a serialized state backend. */
+  static fromState(state: SerializedState<StateEntries>): TestJamSnapshot {
+    return new TestJamSnapshot(TestJamSnapshot.cloneEntries(state.backend));
+  }
+
+  /** Replace a serialized state backend with this checkpoint. */
+  restoreInto(state: SerializedState<StateEntries>): void {
+    state.updateBackend(TestJamSnapshot.cloneEntries(this.entries));
+  }
+
+  /** Return an independent copy for creating a simulator branch. */
+  entriesCopy(): StateEntries {
+    return TestJamSnapshot.cloneEntries(this.entries);
+  }
+}
 
 /**
  * Configuration options for guarantee generation
@@ -346,7 +380,10 @@ export class TestJam {
   private options: SimulatorOptions = {};
   private blake2b?: Blake2b;
 
-  private constructor(state: InMemoryState | SerializedState<StateEntries>) {
+  private constructor(
+    state: InMemoryState | SerializedState<StateEntries>,
+    private readonly chainSpec: ChainSpec = tinyChainSpec,
+  ) {
     this.state = state;
   }
 
@@ -409,6 +446,33 @@ export class TestJam {
     }
     const genesis = parseFromJson<JipChainSpec>(JSON.parse(await file.text()), JipChainSpec.fromJson);
     return new TestJam(loadStateFromGenesis(genesis));
+  }
+
+  /** Capture an independent copy of the current state. */
+  snapshot(): TestJamSnapshot {
+    if (!(this.state instanceof SerializedState)) {
+      throw new Error("TestJam snapshots require serialized state");
+    }
+    return TestJamSnapshot.fromState(this.state);
+  }
+
+  /** Replace the current state with a previously captured snapshot. */
+  restore(snapshot: TestJamSnapshot): this {
+    if (!(this.state instanceof SerializedState)) {
+      throw new Error("TestJam snapshots require serialized state");
+    }
+    snapshot.restoreInto(this.state);
+    this.workReports = [];
+    this.options = {};
+    return this;
+  }
+
+  /** Create an independent simulator branch from the current state or a snapshot. */
+  async fork(snapshot = this.snapshot()): Promise<TestJam> {
+    const blake2b = await Blake2b.createHasher();
+    const chainSpec = this.effectiveChainSpec();
+    const state = SerializedState.fromStateEntries(chainSpec, blake2b, snapshot.entriesCopy());
+    return new TestJam(state, chainSpec);
   }
 
   /**
@@ -530,25 +594,36 @@ export class TestJam {
   async accumulate(): Promise<AccumulateResult> {
     const reports = this.workReports.splice(0);
     try {
-      const result = await simulateAccumulation(this.state, reports, this.options);
-      if (this.state instanceof InMemoryState) {
-        const updateResult = this.state.applyUpdate(result.stateUpdate);
-        if (updateResult.isError) {
-          throw new Error(`Failed to apply accumulation state update: ${resultToString(updateResult)}`);
-        }
-      } else {
-        if (!this.blake2b) {
-          this.blake2b = await Blake2b.createHasher();
-        }
-        const chainSpec = this.options.chainSpec ?? tinyChainSpec;
-        this.state.backend.applyUpdate(serializeStateUpdate(chainSpec, this.blake2b, result.stateUpdate));
-        this.state.updateBackend(this.state.backend);
-      }
+      const result = await simulateAccumulation(this.state, reports, {
+        ...this.options,
+        chainSpec: this.effectiveChainSpec(),
+      });
+      await this.applyStateUpdate(result.stateUpdate);
       return result;
     } catch (error) {
       this.workReports.unshift(...reports);
       throw error;
     }
+  }
+
+  /** Apply a transition-produced state update to the simulator state. */
+  async applyStateUpdate(update: Partial<State & ServicesUpdate>): Promise<void> {
+    if (this.state instanceof InMemoryState) {
+      const updateResult = this.state.applyUpdate(update);
+      if (updateResult.isError) {
+        throw new Error(`Failed to apply simulator state update: ${resultToString(updateResult)}`);
+      }
+    } else {
+      if (!this.blake2b) {
+        this.blake2b = await Blake2b.createHasher();
+      }
+      this.state.backend.applyUpdate(serializeStateUpdate(this.effectiveChainSpec(), this.blake2b, update));
+      this.state.updateBackend(this.state.backend);
+    }
+  }
+
+  private effectiveChainSpec(): ChainSpec {
+    return this.options.chainSpec ?? this.chainSpec;
   }
 
   /**
