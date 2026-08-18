@@ -578,7 +578,8 @@ export class TestJam {
 
   /**
    * Execute accumulation with all queued work reports and apply state changes.
-   * Work reports are automatically cleared after accumulation completes.
+   * Work reports are detached when the call starts, allowing later calls to
+   * consume newly queued reports. Detached reports are restored on failure.
    *
    * @returns Promise resolving to accumulation result including state updates
    * @throws Error if accumulation fails
@@ -590,11 +591,15 @@ export class TestJam {
    * ```
    */
   async accumulate(): Promise<AccumulateResult> {
-    const reports = this.workReports;
-    this.workReports = [];
-    const result = await simulateAccumulation(this.state, reports, this.options);
-    await this.applyStateUpdate(result.stateUpdate);
-    return result;
+    const reports = this.workReports.splice(0);
+    try {
+      const result = await simulateAccumulation(this.state, reports, this.options);
+      await this.applyStateUpdate(result.stateUpdate);
+      return result;
+    } catch (error) {
+      this.workReports.unshift(...reports);
+      throw error;
+    }
   }
 
   /** Apply a transition-produced state update to the simulator state. */

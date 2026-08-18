@@ -121,6 +121,56 @@ describe("simulateAccumulation", () => {
 
     expect(result).toBeDefined();
   });
+
+  test("retains queued reports after failure and preserves reports added during accumulation", async () => {
+    const originalReport = await createWorkReportAsync({
+      results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
+    });
+    const reportAddedDuringFailure = await createWorkReportAsync({
+      results: [{ serviceId: ServiceId(1), gas: Gas(1000n) }],
+    });
+    if (!(jam.state instanceof SerializedState)) {
+      throw new Error("Expected TestJam.empty() to use serialized state");
+    }
+    const backend = jam.state.backend;
+    const applyUpdate = backend.applyUpdate;
+    backend.applyUpdate = () => {
+      jam.withWorkReport(reportAddedDuringFailure);
+      throw new Error("state update failed");
+    };
+
+    try {
+      await expect(jam.withWorkReport(originalReport).accumulate()).rejects.toThrow("state update failed");
+    } finally {
+      backend.applyUpdate = applyUpdate;
+    }
+
+    const retry = await jam.accumulate();
+    expect(retry.accumulationStatistics.has(ServiceId(0))).toBe(true);
+    expect(retry.accumulationStatistics.has(ServiceId(1))).toBe(true);
+
+    const emptyNextAttempt = await jam.accumulate();
+    expect(emptyNextAttempt.accumulationStatistics.size).toBe(0);
+  });
+
+  test("detaches queued reports before concurrent accumulation calls", async () => {
+    const firstReport = await createWorkReportAsync({
+      results: [{ serviceId: ServiceId(0), gas: Gas(1000n) }],
+    });
+    const secondReport = await createWorkReportAsync({
+      results: [{ serviceId: ServiceId(1), gas: Gas(1000n) }],
+    });
+
+    const firstAccumulation = jam.withWorkReport(firstReport).accumulate();
+    const secondAccumulation = jam.withWorkReport(secondReport).accumulate();
+    const [firstResult, secondResult] = await Promise.all([firstAccumulation, secondAccumulation]);
+
+    expect([...firstResult.accumulationStatistics.keys()]).toEqual([ServiceId(0)]);
+    expect([...secondResult.accumulationStatistics.keys()]).toEqual([ServiceId(1)]);
+
+    const emptyNextAttempt = await jam.accumulate();
+    expect(emptyNextAttempt.accumulationStatistics.size).toBe(0);
+  });
 });
 
 describe("generateGuarantees", () => {
